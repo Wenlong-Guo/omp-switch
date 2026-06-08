@@ -36,3 +36,6 @@ src-tauri/target/
 
 # Test coverage
 coverage/
+
+# Windsurf
+.windsurf/
