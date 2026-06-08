@@ -1,8 +1,24 @@
+use std::sync::Mutex;
 use omp_switch_lib::commands::settings;
 use omp_switch_lib::models::settings::AppSettings;
 
+static TEST_LOCK: Mutex<()> = Mutex::new(());
+
+fn clear_db() {
+    let db = omp_switch_lib::commands::provider::get_db();
+    let conn = db.get_conn();
+    let _ = conn.execute("DELETE FROM providers", []);
+    let _ = conn.execute("DELETE FROM provider_models", []);
+    let _ = conn.execute("DELETE FROM model_overrides", []);
+    let _ = conn.execute("DELETE FROM app_settings", []);
+    let _ = conn.execute("DELETE FROM sync_config", []);
+    let _ = conn.execute("DELETE FROM sync_changelog", []);
+}
+
 #[test]
 fn test_command_get_settings_empty() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let result = settings::get_settings();
     assert!(result.is_ok());
     assert!(result.unwrap().is_none());
@@ -10,6 +26,8 @@ fn test_command_get_settings_empty() {
 
 #[test]
 fn test_command_save_and_get_settings() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let settings = AppSettings {
         default_provider: Some("anthropic".to_string()),
         default_model: Some("claude-sonnet-4-20250514".to_string()),
@@ -31,6 +49,8 @@ fn test_command_save_and_get_settings() {
 
 #[test]
 fn test_command_save_settings_with_thinking_level() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let settings = AppSettings {
         default_provider: None,
         default_model: None,
@@ -46,6 +66,8 @@ fn test_command_save_settings_with_thinking_level() {
 
 #[test]
 fn test_command_save_settings_with_hide_thinking() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let settings = AppSettings {
         default_provider: None,
         default_model: None,
@@ -61,6 +83,8 @@ fn test_command_save_settings_with_hide_thinking() {
 
 #[test]
 fn test_command_update_settings() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let settings = AppSettings {
         default_provider: Some("anthropic".to_string()),
         ..Default::default()
@@ -79,6 +103,8 @@ fn test_command_update_settings() {
 
 #[test]
 fn test_command_save_settings_with_budgets() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let mut budgets = std::collections::HashMap::new();
     budgets.insert("low".to_string(), 4096);
     let settings = AppSettings {
@@ -91,6 +117,8 @@ fn test_command_save_settings_with_budgets() {
 
 #[test]
 fn test_command_save_settings_with_roles() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let roles = omp_switch_lib::models::settings::ModelRoles {
         default: omp_switch_lib::models::settings::RoleConfig {
             provider: "anthropic".to_string(),
@@ -112,6 +140,8 @@ fn test_command_save_settings_with_roles() {
 
 #[test]
 fn test_command_save_empty_settings() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let settings = AppSettings::default();
     let result = settings::save_settings(settings);
     assert!(result.is_ok());

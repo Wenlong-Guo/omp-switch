@@ -1,16 +1,41 @@
 use crate::database::connection::DbConnection;
 use crate::services::provider_service::ProviderService;
 use crate::models::provider::ProviderConfig;
+
+#[cfg(not(test))]
 use std::sync::OnceLock;
 
+#[cfg(not(test))]
 static DB: OnceLock<DbConnection> = OnceLock::new();
 
-fn get_db() -> &'static DbConnection {
+#[cfg(not(test))]
+pub fn get_db() -> &'static DbConnection {
     DB.get_or_init(|| {
         let db_path = crate::utils::fs::get_db_path();
         crate::utils::fs::ensure_dir(&db_path.parent().unwrap().to_path_buf()).unwrap();
         DbConnection::new(db_path).expect("Failed to open database")
     })
+}
+
+#[cfg(test)]
+use std::sync::Mutex;
+
+#[cfg(test)]
+static TEST_DB: Mutex<Option<&'static DbConnection>> = Mutex::new(None);
+
+#[cfg(test)]
+pub fn get_db() -> &'static DbConnection {
+    let mut db = TEST_DB.lock().unwrap();
+    if db.is_none() {
+        *db = Some(Box::leak(Box::new(DbConnection::in_memory().unwrap())));
+    }
+    db.unwrap()
+}
+
+#[cfg(test)]
+pub fn reset_db_for_test() {
+    let mut db = TEST_DB.lock().unwrap();
+    *db = Some(Box::leak(Box::new(DbConnection::in_memory().unwrap())));
 }
 
 #[tauri::command]

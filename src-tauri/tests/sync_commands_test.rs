@@ -1,8 +1,24 @@
+use std::sync::Mutex;
 use omp_switch_lib::commands::sync;
 use omp_switch_lib::models::sync::SyncConfig;
 
+static TEST_LOCK: Mutex<()> = Mutex::new(());
+
+fn clear_db() {
+    let db = omp_switch_lib::commands::provider::get_db();
+    let conn = db.get_conn();
+    let _ = conn.execute("DELETE FROM providers", []);
+    let _ = conn.execute("DELETE FROM provider_models", []);
+    let _ = conn.execute("DELETE FROM model_overrides", []);
+    let _ = conn.execute("DELETE FROM app_settings", []);
+    let _ = conn.execute("DELETE FROM sync_config", []);
+    let _ = conn.execute("DELETE FROM sync_changelog", []);
+}
+
 #[test]
 fn test_command_get_sync_config_empty() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let result = sync::get_sync_config();
     assert!(result.is_ok());
     assert!(result.unwrap().is_none());
@@ -10,6 +26,8 @@ fn test_command_get_sync_config_empty() {
 
 #[test]
 fn test_command_save_and_get_sync_config() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let config = SyncConfig {
         enabled: true,
         server_url: "https://dav.example.com".to_string(),
@@ -32,6 +50,8 @@ fn test_command_save_and_get_sync_config() {
 
 #[test]
 fn test_command_save_sync_config_disabled() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let config = SyncConfig {
         enabled: false,
         server_url: "https://dav.example.com".to_string(),
@@ -48,6 +68,8 @@ fn test_command_save_sync_config_disabled() {
 
 #[test]
 fn test_command_save_sync_config_empty_url() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let config = SyncConfig {
         enabled: true,
         server_url: "".to_string(),
@@ -64,6 +86,8 @@ fn test_command_save_sync_config_empty_url() {
 
 #[test]
 fn test_command_update_sync_config() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let config = SyncConfig {
         enabled: true,
         server_url: "https://dav1.example.com".to_string(),
@@ -94,6 +118,8 @@ fn test_command_update_sync_config() {
 
 #[test]
 fn test_command_save_sync_with_last_sync() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let config = SyncConfig {
         enabled: true,
         server_url: "https://dav.example.com".to_string(),
@@ -110,6 +136,8 @@ fn test_command_save_sync_with_last_sync() {
 
 #[test]
 fn test_command_save_sync_with_error() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    clear_db();
     let config = SyncConfig {
         enabled: true,
         server_url: "https://dav.example.com".to_string(),

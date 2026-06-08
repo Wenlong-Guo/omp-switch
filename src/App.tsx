@@ -1,3 +1,4 @@
+import React from "react";
 import { Route, Router, useLocation } from "wouter";
 import Dashboard from "@/pages/Dashboard";
 import ProviderEditor from "@/pages/ProviderEditor";

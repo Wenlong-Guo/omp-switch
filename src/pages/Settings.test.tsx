@@ -1,22 +1,24 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import Settings from "./Settings";
 
-const mockFetch = vi.fn();
-const mockSave = vi.fn();
-
-vi.mock("@/stores/settingsStore", () => ({
-  useSettingsStore: () => ({
+vi.mock("@/stores/settingsStore", () => {
+  const store = {
     settings: {
       defaultProvider: "anthropic",
       defaultModel: "claude-sonnet-4-20250514",
       defaultThinkingLevel: "medium",
       hideThinkingBlock: false,
     },
-    fetchSettings: mockFetch,
-    saveSettings: mockSave,
-  }),
-}));
+    fetchSettings: vi.fn(),
+    saveSettings: vi.fn(),
+  };
+  return {
+    useSettingsStore: () => store,
+  };
+});
+
+import { useSettingsStore } from "@/stores/settingsStore";
 
 describe("Settings", () => {
   it("renders settings title", () => {
@@ -52,21 +54,26 @@ describe("Settings", () => {
   });
 
   it("calls save on submit", () => {
+    const store = useSettingsStore();
     render(<Settings />);
     fireEvent.click(screen.getByText("保存设置"));
-    expect(mockSave).toHaveBeenCalled();
+    expect(store.saveSettings).toHaveBeenCalled();
   });
 
   it("shows save success message", async () => {
-    mockSave.mockResolvedValueOnce(undefined);
+    const store = useSettingsStore();
+    (store.saveSettings as any).mockResolvedValueOnce(undefined);
     render(<Settings />);
-    fireEvent.click(screen.getByText("保存设置"));
-    await screen.findByText("保存成功");
+    fireEvent.submit(screen.getByText("保存设置").closest("form")!);
+    await waitFor(() => {
+      expect(screen.getByText("保存成功")).toBeInTheDocument();
+    }, { timeout: 2000 });
   });
 
   it("fetches settings on mount", () => {
+    const store = useSettingsStore();
     render(<Settings />);
-    expect(mockFetch).toHaveBeenCalled();
+    expect(store.fetchSettings).toHaveBeenCalled();
   });
 
   it("allows changing default provider", () => {

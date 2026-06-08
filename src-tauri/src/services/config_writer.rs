@@ -2,8 +2,19 @@ use crate::database::connection::DbConnection;
 use crate::database::provider_dao::ProviderDao;
 use crate::database::settings_dao::SettingsDao;
 use crate::utils::fs::{atomic_write, get_models_yaml_path, get_settings_json_path};
-use rusqlite::Result;
 use std::collections::HashMap;
+
+#[derive(Debug, thiserror::Error)]
+pub enum ConfigWriterError {
+    #[error("数据库错误: {0}")]
+    Db(#[from] rusqlite::Error),
+    #[error("序列化错误: {0}")]
+    Serialize(String),
+    #[error("文件写入错误: {0}")]
+    FileWrite(String),
+}
+
+pub type Result<T> = std::result::Result<T, ConfigWriterError>;
 
 pub struct ConfigWriter<'a> {
     db: &'a DbConnection,
@@ -49,10 +60,10 @@ impl<'a> ConfigWriter<'a> {
         }
 
         let yaml_data = serde_json::json!({ "providers": providers_map });
-        let yaml_str = serde_yaml::to_string(&yaml_data).unwrap();
-        atomic_write(&get_models_yaml_path(), &yaml_str).map_err(|_| {
-            rusqlite::Error::ExecuteReturnedResults
-        })?;
+        let yaml_str = serde_yaml::to_string(&yaml_data)
+            .map_err(|e| ConfigWriterError::Serialize(e.to_string()))?;
+        atomic_write(&get_models_yaml_path(), &yaml_str)
+            .map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
 
         Ok(())
     }
@@ -60,10 +71,10 @@ impl<'a> ConfigWriter<'a> {
     pub fn write_settings_json(&self) -> Result<()> {
         let dao = SettingsDao::new(self.db);
         if let Some(settings) = dao.get()? {
-            let json_str = serde_json::to_string_pretty(&settings).unwrap();
-            atomic_write(&get_settings_json_path(), &json_str).map_err(|_| {
-                rusqlite::Error::ExecuteReturnedResults
-            })?;
+            let json_str = serde_json::to_string_pretty(&settings)
+                .map_err(|e| ConfigWriterError::Serialize(e.to_string()))?;
+            atomic_write(&get_settings_json_path(), &json_str)
+                .map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
         }
         Ok(())
     }

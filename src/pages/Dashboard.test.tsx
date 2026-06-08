@@ -8,13 +8,13 @@ const mockProviders = [
 ];
 
 vi.mock("@/stores/providerStore", () => ({
-  useProviderStore: () => ({
+  useProviderStore: vi.fn(() => ({
     providers: mockProviders,
     fetchProviders: vi.fn(),
     deleteProvider: vi.fn(),
     setActiveProvider: vi.fn(),
     isLoading: false,
-  }),
+  })),
 }));
 
 vi.mock("@/stores/settingsStore", () => ({
@@ -55,7 +55,7 @@ describe("Dashboard", () => {
   });
 
   it("shows empty state when no providers", () => {
-    vi.mocked(useProviderStore).mockReturnValueOnce({
+    (useProviderStore as any).mockReturnValueOnce({
       providers: [],
       fetchProviders: vi.fn(),
       deleteProvider: vi.fn(),
@@ -67,7 +67,7 @@ describe("Dashboard", () => {
   });
 
   it("shows loading state", () => {
-    vi.mocked(useProviderStore).mockReturnValueOnce({
+    (useProviderStore as any).mockReturnValueOnce({
       providers: [],
       fetchProviders: vi.fn(),
       deleteProvider: vi.fn(),
@@ -96,7 +96,7 @@ describe("Dashboard", () => {
 
   it("clicking set active triggers action", () => {
     const setActive = vi.fn();
-    vi.mocked(useProviderStore).mockReturnValueOnce({
+    (useProviderStore as any).mockReturnValueOnce({
       providers: mockProviders,
       fetchProviders: vi.fn(),
       deleteProvider: vi.fn(),

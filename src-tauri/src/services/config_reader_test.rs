@@ -48,11 +48,11 @@ mod tests {
     }
 
     #[test]
-    fn test_read_settings_json_empty() {
+    fn test_read_models_yaml_nonexistent_file() {
         let db = create_test_db();
         let reader = ConfigReader::new(&db);
-        let settings = reader.read_settings_json().unwrap();
-        assert!(settings.is_none());
+        let providers = reader.read_models_yaml().unwrap();
+        assert!(providers.is_empty());
     }
 
     #[test]

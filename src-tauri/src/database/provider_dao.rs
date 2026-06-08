@@ -1,6 +1,6 @@
 use crate::models::provider::{ModelCost, ModelDefinition, ModelOverride, ProviderConfig};
 use crate::database::connection::DbConnection;
-use rusqlite::{params, Result};
+use rusqlite::{params, OptionalExtension, Result};
 use serde_json;
 
 pub struct ProviderDao<'a> {
@@ -41,8 +41,8 @@ impl<'a> ProviderDao<'a> {
         }
 
         if let Some(overrides) = &provider.model_overrides {
-            for (model_id, override) in overrides {
-                self.insert_override(&tx, &provider.id, model_id, override)?;
+            for (model_id, model_override) in overrides {
+                self.insert_override(&tx, &provider.id, model_id, model_override)?;
             }
         }
 
@@ -82,8 +82,8 @@ impl<'a> ProviderDao<'a> {
         }
 
         if let Some(overrides) = &provider.model_overrides {
-            for (model_id, override) in overrides {
-                self.insert_override(&tx, &provider.id, model_id, override)?;
+            for (model_id, model_override) in overrides {
+                self.insert_override(&tx, &provider.id, model_id, model_override)?;
             }
         }
 
@@ -209,14 +209,14 @@ impl<'a> ProviderDao<'a> {
         Ok(())
     }
 
-    fn insert_override(&self, tx: &rusqlite::Transaction, provider_id: &str, model_id: &str, override: &ModelOverride) -> Result<()> {
+    fn insert_override(&self, tx: &rusqlite::Transaction, provider_id: &str, model_id: &str, model_override: &ModelOverride) -> Result<()> {
         tx.execute(
             "INSERT INTO model_overrides (provider_id, model_id, override_data)
              VALUES (?1, ?2, ?3)",
             params![
                 provider_id,
                 model_id,
-                serde_json::to_string(override).unwrap(),
+                serde_json::to_string(model_override).unwrap(),
             ],
         )?;
         Ok(())

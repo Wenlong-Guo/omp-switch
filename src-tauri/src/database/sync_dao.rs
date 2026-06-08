@@ -1,6 +1,6 @@
 use crate::models::sync::{ChangelogEntry, SyncConfig};
 use crate::database::connection::DbConnection;
-use rusqlite::{params, Result};
+use rusqlite::{params, OptionalExtension, Result};
 
 pub struct SyncDao<'a> {
     db: &'a DbConnection,

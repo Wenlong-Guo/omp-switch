@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ProviderEditor from "./ProviderEditor";
 
 const mockSave = vi.fn();
@@ -56,14 +56,16 @@ describe("ProviderEditor", () => {
     render(<ProviderEditor />);
     fireEvent.change(screen.getByPlaceholderText("openai"), { target: { value: "test" } });
     fireEvent.change(screen.getByPlaceholderText("OpenAI"), { target: { value: "Test" } });
-    fireEvent.click(screen.getByText("保存 Provider"));
+    fireEvent.submit(screen.getByText("保存 Provider").closest("form")!);
     expect(mockSave).toHaveBeenCalled();
   });
 
   it("shows validation error for empty id", async () => {
     mockSave.mockRejectedValueOnce(new Error("Provider ID 不能为空"));
     render(<ProviderEditor />);
-    fireEvent.click(screen.getByText("保存 Provider"));
-    await screen.findByText(/Provider ID 不能为空/);
+    fireEvent.submit(screen.getByText("保存 Provider").closest("form")!);
+    await waitFor(() => {
+      expect(screen.getByText(/Provider ID 不能为空/)).toBeInTheDocument();
+    }, { timeout: 2000 });
   });
 });

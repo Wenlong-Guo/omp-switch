@@ -2,13 +2,8 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import Sync from "./Sync";
 
-const mockFetch = vi.fn();
-const mockSave = vi.fn();
-const mockTest = vi.fn();
-const mockTrigger = vi.fn();
-
-vi.mock("@/stores/syncStore", () => ({
-  useSyncStore: () => ({
+vi.mock("@/stores/syncStore", () => {
+  const store = {
     config: {
       enabled: true,
       serverUrl: "https://dav.example.com",
@@ -19,12 +14,19 @@ vi.mock("@/stores/syncStore", () => ({
       lastSyncStatus: "success" as const,
     },
     isSyncing: false,
-    fetchConfig: mockFetch,
-    saveConfig: mockSave,
-    testConnection: mockTest,
-    triggerSync: mockTrigger,
-  }),
-}));
+    fetchConfig: vi.fn(),
+    saveConfig: vi.fn(),
+    testConnection: vi.fn(),
+    triggerSync: vi.fn(),
+  };
+  return {
+    useSyncStore: () => store,
+  };
+});
+
+import { useSyncStore } from "@/stores/syncStore";
+const store = useSyncStore();
+const mockTest = store.testConnection;
 
 describe("Sync", () => {
   it("renders sync title", () => {

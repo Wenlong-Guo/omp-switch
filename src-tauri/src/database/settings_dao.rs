@@ -1,6 +1,6 @@
 use crate::models::settings::AppSettings;
 use crate::database::connection::DbConnection;
-use rusqlite::{params, Result};
+use rusqlite::{params, OptionalExtension, Result};
 
 pub struct SettingsDao<'a> {
     db: &'a DbConnection,
