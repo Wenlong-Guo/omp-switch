@@ -1,43 +1,44 @@
-use serde::{Deserialize, Serialize};
+use crate::database::connection::DbConnection;
+use crate::services::provider_service::ProviderService;
+use crate::models::provider::ProviderConfig;
+use std::sync::OnceLock;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProviderConfig {
-    pub id: String,
-    pub name: String,
-    pub enabled: bool,
-    pub is_built_in: bool,
-    pub base_url: Option<String>,
-    pub api_key: Option<String>,
-    pub api_type: Option<String>,
-    pub headers: Option<serde_json::Value>,
-    pub auth_header: Option<bool>,
-    pub auth: Option<String>,
-    pub discovery: Option<serde_json::Value>,
-    pub model_overrides: Option<serde_json::Value>,
-    pub models: Option<serde_json::Value>,
+static DB: OnceLock<DbConnection> = OnceLock::new();
+
+fn get_db() -> &'static DbConnection {
+    DB.get_or_init(|| {
+        let db_path = crate::utils::fs::get_db_path();
+        crate::utils::fs::ensure_dir(&db_path.parent().unwrap().to_path_buf()).unwrap();
+        DbConnection::new(db_path).expect("Failed to open database")
+    })
 }
 
 #[tauri::command]
-pub fn get_providers() -> Vec<ProviderConfig> {
-    vec![]
+pub fn get_providers() -> Result<Vec<ProviderConfig>, String> {
+    let service = ProviderService::new(get_db());
+    service.get_all()
 }
 
 #[tauri::command]
 pub fn save_provider(config: ProviderConfig) -> Result<ProviderConfig, String> {
-    Ok(config)
+    let service = ProviderService::new(get_db());
+    service.save(config)
 }
 
 #[tauri::command]
 pub fn delete_provider(id: String) -> Result<(), String> {
-    Ok(())
+    let service = ProviderService::new(get_db());
+    service.delete(&id)
 }
 
 #[tauri::command]
 pub fn set_active_provider(provider_id: String, model_id: Option<String>) -> Result<(), String> {
-    Ok(())
+    let service = ProviderService::new(get_db());
+    service.set_active(&provider_id, model_id.as_deref())
 }
 
 #[tauri::command]
 pub fn get_builtin_presets() -> Vec<ProviderConfig> {
-    vec![]
+    let service = ProviderService::new(get_db());
+    service.get_builtin_presets()
 }
