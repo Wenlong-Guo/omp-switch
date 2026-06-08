@@ -11,7 +11,7 @@ import { invokeCommand } from "@/lib/tauri-api";
 describe("providerStore", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useProviderStore.setState({ providers: [], activeProviderId: null, isLoading: false, error: null });
+    useProviderStore.setState({ providers: [], isLoading: false, error: null });
   });
 
   it("has initial empty state", () => {
@@ -60,12 +60,12 @@ describe("providerStore", () => {
     expect(invokeCommand).toHaveBeenCalledWith("delete_provider", { id: "test" });
   });
 
-  it("setActiveProvider updates state", async () => {
+  it("setActiveProvider calls IPC", async () => {
     vi.mocked(invokeCommand).mockResolvedValueOnce(undefined);
     await act(async () => {
       await useProviderStore.getState().setActiveProvider("test");
     });
-    expect(useProviderStore.getState().activeProviderId).toBe("test");
+    expect(invokeCommand).toHaveBeenCalledWith("set_active_provider", { providerId: "test", modelId: undefined });
   });
 
   it("setActiveProvider with modelId", async () => {

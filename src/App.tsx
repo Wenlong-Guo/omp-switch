@@ -1,12 +1,19 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Route, Router, useLocation } from "wouter";
 import Dashboard from "@/pages/Dashboard";
 import ProviderEditor from "@/pages/ProviderEditor";
 import Settings from "@/pages/Settings";
 import Sync from "@/pages/Sync";
+import Toast from "@/components/Toast";
+import { getVersion } from "@tauri-apps/api/app";
 
 function Layout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
+  const [version, setVersion] = useState("");
+
+  useEffect(() => {
+    getVersion().then(setVersion).catch(() => setVersion(""));
+  }, []);
 
   const navItems = [
     { path: "/", label: "Dashboard" },
@@ -20,7 +27,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <aside className="w-56 border-r bg-muted/30">
         <div className="p-4">
           <h1 className="text-lg font-bold">omp-switch</h1>
-          <p className="text-xs text-muted-foreground">v0.1.0</p>
+          <p className="text-xs text-muted-foreground">{version ? `v${version}` : ""}</p>
         </div>
         <nav className="px-2">
           {navItems.map((item) => (
@@ -49,9 +56,11 @@ function App() {
       <Layout>
         <Route path="/" component={Dashboard} />
         <Route path="/provider/new" component={ProviderEditor} />
+        <Route path="/provider/edit/:id" component={ProviderEditor} />
         <Route path="/settings" component={Settings} />
         <Route path="/sync" component={Sync} />
       </Layout>
+      <Toast />
     </Router>
   );
 }

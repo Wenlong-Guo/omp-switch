@@ -1,10 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useProviderStore } from "@/stores/providerStore";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useToastStore } from "@/stores/toastStore";
+import { useLocation } from "wouter";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function Dashboard() {
   const { providers, fetchProviders, deleteProvider, setActiveProvider, isLoading } = useProviderStore();
   const { settings, fetchSettings } = useSettingsStore();
+  const toast = useToastStore();
+  const [, setLocation] = useLocation();
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProviders();
@@ -46,7 +52,13 @@ export default function Dashboard() {
                 设为默认
               </button>
               <button
-                onClick={() => deleteProvider(provider.id)}
+                onClick={() => setLocation(`/provider/edit/${provider.id}`)}
+                className="text-sm px-3 py-1.5 border rounded hover:bg-muted"
+              >
+                编辑
+              </button>
+              <button
+                onClick={() => setConfirmId(provider.id)}
                 className="text-sm px-3 py-1.5 border rounded hover:bg-destructive hover:text-destructive-foreground"
               >
                 删除
@@ -60,6 +72,23 @@ export default function Dashboard() {
         <div className="text-center py-12 text-muted-foreground">
           暂无 Provider，点击上方添加
         </div>
+      )}
+
+      {confirmId && (
+        <ConfirmDialog
+          title="确认删除"
+          message={`确定删除 "${providers.find((p) => p.id === confirmId)?.name ?? confirmId}"？此操作不可撤销。`}
+          onConfirm={async () => {
+            try {
+              await deleteProvider(confirmId);
+              toast.show("删除成功", "success");
+            } catch {
+              toast.show("删除失败", "error");
+            }
+            setConfirmId(null);
+          }}
+          onCancel={() => setConfirmId(null)}
+        />
       )}
     </div>
   );

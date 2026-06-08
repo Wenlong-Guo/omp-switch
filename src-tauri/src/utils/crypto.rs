@@ -3,11 +3,34 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use anyhow::Result;
+use std::path::PathBuf;
 
-const KEY: &[u8] = b"omp-switch-encryption-key-32bytes!";
+const OLD_KEY: &[u8] = b"omp-switch-encryption-key-32bytes!";
+
+fn get_key_path() -> PathBuf {
+    crate::utils::fs::get_switch_data_dir().join(".enc-key")
+}
+
+fn get_or_create_key() -> Vec<u8> {
+    let key_path = get_key_path();
+    if let Ok(data) = std::fs::read(&key_path) {
+        if data.len() == 32 {
+            return data;
+        }
+    }
+    let new_key: Vec<u8> = (0..32).map(|_| rand::random::<u8>()).collect();
+    let _ = crate::utils::fs::ensure_dir(&key_path.parent().unwrap().to_path_buf());
+    let _ = std::fs::write(&key_path, &new_key);
+    new_key
+}
+
+fn get_key() -> Vec<u8> {
+    get_or_create_key()
+}
 
 pub fn encrypt(plaintext: &str) -> Result<String> {
-    let cipher = Aes256Gcm::new_from_slice(KEY)
+    let key = get_key();
+    let cipher = Aes256Gcm::new_from_slice(&key)
         .map_err(|e| anyhow::anyhow!("Failed to create cipher: {}", e))?;
     let nonce = Aes256Gcm::generate_nonce(&mut aes_gcm::aead::OsRng);
     let ciphertext = cipher
@@ -28,15 +51,26 @@ pub fn decrypt(ciphertext: &str) -> Result<String> {
 
     let (nonce_bytes, encrypted) = data.split_at(12);
     let nonce = Nonce::from_slice(nonce_bytes);
-    let cipher = Aes256Gcm::new_from_slice(KEY)
+
+    let key = get_key();
+    let cipher = Aes256Gcm::new_from_slice(&key)
         .map_err(|e| anyhow::anyhow!("Failed to create cipher: {}", e))?;
 
-    let plaintext = cipher
-        .decrypt(nonce, encrypted)
-        .map_err(|e| anyhow::anyhow!("Decrypt failed: {:?}", e))?;
-
-    Ok(String::from_utf8(plaintext)
-        .map_err(|e| anyhow::anyhow!("Invalid UTF-8: {}", e))?)
+    match cipher.decrypt(nonce, encrypted) {
+        Ok(plaintext) => Ok(String::from_utf8(plaintext)
+            .map_err(|e| anyhow::anyhow!("Invalid UTF-8: {}", e))?),
+        Err(_) => {
+            let old_cipher = Aes256Gcm::new_from_slice(OLD_KEY)
+                .map_err(|e| anyhow::anyhow!("Failed to create old cipher: {}", e))?;
+            let plaintext = old_cipher
+                .decrypt(nonce, encrypted)
+                .map_err(|e| anyhow::anyhow!("Decrypt failed: {:?}", e))?;
+            let text = String::from_utf8(plaintext)
+                .map_err(|e| anyhow::anyhow!("Invalid UTF-8: {}", e))?;
+            let _ = encrypt(&text);
+            Ok(text)
+        }
+    }
 }
 
 // Simple base64 module for internal use

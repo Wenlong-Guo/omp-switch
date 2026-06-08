@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useProviderStore } from "@/stores/providerStore";
+import { useToastStore } from "@/stores/toastStore";
+import { useLocation, useParams } from "wouter";
 import type { ProviderConfig } from "@/types/provider";
 
 const API_TYPES = [
@@ -13,7 +15,13 @@ const API_TYPES = [
 ];
 
 export default function ProviderEditor() {
-  const { saveProvider } = useProviderStore();
+  const { saveProvider, providers, fetchProviders } = useProviderStore();
+  const toast = useToastStore();
+  const [, setLocation] = useLocation();
+  const params = useParams();
+  const editId = params.id;
+  const isEdit = !!editId;
+
   const [form, setForm] = useState<ProviderConfig>({
     id: "",
     name: "",
@@ -22,20 +30,35 @@ export default function ProviderEditor() {
   });
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (isEdit) {
+      const existing = providers.find((p) => p.id === editId);
+      if (existing) {
+        setForm(existing);
+      } else {
+        fetchProviders();
+      }
+    }
+  }, [isEdit, editId, providers, fetchProviders]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
       await saveProvider(form);
-      setForm({ id: "", name: "", enabled: true, isBuiltIn: false });
+      toast.show(isEdit ? "更新成功" : "保存成功", "success");
+      setLocation("/");
     } catch (err) {
       setError(String(err));
+      toast.show("保存失败", "error");
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">添加 Provider</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        {isEdit ? `编辑 Provider ${form.name}` : "添加 Provider"}
+      </h1>
 
       {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded">{error}</div>}
 
@@ -45,9 +68,10 @@ export default function ProviderEditor() {
           <input
             value={form.id}
             onChange={(e) => setForm({ ...form, id: e.target.value })}
-            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-muted disabled:cursor-not-allowed"
             placeholder="openai"
             required
+            disabled={isEdit}
           />
         </div>
 

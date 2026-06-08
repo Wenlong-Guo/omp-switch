@@ -28,6 +28,7 @@ dirs = "6"
 chrono = { version = "0.4", features = ["serde"] }
 aes-gcm = "0.10"
 base64 = "0.22"
+rand = "0.8"
 
 [dev-dependencies]
 mockall = "0.13"
