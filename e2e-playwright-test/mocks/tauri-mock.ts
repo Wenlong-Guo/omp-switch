@@ -9,7 +9,7 @@ export function injectTauriMock(page: any) {
     let providers = [...mockProviders];
     let settings = { defaultProvider: 'openai', defaultModel: 'gpt-4', thinkingLevel: 'medium' };
 
-    (window as any).__TAURI__ = {
+    (window as any).__TAURI_INTERNALS__ = {
       invoke: async (cmd: string, args?: any) => {
         switch (cmd) {
           case 'get_providers':
@@ -34,6 +34,8 @@ export function injectTauriMock(page: any) {
             settings = { ...settings, ...args.settings };
             return;
           case 'get_version':
+            return '0.1.2';
+          case 'plugin:app|version':
             return '0.1.2';
           default:
             throw new Error(`Unknown command: ${cmd}`);
