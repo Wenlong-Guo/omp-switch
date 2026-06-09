@@ -27,6 +27,24 @@ export function injectTauriMock(page: any) {
       },
     ];
 
+    const builtinPresets = [
+      { id: 'openai', name: 'OpenAI', api: 'openai-completions', baseUrl: 'https://api.openai.com/v1', enabled: true, isBuiltIn: true, auth: 'apiKey' },
+      { id: 'anthropic', name: 'Anthropic', api: 'anthropic-messages', baseUrl: 'https://api.anthropic.com', enabled: true, isBuiltIn: true, auth: 'apiKey' },
+      {
+        id: 'step-plan',
+        name: 'StepFun (Step Plan)',
+        api: 'openai-completions',
+        baseUrl: 'https://api.stepfun.com/step_plan/v1',
+        enabled: true,
+        isBuiltIn: true,
+        auth: 'apiKey',
+        models: [
+          { id: 'step-3.7-flash', name: 'Step 3.7 Flash', api: 'openai-completions', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 4096 },
+          { id: 'step-4.0', name: 'Step 4.0', api: 'openai-completions', reasoning: true, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 256000, maxTokens: 8192 },
+        ],
+      },
+    ];
+
     let providers = [...mockProviders];
     let settings = { defaultProvider: 'openai', defaultModel: 'gpt-4', thinkingLevel: 'medium' };
     let chatHistory: any[] = [];
@@ -36,6 +54,8 @@ export function injectTauriMock(page: any) {
         switch (cmd) {
           case 'get_providers':
             return providers;
+          case 'get_builtin_presets':
+            return builtinPresets;
           case 'save_provider':
             const existing = providers.findIndex((p: any) => p.id === args.config.id);
             if (existing >= 0) {

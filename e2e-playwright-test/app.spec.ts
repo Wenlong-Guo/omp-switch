@@ -35,10 +35,10 @@ test.describe('ProviderEditor', () => {
 
     await page.locator('input[placeholder="openai"]').fill('test-provider');
     await page.locator('input[placeholder="OpenAI"]').fill('Test Provider');
-    await page.locator('select').selectOption('openai-completions');
+    await page.getByTestId('api-type-select').selectOption('openai-completions');
     await page.locator('input[placeholder="https://api.openai.com/v1"]').fill('https://api.test.com/v1');
     await page.locator('input[type="password"]').fill('test-api-key-123');
-    await page.getByRole('button', { name: '保存 Provider' }).click();
+    await page.getByTestId('save-provider-btn').click();
 
     await expect(page.getByText('保存成功')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
@@ -109,10 +109,10 @@ test.describe('StepFun Provider', () => {
 
     await page.locator('input[placeholder="openai"]').fill('step-plan-test');
     await page.locator('input[placeholder="OpenAI"]').fill('StepFun Test');
-    await page.locator('select').selectOption('openai-completions');
+    await page.getByTestId('api-type-select').selectOption('openai-completions');
     await page.locator('input[placeholder="https://api.openai.com/v1"]').fill('https://api.stepfun.com/step_plan/v1');
     await page.locator('input[type="password"]').fill('2VpngWbeoYJAnD2JXy4RGRNh9if9Vv6xqxpRomhbLOLVBIQDzqTecYmlPNUp3PtwU');
-    await page.getByRole('button', { name: '保存 Provider' }).click();
+    await page.getByTestId('save-provider-btn').click();
 
     await expect(page.getByText('保存成功')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
@@ -130,6 +130,59 @@ test.describe('StepFun Provider', () => {
       });
     });
     expect(result.choices[0].message.content).toBe('3');
+  });
+});
+
+test.describe('Preset Model Selection', () => {
+  test('select preset and model with alias', async ({ page }) => {
+    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+
+    // Select StepFun preset
+    await page.getByTestId('preset-select').selectOption('step-plan');
+
+    // Verify preset info auto-filled
+    await expect(page.locator('input[placeholder="openai"]')).toHaveValue('step-plan');
+    await expect(page.locator('input[placeholder="OpenAI"]')).toHaveValue('StepFun (Step Plan)');
+
+    // Select model from dropdown
+    await page.getByTestId('model-select').selectOption('step-3.7-flash');
+
+    // Set alias
+    await page.getByTestId('model-alias-input').fill('我的Step模型');
+
+    // Save provider
+    await page.getByTestId('save-provider-btn').click();
+    await expect(page.getByText('保存成功')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
+
+    // Verify on dashboard
+    await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
+
+    // Re-edit and verify model alias persisted
+    const card = page.getByTestId('provider-card-step-plan');
+    await card.getByRole('button', { name: '编辑' }).click();
+    await expect(page.getByText('我的Step模型')).toBeVisible();
+  });
+
+  test('select preset without model then manual add', async ({ page }) => {
+    await page.getByRole('button', { name: '添加 Provider' }).click();
+
+    // Select OpenAI preset (no models in mock)
+    await page.getByTestId('preset-select').selectOption('openai');
+    await expect(page.locator('input[placeholder="openai"]')).toHaveValue('openai');
+
+    // No model dropdown since OpenAI preset has no models
+    await expect(page.getByTestId('model-select')).not.toBeVisible();
+
+    // Add model manually
+    await page.getByTestId('add-model-btn').click();
+    await page.getByTestId('model-id-input').fill('gpt-4');
+    await page.getByTestId('model-name-input').fill('GPT-4');
+    await page.getByTestId('save-model-btn').click();
+
+    await page.getByTestId('save-provider-btn').click();
+    await expect(page.getByText('保存成功')).toBeVisible();
   });
 });
 

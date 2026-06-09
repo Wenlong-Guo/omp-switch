@@ -28,7 +28,7 @@ const emptyModel = (): ModelDefinition => ({
 });
 
 export default function ProviderEditor() {
-  const { saveProvider, providers, fetchProviders } = useProviderStore();
+  const { saveProvider, providers, fetchProviders, builtinPresets, fetchBuiltinPresets } = useProviderStore();
   const toast = useToastStore();
   const [, setLocation] = useLocation();
   const params = useParams();
@@ -46,6 +46,11 @@ export default function ProviderEditor() {
   const [modelForm, setModelForm] = useState<ModelDefinition>(emptyModel());
   const [error, setError] = useState<string | null>(null);
 
+  // Preset/model selection for add mode
+  const [selectedPresetId, setSelectedPresetId] = useState<string>("");
+  const [selectedModelId, setSelectedModelId] = useState<string>("");
+  const [modelAlias, setModelAlias] = useState<string>("");
+
   useEffect(() => {
     if (isEdit) {
       const existing = providers.find((p) => p.id === editId);
@@ -54,8 +59,10 @@ export default function ProviderEditor() {
       } else {
         fetchProviders();
       }
+    } else {
+      fetchBuiltinPresets();
     }
-  }, [isEdit, editId, providers, fetchProviders]);
+  }, [isEdit, editId, providers, fetchProviders, fetchBuiltinPresets]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,6 +130,90 @@ export default function ProviderEditor() {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">基本信息</h2>
 
+          {/* Preset selector for add mode */}
+          {!isEdit && (
+            <div>
+              <label className="block text-sm font-medium mb-1">选择预设</label>
+              <select
+                value={selectedPresetId}
+                onChange={(e) => {
+                  const presetId = e.target.value;
+                  setSelectedPresetId(presetId);
+                  setSelectedModelId("");
+                  setModelAlias("");
+                  const preset = builtinPresets.find((p) => p.id === presetId);
+                  if (preset) {
+                    setForm({
+                      ...form,
+                      id: preset.id,
+                      name: preset.name,
+                      api: preset.api,
+                      baseUrl: preset.baseUrl,
+                      auth: preset.auth,
+                      models: preset.models ? [...preset.models] : [],
+                    });
+                  } else {
+                    setForm({ id: "", name: "", enabled: true, isBuiltIn: false, models: [] });
+                  }
+                }}
+                data-testid="preset-select"
+                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">手动配置</option>
+                {builtinPresets.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Model selection for add mode when preset has models */}
+          {!isEdit && selectedPresetId && form.models && form.models.length > 0 && (
+            <div className="p-3 border rounded bg-muted/20 space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">选择模型</label>
+                <select
+                  value={selectedModelId}
+                  onChange={(e) => {
+                    const modelId = e.target.value;
+                    setSelectedModelId(modelId);
+                    const model = form.models?.find((m) => m.id === modelId);
+                    if (model) {
+                      setModelAlias(model.name);
+                    }
+                  }}
+                  data-testid="model-select"
+                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">请选择模型</option>
+                  {form.models.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name} ({m.id})</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedModelId && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">模型别名（可选）</label>
+                  <input
+                    value={modelAlias}
+                    onChange={(e) => {
+                      setModelAlias(e.target.value);
+                      // Update the alias in form.models
+                      const nextModels = form.models?.map((m) =>
+                        m.id === selectedModelId ? { ...m, name: e.target.value || m.name } : m
+                      );
+                      setForm({ ...form, models: nextModels });
+                    }}
+                    data-testid="model-alias-input"
+                    placeholder="自定义显示名称"
+                    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium mb-1">Provider ID</label>
             <input
@@ -151,6 +242,7 @@ export default function ProviderEditor() {
             <select
               value={form.api ?? ""}
               onChange={(e) => setForm({ ...form, api: e.target.value as any })}
+              data-testid="api-type-select"
               className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">请选择</option>
