@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import type { ModelDefinition } from "@/types/provider";
+import type { ModelDefinition, ApiType } from "@/types/provider";
 import {
   getDefaultModel,
   getAttributesByCategory,
@@ -53,8 +53,8 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
     onSave(form as ModelDefinition);
   };
 
-  const cost = (form.cost || { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }) as unknown as Record<string, number>;
-  const limit = (form.limit || {}) as Record<string, number>;
+  const cost = (form.cost || { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
+  const limit = (form.limit || {});
   const compat = (form.compat || {}) as Record<string, boolean | string | Record<string, unknown>>;
 
   return (
@@ -108,8 +108,8 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
               <div>
                 <label className="block text-sm font-medium mb-1">API 类型</label>
                 <select
-                  value={(form.api as string) ?? ""}
-                  onChange={(e) => updateField("api", e.target.value as any)}
+                  value={(form.api) ?? ""}
+                  onChange={(e) => updateField("api", e.target.value as ApiType | undefined)}
                   className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
                 >
                   <option value="">继承 Provider</option>
@@ -185,7 +185,7 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
                       type="number"
                       step="0.0001"
                       value={cost[k] ?? 0}
-                      onChange={(e) => updateField("cost", { ...cost, [k]: Number(e.target.value) } as any)}
+                      onChange={(e) => updateField("cost", { ...cost, [k]: Number(e.target.value) } as ModelDefinition['cost'])}
                       className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
                   </div>
@@ -260,8 +260,8 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
               <div>
                 <label className="block text-sm font-medium mb-1">Thinking Level 映射</label>
                 <ThinkingLevelMapTable
-                  value={(form.thinkingLevelMap as Record<string, string | null>) || {}}
-                  onChange={(v) => updateField("thinkingLevelMap", v as any)}
+                  value={form.thinkingLevelMap || {}}
+                  onChange={(v) => updateField("thinkingLevelMap", v)}
                 />
               </div>
               <div>

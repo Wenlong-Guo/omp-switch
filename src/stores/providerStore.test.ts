@@ -196,7 +196,7 @@ describe("providerStore", () => {
         contextWindow: 128000,
         maxTokens: 16384,
         family: "gpt-4",
-        status: "stable" as any,
+        status: "beta" as const,
       }],
     };
     vi.mocked(invokeCommand).mockResolvedValueOnce([mockProvider]);

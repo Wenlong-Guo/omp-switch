@@ -4,6 +4,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useLocation } from "wouter";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { validateProviderImport } from "@/lib/importValidation";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function Dashboard() {
@@ -95,19 +96,15 @@ export default function Dashboard() {
                 try {
                   const text = await file.text();
                   const imported = JSON.parse(text);
-                  // Validate basic structure
-                  if (!Array.isArray(imported)) {
-                    toast.show("导入失败：格式错误", "error");
+                  const result = validateProviderImport(imported);
+                  if (!result.valid) {
+                    toast.show(`导入失败：${result.error}`, "error");
                     return;
                   }
-                  for (const p of imported) {
-                    if (!p.id || !p.name) {
-                      toast.show("导入失败：数据格式不正确", "error");
-                      return;
-                    }
+                  for (const p of result.providers) {
                     await saveProvider?.(p);
                   }
-                  toast.show(`导入成功 ${imported.length} 个 Provider`, "success");
+                  toast.show(`导入成功 ${result.providers.length} 个 Provider`, "success");
                   fetchProviders();
                 } catch {
                   toast.show("导入失败", "error");
@@ -154,6 +151,19 @@ export default function Dashboard() {
           {filteredProviders.map((provider) => {
             const isExpanded = expandedId === provider.id;
             const modelCount = provider.models?.length ?? 0;
+            const apiType = provider.api ?? "unknown";
+            const apiColor =
+              apiType.includes("openai") ? "border-l-blue-500" :
+              apiType.includes("anthropic") ? "border-l-amber-500" :
+              apiType.includes("google") ? "border-l-emerald-500" :
+              apiType.includes("azure") ? "border-l-sky-600" :
+              "border-l-slate-400";
+            const apiBadgeColor =
+              apiType.includes("openai") ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" :
+              apiType.includes("anthropic") ? "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" :
+              apiType.includes("google") ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" :
+              apiType.includes("azure") ? "bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300" :
+              "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
             return (
               <div
                 key={provider.id}
@@ -163,24 +173,41 @@ export default function Dashboard() {
                 onDragOver={(e) => handleDragOver(e, provider.id)}
                 onDrop={() => handleDrop(provider.id)}
                 onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-                className={`border rounded-lg p-4 transition-all hover:shadow-md cursor-move ${provider.enabled ? "border-border" : "border-dashed opacity-60"} ${dragOverId === provider.id && dragId !== provider.id ? "ring-2 ring-primary ring-offset-2 scale-[1.02]" : ""} ${dragId === provider.id ? "opacity-40" : ""}`}
+                className={`border rounded-lg p-4 transition-all hover:shadow-md cursor-move border-l-4 ${apiColor} ${provider.enabled ? "border-border bg-background" : "border-dashed opacity-60 bg-muted/20"} ${dragOverId === provider.id && dragId !== provider.id ? "ring-2 ring-primary ring-offset-2 scale-[1.02]" : ""} ${dragId === provider.id ? "opacity-40" : ""}`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">{provider.name}</h3>
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-base">{provider.name}</h3>
+                    {provider.isBuiltIn && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
+                        内置
+                      </span>
+                    )}
+                    {!provider.enabled && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 font-medium">
+                        已停用
+                      </span>
+                    )}
+                  </div>
                   {settings?.defaultProvider === provider.id && (
-                    <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-medium">
                       默认
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground mb-1">{provider.api ?? "未配置 API"}</p>
-                <p className="text-sm text-muted-foreground mb-2 truncate">{provider.baseUrl ?? "无 baseUrl"}</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${apiBadgeColor}`}>
+                    {apiType}
+                  </span>
+                  <span className="text-xs text-muted-foreground truncate">{provider.baseUrl ?? "无 baseUrl"}</span>
+                </div>
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : provider.id)}
                   className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2 transition-colors"
                 >
                   <span>{isExpanded ? "▼" : "▶"}</span>
-                  <span>{modelCount} 个模型</span>
+                  <span className="font-medium">{modelCount}</span>
+                  <span>个模型</span>
                 </button>
                 {isExpanded && provider.models && (
                   <div className="mb-3 p-2 bg-muted/50 rounded-md text-sm space-y-1">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
-import type { AppSettings } from "@/types/settings";
+import type { AppSettings, ThinkingLevel } from "@/types/settings";
 
 export default function Settings() {
   const { settings, fetchSettings, saveSettings } = useSettingsStore();
@@ -57,7 +57,7 @@ export default function Settings() {
           <label className="block text-sm font-medium mb-1">默认 Thinking 级别</label>
           <select
             value={form.defaultThinkingLevel ?? ""}
-            onChange={(e) => setForm({ ...form, defaultThinkingLevel: e.target.value as any || undefined })}
+            onChange={(e) => setForm({ ...form, defaultThinkingLevel: (e.target.value as ThinkingLevel) || undefined })}
             className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">请选择</option>
