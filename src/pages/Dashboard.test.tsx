@@ -75,7 +75,7 @@ describe("Dashboard", () => {
       isLoading: true,
     });
     render(<Dashboard />);
-    expect(screen.getByText(/加载中/)).toBeInTheDocument();
+    expect(screen.getByText(/加载 Provider 列表/)).toBeInTheDocument();
   });
 
   it("renders page title", () => {

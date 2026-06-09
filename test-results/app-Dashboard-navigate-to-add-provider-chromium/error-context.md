@@ -7,12 +7,12 @@
 # Test info
 
 - Name: app.spec.ts >> Dashboard >> navigate to add provider
-- Location: e2e/app.spec.ts:24:3
+- Location: e2e-playwright-test\app.spec.ts:25:3
 
 # Error details
 
 ```
-Error: browserType.launch: Executable doesn't exist at /Users/admin/Library/Caches/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-mac-arm64/chrome-headless-shell
+Error: browserType.launch: Executable doesn't exist at C:\Users\guowenlong\AppData\Local\ms-playwright\chromium_headless_shell-1223\chrome-headless-shell-win64\chrome-headless-shell.exe
 ╔════════════════════════════════════════════════════════════╗
 ║ Looks like Playwright was just installed or updated.       ║
 ║ Please run the following command to download new browsers: ║

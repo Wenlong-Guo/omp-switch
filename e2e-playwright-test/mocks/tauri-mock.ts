@@ -36,6 +36,7 @@ export function injectTauriMock(page: any) {
           case 'get_version':
             return '0.1.2';
           case 'plugin:app|version':
+          case 'plugin:app|version|none':
             return '0.1.2';
           default:
             throw new Error(`Unknown command: ${cmd}`);

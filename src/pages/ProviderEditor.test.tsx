@@ -44,7 +44,7 @@ describe("ProviderEditor", () => {
 
   it("has enabled checkbox", () => {
     render(<ProviderEditor />);
-    expect(screen.getByLabelText("启用")).toBeInTheDocument();
+    expect(screen.getByLabelText(/启用此 Provider/)).toBeInTheDocument();
   });
 
   it("has submit button", () => {
