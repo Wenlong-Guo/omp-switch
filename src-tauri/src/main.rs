@@ -11,6 +11,22 @@ fn main() {
                 let window = app.get_webview_window("main").unwrap();
                 window.open_devtools();
             }
+
+            // Initialize builtin presets on first startup
+            use omp_switch_lib::commands::provider::get_db;
+            use omp_switch_lib::services::provider_service::ProviderService;
+
+            let db = get_db();
+            let service = ProviderService::new(db);
+            if let Ok(existing) = service.get_all() {
+                if existing.is_empty() {
+                    let presets = service.get_builtin_presets();
+                    for preset in presets {
+                        let _ = service.save(preset);
+                    }
+                }
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
