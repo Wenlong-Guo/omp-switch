@@ -3,6 +3,7 @@ import { useProviderStore } from "@/stores/providerStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useLocation } from "wouter";
+import { Plus, ArrowRight } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { validateProviderImport } from "@/lib/importValidation";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -251,7 +252,15 @@ export default function Dashboard() {
         <div className="text-center py-16 text-muted-foreground border rounded-xl border-dashed">
           <div className="text-4xl mb-3">🤖</div>
           <p className="text-base font-medium">暂无 Provider</p>
-          <p className="text-sm mt-1 opacity-60">点击「添加 Provider」开始使用</p>
+          <p className="text-sm mt-1 opacity-60 mb-4">添加第一个 AI Provider 开始配置</p>
+          <button
+            onClick={() => setLocation("/provider/new")}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 text-sm transition-opacity"
+          >
+            <Plus className="w-4 h-4" />
+            添加 Provider
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 

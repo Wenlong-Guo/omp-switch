@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useProviderStore } from "@/stores/providerStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useLocation, useParams } from "wouter";
+import { ArrowLeft, Save } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import type { ProviderConfig, ModelDefinition } from "@/types/provider";
 import ProviderBasicForm from "@/components/ProviderEditor/ProviderBasicForm";
@@ -111,11 +112,20 @@ export default function ProviderEditor() {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">
-        {isEdit ? `编辑 Provider ${form.name}` : "添加 Provider"}
-      </h1>
+      <div className="flex items-center gap-2 mb-6">
+        <button
+          onClick={() => setLocation("/")}
+          className="p-1.5 rounded-md hover:bg-muted transition-colors"
+          aria-label="返回"
+        >
+          <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+        </button>
+        <h1 className="text-2xl font-bold">
+          {isEdit ? `编辑 Provider ${form.name}` : "添加 Provider"}
+        </h1>
+      </div>
 
-      {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded">{error}</div>}
+      {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md border border-red-100 flex items-center gap-2 text-sm"><span className="font-medium">错误:</span> {error}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Preset selector for add mode */}
@@ -240,8 +250,9 @@ export default function ProviderEditor() {
         <button
           type="submit"
           data-testid="save-provider-btn"
-          className="w-full py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
+          className="w-full py-2.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center justify-center gap-2 font-medium transition-opacity"
         >
+          <Save className="w-4 h-4" />
           保存 Provider
         </button>
       </form>

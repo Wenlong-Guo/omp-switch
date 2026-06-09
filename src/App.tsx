@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Route, Router, useLocation } from "wouter";
+import { LayoutDashboard, Plus, Settings as SettingsIcon, RefreshCw } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import Dashboard from "@/pages/Dashboard";
 import ProviderEditor from "@/pages/ProviderEditor";
@@ -8,6 +9,24 @@ import Sync from "@/pages/Sync";
 import Toast from "@/components/Toast";
 import SearchDialog from "@/components/SearchDialog";
 import { getVersion } from "@tauri-apps/api/app";
+
+function PageWrapper({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(false);
+    const r = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(r);
+  }, [children]);
+  return (
+    <div
+      className={`transition-all duration-300 ${
+        mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
 
 function Layout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
@@ -30,33 +49,43 @@ function Layout({ children }: { children: React.ReactNode }) {
   }, []);
 
   const navItems = [
-    { path: "/", label: "Dashboard" },
-    { path: "/provider/new", label: "添加 Provider" },
-    { path: "/settings", label: "设置" },
-    { path: "/sync", label: "同步" },
+    { path: "/", label: "Dashboard", icon: LayoutDashboard },
+    { path: "/provider/new", label: "添加 Provider", icon: Plus },
+    { path: "/settings", label: "设置", icon: SettingsIcon },
+    { path: "/sync", label: "同步", icon: RefreshCw },
   ];
 
+  const isActive = (path: string) => {
+    if (path === "/") return location === "/";
+    return location === path || location.startsWith(path + "/");
+  };
+
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-56 border-r bg-muted/30">
+    <div className="min-h-screen flex bg-background">
+      <aside className="w-56 border-r bg-muted/30 flex flex-col">
         <div className="p-4">
-          <h1 className="text-lg font-bold">omp-switch</h1>
-          <p className="text-xs text-muted-foreground">{version ? `v${version}` : ""}</p>
+          <h1 className="text-lg font-bold tracking-tight">omp-switch</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{version ? `v${version}` : ""}</p>
         </div>
-        <nav className="px-2">
-          {navItems.map((item) => (
-            <button
-              key={item.path}
-              onClick={() => setLocation(item.path)}
-              className={`w-full text-left px-3 py-2 rounded text-sm mb-1 ${
-                location === item.path
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
+        <nav className="px-2 flex-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.path);
+            return (
+              <button
+                key={item.path}
+                onClick={() => setLocation(item.path)}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm mb-1 flex items-center gap-2 transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {item.label}
+              </button>
+            );
+          })}
         </nav>
         <div className="px-4 mt-4">
           <button
@@ -70,8 +99,13 @@ function Layout({ children }: { children: React.ReactNode }) {
             <kbd className="text-[10px] px-1 border rounded bg-background">⌘K</kbd>
           </button>
         </div>
+        <div className="p-4 text-xs text-muted-foreground border-t mt-4">
+          AI Provider 配置管理
+        </div>
       </aside>
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="flex-1 overflow-auto">
+        <PageWrapper key={location}>{children}</PageWrapper>
+      </main>
       <SearchDialog open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
