@@ -118,8 +118,10 @@ impl WebDavClient {
                 std::fs::write(&temp_path, &bytes).map_err(|e| format!("写入临时文件失败: {}", e))?;
 
                 // Atomic rename
-                std::fs::rename(&temp_path, local_path)
-                    .map_err(|e| format!("替换数据库文件失败: {}", e))?;
+                if let Err(e) = std::fs::rename(&temp_path, local_path) {
+                    let _ = std::fs::remove_file(&temp_path);
+                    return Err(format!("替换数据库文件失败: {}", e));
+                }
 
                 Ok(())
             }

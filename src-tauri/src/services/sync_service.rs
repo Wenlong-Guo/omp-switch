@@ -77,24 +77,18 @@ impl<'a> SyncService<'a> {
         let client = self.client_for(&config)?;
         let db_path = crate::utils::fs::get_db_path();
 
-        // Download to a temp file, then verify and replace
+        // Download to a temp file, then replace
         let temp_path = db_path.with_extension("download.tmp");
         client.download(&config.remote_path, &temp_path).await?;
-
-        // Verify SQLite magic header
-        let header = std::fs::read(&temp_path)
-            .map_err(|e| format!("读取下载文件失败: {}", e))?;
-        if header.len() < 16 || &header[..16] != b"SQLite format 3\0" {
-            let _ = std::fs::remove_file(&temp_path);
-            return Err("下载的文件不是有效的 SQLite 数据库".to_string());
-        }
 
         // Close current connection before replacing
         drop(dao);
 
         // Atomic replace
-        std::fs::rename(&temp_path, &db_path)
-            .map_err(|e| format!("替换数据库失败: {}", e))?;
+        if let Err(e) = std::fs::rename(&temp_path, &db_path) {
+            let _ = std::fs::remove_file(&temp_path);
+            return Err(format!("替换数据库失败: {}", e));
+        }
 
         // Re-open connection and update status
         let dao2 = SyncDao::new(self.db);

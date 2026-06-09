@@ -62,7 +62,10 @@ impl<'a> ConfigWriter<'a> {
         let yaml_data = serde_json::json!({ "providers": providers_map });
         let yaml_str = serde_yaml::to_string(&yaml_data)
             .map_err(|e| ConfigWriterError::Serialize(e.to_string()))?;
-        atomic_write(&get_models_yaml_path(), &yaml_str)
+        let path = get_models_yaml_path();
+        crate::utils::fs::ensure_dir(&path.parent().unwrap_or(&path).to_path_buf())
+            .map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
+        atomic_write(&path, &yaml_str)
             .map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
 
         Ok(())
@@ -73,7 +76,10 @@ impl<'a> ConfigWriter<'a> {
         if let Some(settings) = dao.get()? {
             let json_str = serde_json::to_string_pretty(&settings)
                 .map_err(|e| ConfigWriterError::Serialize(e.to_string()))?;
-            atomic_write(&get_settings_json_path(), &json_str)
+            let path = get_settings_json_path();
+            crate::utils::fs::ensure_dir(&path.parent().unwrap_or(&path).to_path_buf())
+                .map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
+            atomic_write(&path, &json_str)
                 .map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
         }
         Ok(())
