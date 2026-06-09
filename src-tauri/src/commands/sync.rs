@@ -29,3 +29,9 @@ pub async fn trigger_sync(direction: String) -> Result<SyncResult, String> {
         _ => Err(format!("Unknown sync direction: {}", direction)),
     }
 }
+
+#[tauri::command]
+pub async fn auto_sync() -> Result<SyncResult, String> {
+    let service = SyncService::new(get_db());
+    service.auto_sync().await
+}

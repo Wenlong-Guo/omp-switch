@@ -44,6 +44,7 @@ fn main() {
             omp_switch_lib::commands::sync::save_sync_config,
             omp_switch_lib::commands::sync::test_sync_connection,
             omp_switch_lib::commands::sync::trigger_sync,
+            omp_switch_lib::commands::sync::auto_sync,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

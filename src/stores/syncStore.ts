@@ -10,7 +10,8 @@ interface SyncStore {
   fetchConfig: () => Promise<void>;
   saveConfig: (config: SyncConfig) => Promise<void>;
   testConnection: () => Promise<boolean>;
-  triggerSync: (direction: "upload" | "download") => Promise<void>;
+  triggerSync: (direction: "upload" | "download") => Promise<SyncResult>;
+  autoSync: () => Promise<SyncResult>;
 }
 
 export const useSyncStore = create<SyncStore>((set) => ({
@@ -53,12 +54,23 @@ export const useSyncStore = create<SyncStore>((set) => ({
     set({ isSyncing: true, error: null });
     try {
       const result = await invokeCommand<SyncResult>("trigger_sync", { direction });
-      if (!result.success) {
-        set({ error: result.message });
-      }
       set({ isSyncing: false });
+      return result;
     } catch (err) {
       set({ error: String(err), isSyncing: false });
+      throw err;
+    }
+  },
+
+  autoSync: async () => {
+    set({ isSyncing: true, error: null });
+    try {
+      const result = await invokeCommand<SyncResult>("auto_sync");
+      set({ isSyncing: false });
+      return result;
+    } catch (err) {
+      set({ error: String(err), isSyncing: false });
+      throw err;
     }
   },
 }));

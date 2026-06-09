@@ -31,6 +31,8 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
     try {
       await invokeCommand<void>("save_settings", { settings });
       set({ settings, isLoading: false });
+      // Auto sync in background
+      invokeCommand("auto_sync").catch(() => {});
     } catch (err) {
       set({ error: String(err), isLoading: false });
     }

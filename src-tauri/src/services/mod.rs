@@ -4,6 +4,7 @@ pub mod config_writer;
 pub mod config_reader;
 pub mod file_watcher;
 pub mod sync_service;
+pub mod webdav_client;
 
 #[cfg(test)]
 pub mod provider_service_test;

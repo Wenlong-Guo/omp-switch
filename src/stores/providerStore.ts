@@ -48,6 +48,8 @@ export const useProviderStore = create<ProviderStore>((set, get) => ({
       await invokeCommand<ProviderConfig>("save_provider", { config });
       await get().fetchProviders();
       set({ isLoading: false });
+      // Auto sync in background
+      invokeCommand("auto_sync").catch(() => {});
     } catch (err) {
       set({ error: String(err), isLoading: false });
     }
@@ -59,6 +61,8 @@ export const useProviderStore = create<ProviderStore>((set, get) => ({
       await invokeCommand<void>("delete_provider", { id });
       await get().fetchProviders();
       set({ isLoading: false });
+      // Auto sync in background
+      invokeCommand("auto_sync").catch(() => {});
     } catch (err) {
       set({ error: String(err), isLoading: false });
     }

@@ -74,9 +74,11 @@ function buildInitScript() {
         builtinPresets: builtinPresets,
         settings: Object.assign({}, initialSettings),
         chatHistory: [],
+        syncConfig: null,
       };
       saveState(state);
     } else {
+      if (!state.syncConfig) state.syncConfig = null;
       window.__TAURI_MOCK_STATE__ = state;
     }
 
@@ -86,6 +88,7 @@ function buildInitScript() {
         builtinPresets: builtinPresets,
         settings: Object.assign({}, initialSettings),
         chatHistory: [],
+        syncConfig: null,
       };
       saveState(newState);
     };
@@ -140,6 +143,18 @@ function buildInitScript() {
             st.chatHistory.push({ request: messages, response: result });
             saveState(st);
             return result;
+          case 'get_sync_config':
+            return st.syncConfig;
+          case 'save_sync_config':
+            st.syncConfig = args.config;
+            saveState(st);
+            return;
+          case 'test_sync_connection':
+            return st.syncConfig && st.syncConfig.serverUrl ? true : false;
+          case 'trigger_sync':
+            return { success: true, message: 'mock sync ' + args.direction };
+          case 'auto_sync':
+            return { success: true, message: 'mock auto sync' };
           default:
             throw new Error('Unknown command: ' + cmd);
         }
