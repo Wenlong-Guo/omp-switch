@@ -14,5 +14,18 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
+    exclude: ["e2e-playwright-test/**", "node_modules/**"],
+    coverage: {
+      include: ["src/**"],
+      exclude: [
+        "src/test/**",
+        "src/**/*.test.*",
+        "src/types/**",
+        "src/main.tsx",
+        "src/App.tsx",
+        "src/lib/tauri-api.ts",
+        "src/lib/utils.ts",
+      ],
+    },
   },
 });

@@ -7,6 +7,10 @@ const mockSave = vi.fn();
 vi.mock("@/stores/providerStore", () => ({
   useProviderStore: () => ({
     saveProvider: mockSave,
+    providers: [],
+    fetchProviders: vi.fn(),
+    builtinPresets: [],
+    fetchBuiltinPresets: vi.fn(),
   }),
 }));
 
@@ -67,5 +71,75 @@ describe("ProviderEditor", () => {
     await waitFor(() => {
       expect(screen.getByText(/Provider ID 不能为空/)).toBeInTheDocument();
     }, { timeout: 2000 });
+  });
+
+  it("shows add model button", () => {
+    render(<ProviderEditor />);
+    expect(screen.getByTestId("add-model-btn")).toBeInTheDocument();
+  });
+
+  it("opens model editor on add model click", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    expect(screen.getByTestId("model-editor")).toBeInTheDocument();
+    expect(screen.getByText("添加模型")).toBeInTheDocument();
+  });
+
+  it("adds a model to the form", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "gpt-4" } });
+    fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "GPT-4" } });
+    fireEvent.click(screen.getByTestId("save-model-btn"));
+    expect(screen.getByTestId("model-item-gpt-4")).toBeInTheDocument();
+    expect(screen.getByText("GPT-4")).toBeInTheDocument();
+  });
+
+  it("deletes a model from the form", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "temp" } });
+    fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "Temp" } });
+    fireEvent.click(screen.getByTestId("save-model-btn"));
+    expect(screen.getByTestId("model-item-temp")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("delete-model-temp"));
+    expect(screen.queryByTestId("model-item-temp")).not.toBeInTheDocument();
+  });
+
+  it("edits a model in the form", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "gpt-4o" } });
+    fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "GPT-4o" } });
+    fireEvent.click(screen.getByTestId("save-model-btn"));
+
+    fireEvent.click(screen.getByTestId("edit-model-gpt-4o"));
+    fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "GPT-4o Updated" } });
+    fireEvent.click(screen.getByTestId("save-model-btn"));
+
+    expect(screen.getByText("GPT-4o Updated")).toBeInTheDocument();
+  });
+
+  it("cancels model editor", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    expect(screen.getByTestId("model-editor")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("cancel-model-btn"));
+    expect(screen.queryByTestId("model-editor")).not.toBeInTheDocument();
+  });
+
+  it("shows preset select when builtinPresets available", () => {
+    vi.doMock("@/stores/providerStore", () => ({
+      useProviderStore: () => ({
+        saveProvider: mockSave,
+        providers: [],
+        fetchProviders: vi.fn(),
+        builtinPresets: [{ id: "openai", name: "OpenAI" }],
+        fetchBuiltinPresets: vi.fn(),
+      }),
+    }));
+    render(<ProviderEditor />);
+    expect(screen.getByTestId("preset-select")).toBeInTheDocument();
   });
 });

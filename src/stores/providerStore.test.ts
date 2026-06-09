@@ -11,7 +11,7 @@ import { invokeCommand } from "@/lib/tauri-api";
 describe("providerStore", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useProviderStore.setState({ providers: [], isLoading: false, error: null });
+    useProviderStore.setState({ providers: [], builtinPresets: [], isLoading: false, error: null });
   });
 
   it("has initial empty state", () => {
@@ -129,5 +129,24 @@ describe("providerStore", () => {
       await useProviderStore.getState().fetchProviders();
     });
     expect(useProviderStore.getState().providers.length).toBe(1);
+  });
+
+  it("fetchBuiltinPresets loads presets", async () => {
+    const mockPresets = [{ id: "openai", name: "OpenAI", enabled: true, isBuiltIn: true }];
+    vi.mocked(invokeCommand).mockResolvedValueOnce(mockPresets);
+    await act(async () => {
+      await useProviderStore.getState().fetchBuiltinPresets();
+    });
+    expect(useProviderStore.getState().builtinPresets).toEqual(mockPresets);
+    expect(useProviderStore.getState().isLoading).toBe(false);
+  });
+
+  it("fetchBuiltinPresets handles error", async () => {
+    vi.mocked(invokeCommand).mockRejectedValueOnce(new Error("Failed"));
+    await act(async () => {
+      await useProviderStore.getState().fetchBuiltinPresets();
+    });
+    expect(useProviderStore.getState().error).toBe("Error: Failed");
+    expect(useProviderStore.getState().isLoading).toBe(false);
   });
 });
