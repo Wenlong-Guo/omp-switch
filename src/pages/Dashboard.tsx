@@ -32,6 +32,7 @@ export default function Dashboard() {
         {providers.map((provider) => (
           <div
             key={provider.id}
+            data-testid={`provider-card-${provider.id}`}
             className={`border rounded-lg p-4 ${provider.enabled ? "border-border" : "border-dashed opacity-60"}`}
           >
             <div className="flex items-center justify-between mb-2">
