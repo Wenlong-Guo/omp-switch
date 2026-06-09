@@ -41,7 +41,7 @@ export default function Settings() {
       </div>
 
       {saved && (
-        <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-md flex items-center gap-2 text-sm border border-green-100">
+        <div className="mb-4 p-3 bg-green-900/30 text-green-400 rounded-md flex items-center gap-2 text-sm border border-green-800">
           <Save className="w-4 h-4" />
           保存成功
         </div>
@@ -109,25 +109,6 @@ export default function Settings() {
             </label>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">主题</label>
-            <div className="flex gap-2">
-              {(["light", "dark", "system"] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setForm({ ...form, theme: t })}
-                  className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
-                    form.theme === t || (!form.theme && t === "system")
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "hover:bg-muted"
-                  }`}
-                >
-                  {t === "light" ? "浅色" : t === "dark" ? "深色" : "跟随系统"}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         <button

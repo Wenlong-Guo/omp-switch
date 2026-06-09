@@ -91,8 +91,8 @@ export default function Sync() {
               {config.lastSyncStatus && (
                 <span className={`ml-2 inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded ${
                   config.lastSyncStatus.includes("success")
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
+                    ? "bg-green-900/40 text-green-400"
+                    : "bg-red-900/40 text-red-400"
                 }`}>
                   {config.lastSyncStatus.includes("success") ? (
                     <CheckCircle2 className="w-3 h-3" />
@@ -182,7 +182,7 @@ export default function Sync() {
           </div>
 
           {testResult !== null && (
-            <div className={`p-2.5 rounded-md text-sm flex items-center gap-2 border ${testResult ? "bg-green-50 text-green-700 border-green-100" : "bg-red-50 text-red-700 border-red-100"}`}>
+            <div className={`p-2.5 rounded-md text-sm flex items-center gap-2 border ${testResult ? "bg-green-900/30 text-green-400 border-green-800" : "bg-red-900/30 text-red-400 border-red-800"}`}>
               {testResult ? <CheckCircle2 className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
               {testResult ? "连接成功" : "连接失败"}
             </div>

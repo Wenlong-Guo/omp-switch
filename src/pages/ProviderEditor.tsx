@@ -124,7 +124,7 @@ export default function ProviderEditor() {
         </h1>
       </div>
 
-      {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md border border-red-100 flex items-center gap-2 text-sm"><span className="font-medium">错误:</span> {error}</div>}
+      {error && <div className="mb-4 p-3 bg-red-900/30 text-red-400 rounded-md border border-red-800 flex items-center gap-2 text-sm"><span className="font-medium">错误:</span> {error}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Preset selector for add mode */}
