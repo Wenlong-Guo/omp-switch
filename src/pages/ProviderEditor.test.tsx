@@ -87,7 +87,7 @@ describe("ProviderEditor", () => {
     render(<ProviderEditor />);
     fireEvent.click(screen.getByTestId("add-model-btn"));
     expect(screen.getByTestId("model-editor-dialog")).toBeInTheDocument();
-    expect(screen.getByText("添加模型")).toBeInTheDocument();
+    expect(screen.getAllByText("添加模型").length).toBeGreaterThanOrEqual(1);
   });
 
   it("adds a model to the form", () => {

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useProviderStore } from "@/stores/providerStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useLocation, useParams } from "wouter";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Plus } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import type { ProviderConfig, ModelDefinition } from "@/types/provider";
 import ProviderBasicForm from "@/components/ProviderEditor/ProviderBasicForm";
@@ -227,7 +227,7 @@ export default function ProviderEditor() {
               data-testid="add-model-btn"
               className="text-sm px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:opacity-90"
             >
-              + 添加模型
+              <Plus className="w-3.5 h-3.5" /> 添加模型
             </button>
           </div>
 

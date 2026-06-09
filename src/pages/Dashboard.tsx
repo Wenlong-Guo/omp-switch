@@ -3,7 +3,7 @@ import { useProviderStore } from "@/stores/providerStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useLocation } from "wouter";
-import { Plus, ArrowRight } from "lucide-react";
+import { Plus, ArrowRight, Star, Pencil, Trash2, Download, Upload } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { validateProviderImport } from "@/lib/importValidation";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -81,11 +81,13 @@ export default function Dashboard() {
               URL.revokeObjectURL(url);
               toast.show("导出成功", "success");
             }}
-            className="text-xs px-3 py-1.5 border rounded-md hover:bg-muted transition-colors"
+            className="text-xs px-3 py-1.5 border rounded-md hover:bg-muted transition-colors flex items-center gap-1.5"
           >
+            <Download className="w-3.5 h-3.5" />
             导出 JSON
           </button>
-          <label className="text-xs px-3 py-1.5 border rounded-md hover:bg-muted transition-colors cursor-pointer">
+          <label className="text-xs px-3 py-1.5 border rounded-md hover:bg-muted transition-colors cursor-pointer flex items-center gap-1.5">
+            <Upload className="w-3.5 h-3.5" />
             导入 JSON
             <input
               type="file"
@@ -225,20 +227,23 @@ export default function Dashboard() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setActiveProvider(provider.id)}
-                    className="text-sm px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity"
+                    className="text-sm px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity flex items-center gap-1"
                   >
+                    <Star className="w-3.5 h-3.5" />
                     设为默认
                   </button>
                   <button
                     onClick={() => setLocation(`/provider/edit/${provider.id}`)}
-                    className="text-sm px-3 py-1.5 border rounded-md hover:bg-muted transition-colors"
+                    className="text-sm px-3 py-1.5 border rounded-md hover:bg-muted transition-colors flex items-center gap-1"
                   >
+                    <Pencil className="w-3.5 h-3.5" />
                     编辑
                   </button>
                   <button
                     onClick={() => setConfirmId(provider.id)}
-                    className="text-sm px-3 py-1.5 border rounded-md hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    className="text-sm px-3 py-1.5 border rounded-md hover:bg-destructive hover:text-destructive-foreground transition-colors flex items-center gap-1"
                   >
+                    <Trash2 className="w-3.5 h-3.5" />
                     删除
                   </button>
                 </div>
