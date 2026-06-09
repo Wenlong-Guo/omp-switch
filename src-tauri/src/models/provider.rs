@@ -39,6 +39,16 @@ pub struct ModelDefinition {
     pub max_tokens: i64,
     pub headers: Option<HashMap<String, String>>,
     pub compat: Option<ModelCompat>,
+    #[serde(rename = "defaultTemperature")]
+    pub default_temperature: Option<f64>,
+    #[serde(rename = "defaultTopP")]
+    pub default_top_p: Option<f64>,
+    #[serde(rename = "defaultPresencePenalty")]
+    pub default_presence_penalty: Option<f64>,
+    #[serde(rename = "defaultFrequencyPenalty")]
+    pub default_frequency_penalty: Option<f64>,
+    #[serde(rename = "defaultSeed")]
+    pub default_seed: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -83,4 +93,14 @@ pub struct ModelOverride {
     pub compat: Option<ModelCompat>,
     #[serde(rename = "contextPromotionTarget")]
     pub context_promotion_target: Option<String>,
+    #[serde(rename = "defaultTemperature")]
+    pub default_temperature: Option<f64>,
+    #[serde(rename = "defaultTopP")]
+    pub default_top_p: Option<f64>,
+    #[serde(rename = "defaultPresencePenalty")]
+    pub default_presence_penalty: Option<f64>,
+    #[serde(rename = "defaultFrequencyPenalty")]
+    pub default_frequency_penalty: Option<f64>,
+    #[serde(rename = "defaultSeed")]
+    pub default_seed: Option<i64>,
 }

@@ -13,6 +13,7 @@ vi.mock("@/stores/providerStore", () => ({
     fetchProviders: vi.fn(),
     deleteProvider: vi.fn(),
     setActiveProvider: vi.fn(),
+    saveProvider: vi.fn(),
     isLoading: false,
   })),
 }));
@@ -55,27 +56,29 @@ describe("Dashboard", () => {
   });
 
   it("shows empty state when no providers", () => {
-    (useProviderStore as any).mockReturnValueOnce({
+    vi.mocked(useProviderStore).mockReturnValue({
       providers: [],
       fetchProviders: vi.fn(),
       deleteProvider: vi.fn(),
       setActiveProvider: vi.fn(),
+      saveProvider: vi.fn(),
       isLoading: false,
-    });
+    } as any);
     render(<Dashboard />);
     expect(screen.getByText(/暂无 Provider/)).toBeInTheDocument();
   });
 
   it("shows loading state", () => {
-    (useProviderStore as any).mockReturnValueOnce({
+    vi.mocked(useProviderStore).mockReturnValue({
       providers: [],
       fetchProviders: vi.fn(),
       deleteProvider: vi.fn(),
       setActiveProvider: vi.fn(),
+      saveProvider: vi.fn(),
       isLoading: true,
-    });
+    } as any);
     render(<Dashboard />);
-    expect(screen.getByText(/加载中/)).toBeInTheDocument();
+    expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
   it("renders page title", () => {
@@ -96,13 +99,14 @@ describe("Dashboard", () => {
 
   it("clicking set active triggers action", () => {
     const setActive = vi.fn();
-    (useProviderStore as any).mockReturnValueOnce({
+    vi.mocked(useProviderStore).mockReturnValue({
       providers: mockProviders,
       fetchProviders: vi.fn(),
       deleteProvider: vi.fn(),
       setActiveProvider: setActive,
+      saveProvider: vi.fn(),
       isLoading: false,
-    });
+    } as any);
     render(<Dashboard />);
     const button = screen.getAllByText("设为默认")[0];
     fireEvent.click(button);

@@ -1,77 +1,230 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useProviderStore } from "@/stores/providerStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useLocation } from "wouter";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function Dashboard() {
-  const { providers, fetchProviders, deleteProvider, setActiveProvider, isLoading } = useProviderStore();
+  const { providers, fetchProviders, deleteProvider, setActiveProvider, saveProvider, isLoading } = useProviderStore();
   const { settings, fetchSettings } = useSettingsStore();
   const toast = useToastStore();
   const [, setLocation] = useLocation();
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [orderedProviders, setOrderedProviders] = useState<typeof providers>([]);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setOrderedProviders(providers);
+  }, [providers]);
+
+  useKeyboardShortcuts({
+    onSearch: () => {
+      searchRef.current?.focus();
+    },
+  });
 
   useEffect(() => {
     fetchProviders();
     fetchSettings();
   }, [fetchProviders, fetchSettings]);
 
+  const filteredProviders = orderedProviders.filter((p) =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (p.api ?? "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleDragStart = (id: string) => {
+    setDragId(id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    setDragOverId(id);
+  };
+
+  const handleDrop = (targetId: string) => {
+    if (!dragId || dragId === targetId) return;
+    const newOrder = [...orderedProviders];
+    const dragIdx = newOrder.findIndex((p) => p.id === dragId);
+    const targetIdx = newOrder.findIndex((p) => p.id === targetId);
+    if (dragIdx === -1 || targetIdx === -1) return;
+    const [removed] = newOrder.splice(dragIdx, 1);
+    newOrder.splice(targetIdx, 0, removed);
+    setOrderedProviders(newOrder);
+    setDragId(null);
+    setDragOverId(null);
+  };
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Provider 管理</h1>
-        <div className="text-sm text-muted-foreground">
-          默认: {settings?.defaultProvider ?? "未设置"}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              const data = JSON.stringify(providers, null, 2);
+              const blob = new Blob([data], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `providers-${new Date().toISOString().slice(0, 10)}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+              toast.show("导出成功", "success");
+            }}
+            className="text-xs px-3 py-1.5 border rounded-md hover:bg-muted transition-colors"
+          >
+            导出 JSON
+          </button>
+          <label className="text-xs px-3 py-1.5 border rounded-md hover:bg-muted transition-colors cursor-pointer">
+            导入 JSON
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  const text = await file.text();
+                  const imported = JSON.parse(text);
+                  // Validate basic structure
+                  if (!Array.isArray(imported)) {
+                    toast.show("导入失败：格式错误", "error");
+                    return;
+                  }
+                  for (const p of imported) {
+                    if (!p.id || !p.name) {
+                      toast.show("导入失败：数据格式不正确", "error");
+                      return;
+                    }
+                    await saveProvider?.(p);
+                  }
+                  toast.show(`导入成功 ${imported.length} 个 Provider`, "success");
+                  fetchProviders();
+                } catch {
+                  toast.show("导入失败", "error");
+                }
+                e.target.value = "";
+              }}
+            />
+          </label>
+          <div className="text-sm text-muted-foreground">
+            默认: {settings?.defaultProvider ?? "未设置"}
+          </div>
         </div>
       </div>
 
-      {isLoading && <p className="text-muted-foreground">加载中...</p>}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {providers.map((provider) => (
-          <div
-            key={provider.id}
-            data-testid={`provider-card-${provider.id}`}
-            className={`border rounded-lg p-4 ${provider.enabled ? "border-border" : "border-dashed opacity-60"}`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">{provider.name}</h3>
-              {settings?.defaultProvider === provider.id && (
-                <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded">
-                  默认
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">{provider.api ?? "未配置 API"}</p>
-            <p className="text-sm text-muted-foreground mb-3 truncate">{provider.baseUrl ?? "无 baseUrl"}</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setActiveProvider(provider.id)}
-                className="text-sm px-3 py-1.5 bg-primary text-primary-foreground rounded hover:opacity-90"
-              >
-                设为默认
-              </button>
-              <button
-                onClick={() => setLocation(`/provider/edit/${provider.id}`)}
-                className="text-sm px-3 py-1.5 border rounded hover:bg-muted"
-              >
-                编辑
-              </button>
-              <button
-                onClick={() => setConfirmId(provider.id)}
-                className="text-sm px-3 py-1.5 border rounded hover:bg-destructive hover:text-destructive-foreground"
-              >
-                删除
-              </button>
-            </div>
-          </div>
-        ))}
+      <div className="mb-4">
+        <input
+          ref={searchRef}
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="搜索 Provider (名称/ID/API)...  ⌘K"
+          className="w-full max-w-md px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
+        />
       </div>
 
-      {providers.length === 0 && !isLoading && (
-        <div className="text-center py-12 text-muted-foreground">
-          暂无 Provider，点击上方添加
+      {isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="border rounded-lg p-4 space-y-3 animate-pulse">
+              <div className="h-5 bg-muted rounded w-1/3" />
+              <div className="h-4 bg-muted rounded w-2/3" />
+              <div className="h-4 bg-muted rounded w-1/2" />
+              <div className="flex gap-2 pt-2">
+                <div className="h-8 bg-muted rounded w-20" />
+                <div className="h-8 bg-muted rounded w-16" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!isLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredProviders.map((provider) => {
+            const isExpanded = expandedId === provider.id;
+            const modelCount = provider.models?.length ?? 0;
+            return (
+              <div
+                key={provider.id}
+                data-testid={`provider-card-${provider.id}`}
+                draggable
+                onDragStart={() => handleDragStart(provider.id)}
+                onDragOver={(e) => handleDragOver(e, provider.id)}
+                onDrop={() => handleDrop(provider.id)}
+                onDragEnd={() => { setDragId(null); setDragOverId(null); }}
+                className={`border rounded-lg p-4 transition-all hover:shadow-md cursor-move ${provider.enabled ? "border-border" : "border-dashed opacity-60"} ${dragOverId === provider.id && dragId !== provider.id ? "ring-2 ring-primary ring-offset-2 scale-[1.02]" : ""} ${dragId === provider.id ? "opacity-40" : ""}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold">{provider.name}</h3>
+                  {settings?.defaultProvider === provider.id && (
+                    <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                      默认
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">{provider.api ?? "未配置 API"}</p>
+                <p className="text-sm text-muted-foreground mb-2 truncate">{provider.baseUrl ?? "无 baseUrl"}</p>
+                <button
+                  onClick={() => setExpandedId(isExpanded ? null : provider.id)}
+                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2 transition-colors"
+                >
+                  <span>{isExpanded ? "▼" : "▶"}</span>
+                  <span>{modelCount} 个模型</span>
+                </button>
+                {isExpanded && provider.models && (
+                  <div className="mb-3 p-2 bg-muted/50 rounded-md text-sm space-y-1">
+                    {provider.models.map((m) => (
+                      <div key={m.id} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />
+                        <span className="font-medium text-foreground">{m.name}</span>
+                        <span className="truncate">({m.id})</span>
+                        {m.reasoning && <span className="text-[10px] bg-secondary px-1 rounded">reasoning</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveProvider(provider.id)}
+                    className="text-sm px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity"
+                  >
+                    设为默认
+                  </button>
+                  <button
+                    onClick={() => setLocation(`/provider/edit/${provider.id}`)}
+                    className="text-sm px-3 py-1.5 border rounded-md hover:bg-muted transition-colors"
+                  >
+                    编辑
+                  </button>
+                  <button
+                    onClick={() => setConfirmId(provider.id)}
+                    className="text-sm px-3 py-1.5 border rounded-md hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  >
+                    删除
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {!isLoading && filteredProviders.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground border rounded-xl border-dashed">
+          <div className="text-4xl mb-3">🤖</div>
+          <p className="text-base font-medium">暂无 Provider</p>
+          <p className="text-sm mt-1 opacity-60">点击「添加 Provider」开始使用</p>
         </div>
       )}
 

@@ -149,4 +149,71 @@ describe("providerStore", () => {
     expect(useProviderStore.getState().error).toBe("Error: Failed");
     expect(useProviderStore.getState().isLoading).toBe(false);
   });
+
+  it("saveProvider with model containing advanced fields", async () => {
+    const provider = {
+      id: "test",
+      name: "Test",
+      enabled: true,
+      isBuiltIn: false,
+      authHeader: true,
+      models: [{
+        id: "gpt-4o",
+        name: "GPT-4o",
+        reasoning: true,
+        input: ["text", "image"] as ("text" | "image")[],
+        cost: { input: 2.5, output: 10, cacheRead: 1.25, cacheWrite: 5 },
+        contextWindow: 128000,
+        maxTokens: 4096,
+        family: "gpt-4",
+        status: "beta" as const,
+        temperature: true,
+        toolCall: true,
+      }],
+    };
+    vi.mocked(invokeCommand)
+      .mockResolvedValueOnce(provider)
+      .mockResolvedValueOnce([provider]);
+    await act(async () => {
+      await useProviderStore.getState().saveProvider(provider);
+    });
+    expect(invokeCommand).toHaveBeenCalledWith("save_provider", expect.any(Object));
+    expect(useProviderStore.getState().error).toBeNull();
+  });
+
+  it("fetchProviders returns models with new fields", async () => {
+    const mockProvider = {
+      id: "test",
+      name: "Test",
+      enabled: true,
+      isBuiltIn: false,
+      models: [{
+        id: "gpt-4o",
+        name: "GPT-4o",
+        reasoning: true,
+        input: ["text"] as ("text" | "image")[],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: 128000,
+        maxTokens: 16384,
+        family: "gpt-4",
+        status: "stable" as any,
+      }],
+    };
+    vi.mocked(invokeCommand).mockResolvedValueOnce([mockProvider]);
+    await act(async () => {
+      await useProviderStore.getState().fetchProviders();
+    });
+    expect(useProviderStore.getState().providers[0].models?.[0].family).toBe("gpt-4");
+  });
+
+  it("provider state includes authHeader field", async () => {
+    const provider = { id: "test", name: "Test", enabled: true, isBuiltIn: false, authHeader: true };
+    vi.mocked(invokeCommand)
+      .mockResolvedValueOnce(provider)
+      .mockResolvedValueOnce([provider]);
+    await act(async () => {
+      await useProviderStore.getState().saveProvider(provider);
+    });
+    expect(useProviderStore.getState().providers[0].authHeader).toBe(true);
+  });
 });

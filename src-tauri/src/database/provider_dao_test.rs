@@ -233,6 +233,11 @@ mod tests {
                 max_tokens: 16384,
                 headers: None,
                 compat: None,
+                default_temperature: None,
+                default_top_p: None,
+                default_presence_penalty: None,
+                default_frequency_penalty: None,
+                default_seed: None,
             }
         ]);
         assert!(dao.create(&provider).is_ok());

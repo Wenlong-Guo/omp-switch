@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Route, Router, useLocation } from "wouter";
+import { useTheme } from "@/hooks/useTheme";
 import Dashboard from "@/pages/Dashboard";
 import ProviderEditor from "@/pages/ProviderEditor";
 import Settings from "@/pages/Settings";
@@ -51,6 +52,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  useTheme();
   return (
     <Router>
       <Layout>

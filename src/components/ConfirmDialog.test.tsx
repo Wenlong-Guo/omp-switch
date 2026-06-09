@@ -40,7 +40,7 @@ describe("ConfirmDialog", () => {
         onCancel={vi.fn()}
       />
     );
-    fireEvent.click(screen.getByText("确认删除"));
+    fireEvent.click(screen.getByRole("button", { name: "确认" }));
     await waitFor(() => expect(onConfirm).toHaveBeenCalled());
   });
 
@@ -70,7 +70,7 @@ describe("ConfirmDialog", () => {
         onCancel={onCancel}
       />
     );
-    fireEvent.click(screen.getByText("确认删除").closest("div")?.parentElement!);
+    fireEvent.click(screen.getByRole("button", { name: "确认" }).closest("div")?.parentElement!);
     expect(onCancel).not.toHaveBeenCalled();
   });
 
@@ -84,7 +84,7 @@ describe("ConfirmDialog", () => {
         onCancel={vi.fn()}
       />
     );
-    fireEvent.click(screen.getByText("确认删除"));
+    fireEvent.click(screen.getByRole("button", { name: "确认" }));
     expect(screen.getByText("处理中...")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText("处理中...")).not.toBeInTheDocument());
   });

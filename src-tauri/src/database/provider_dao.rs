@@ -134,7 +134,7 @@ impl<'a> ProviderDao<'a> {
 
     fn get_models(&self, conn: &rusqlite::Connection, provider_id: &str) -> Result<Option<Vec<ModelDefinition>>> {
         let mut stmt = conn.prepare(
-            "SELECT model_id, name, api_type, reasoning, input_types, cost, context_window, max_tokens, headers, compat
+            "SELECT model_id, name, api_type, reasoning, input_types, cost, context_window, max_tokens, headers, compat, default_temperature, default_top_p, default_presence_penalty, default_frequency_penalty, default_seed
              FROM provider_models WHERE provider_id = ?1 ORDER BY name"
         )?;
 
@@ -150,6 +150,11 @@ impl<'a> ProviderDao<'a> {
                 max_tokens: row.get(7)?,
                 headers: row.get::<_, Option<String>>(8)?.and_then(|s| serde_json::from_str(&s).ok()),
                 compat: row.get::<_, Option<String>>(9)?.and_then(|s| serde_json::from_str(&s).ok()),
+                default_temperature: row.get(10).ok(),
+                default_top_p: row.get(11).ok(),
+                default_presence_penalty: row.get(12).ok(),
+                default_frequency_penalty: row.get(13).ok(),
+                default_seed: row.get(14).ok(),
             })
         })?;
 
@@ -229,8 +234,8 @@ impl<'a> ProviderDao<'a> {
 
     fn insert_model(&self, tx: &rusqlite::Transaction, provider_id: &str, model: &ModelDefinition) -> Result<()> {
         tx.execute(
-            "INSERT INTO provider_models (id, provider_id, model_id, name, api_type, reasoning, input_types, cost, context_window, max_tokens, headers, compat)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+            "INSERT INTO provider_models (id, provider_id, model_id, name, api_type, reasoning, input_types, cost, context_window, max_tokens, headers, compat, default_temperature, default_top_p, default_presence_penalty, default_frequency_penalty, default_seed)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
             params![
                 format!("{}-{}", provider_id, model.id),
                 provider_id,
@@ -244,6 +249,11 @@ impl<'a> ProviderDao<'a> {
                 model.max_tokens,
                 model.headers.as_ref().map(|h| serde_json::to_string(h).unwrap()),
                 model.compat.as_ref().map(|c| serde_json::to_string(c).unwrap()),
+                model.default_temperature,
+                model.default_top_p,
+                model.default_presence_penalty,
+                model.default_frequency_penalty,
+                model.default_seed,
             ],
         )?;
         Ok(())

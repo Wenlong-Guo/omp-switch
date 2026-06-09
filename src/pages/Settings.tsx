@@ -80,6 +80,26 @@ export default function Settings() {
           <label htmlFor="hideThinking" className="text-sm">隐藏 Thinking 块</label>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium mb-1">主题</label>
+          <div className="flex gap-2">
+            {(["light", "dark", "system"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setForm({ ...form, theme: t })}
+                className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                  form.theme === t || (!form.theme && t === "system")
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "hover:bg-muted"
+                }`}
+              >
+                {t === "light" ? "浅色" : t === "dark" ? "深色" : "跟随系统"}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button
           type="submit"
           className="w-full py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
