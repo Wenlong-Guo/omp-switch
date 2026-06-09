@@ -23,6 +23,8 @@ const emptyModel = (): ModelDefinition => ({
   cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
   contextWindow: 4096,
   maxTokens: 2048,
+  headers: undefined,
+  compat: undefined,
 });
 
 export default function ProviderEditor() {
@@ -220,6 +222,11 @@ export default function ProviderEditor() {
                   <div className="text-xs text-muted-foreground">
                     ID: {m.id} | Context: {m.contextWindow} | Max Tokens: {m.maxTokens}
                     {m.reasoning && " | Reasoning"}
+                    {m.headers && " | Headers"}
+                    {m.compat?.supportsStore && " | Store"}
+                    {m.compat?.supportsDeveloperRole && " | DevRole"}
+                    {m.compat?.supportsReasoningEffort && " | ReasoningEffort"}
+                    {m.compat?.maxTokensField && ` | maxTokensField=${m.compat.maxTokensField}`}
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -408,6 +415,138 @@ export default function ProviderEditor() {
                     })
                   }
                   className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            {/* Headers */}
+            <div>
+              <label className="block text-sm font-medium mb-1">自定义 Headers (JSON)</label>
+              <textarea
+                value={modelForm.headers ? JSON.stringify(modelForm.headers, null, 2) : ""}
+                onChange={(e) => {
+                  try {
+                    const val = e.target.value.trim() ? JSON.parse(e.target.value) : undefined;
+                    setModelForm({ ...modelForm, headers: val });
+                  } catch {
+                    // ignore invalid JSON while typing
+                  }
+                }}
+                placeholder='{"X-Custom-Header": "value"}'
+                rows={3}
+                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary font-mono text-xs"
+              />
+            </div>
+
+            {/* ModelCompat */}
+            <div className="space-y-2 pt-2 border-t">
+              <h4 className="text-sm font-semibold text-muted-foreground">兼容性配置</h4>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={modelForm.compat?.supportsStore ?? false}
+                  onChange={(e) =>
+                    setModelForm({
+                      ...modelForm,
+                      compat: { ...modelForm.compat, supportsStore: e.target.checked },
+                    })
+                  }
+                  id="compat-store"
+                />
+                <label htmlFor="compat-store" className="text-sm">supportsStore</label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={modelForm.compat?.supportsDeveloperRole ?? false}
+                  onChange={(e) =>
+                    setModelForm({
+                      ...modelForm,
+                      compat: { ...modelForm.compat, supportsDeveloperRole: e.target.checked },
+                    })
+                  }
+                  id="compat-dev-role"
+                />
+                <label htmlFor="compat-dev-role" className="text-sm">supportsDeveloperRole</label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={modelForm.compat?.supportsReasoningEffort ?? false}
+                  onChange={(e) =>
+                    setModelForm({
+                      ...modelForm,
+                      compat: { ...modelForm.compat, supportsReasoningEffort: e.target.checked },
+                    })
+                  }
+                  id="compat-reasoning-effort"
+                />
+                <label htmlFor="compat-reasoning-effort" className="text-sm">supportsReasoningEffort</label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">maxTokensField</label>
+                <input
+                  value={modelForm.compat?.maxTokensField ?? ""}
+                  onChange={(e) =>
+                    setModelForm({
+                      ...modelForm,
+                      compat: { ...modelForm.compat, maxTokensField: e.target.value || undefined },
+                    })
+                  }
+                  placeholder="max_completion_tokens"
+                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">openRouterRouting (JSON)</label>
+                <textarea
+                  value={modelForm.compat?.openRouterRouting ? JSON.stringify(modelForm.compat.openRouterRouting, null, 2) : ""}
+                  onChange={(e) => {
+                    try {
+                      const val = e.target.value.trim() ? JSON.parse(e.target.value) : undefined;
+                      setModelForm({ ...modelForm, compat: { ...modelForm.compat, openRouterRouting: val } });
+                    } catch { /* ignore */ }
+                  }}
+                  placeholder='{"provider": {"order": ["OpenAI"]}}'
+                  rows={2}
+                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary font-mono text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">vercelGatewayRouting (JSON)</label>
+                <textarea
+                  value={modelForm.compat?.vercelGatewayRouting ? JSON.stringify(modelForm.compat.vercelGatewayRouting, null, 2) : ""}
+                  onChange={(e) => {
+                    try {
+                      const val = e.target.value.trim() ? JSON.parse(e.target.value) : undefined;
+                      setModelForm({ ...modelForm, compat: { ...modelForm.compat, vercelGatewayRouting: val } });
+                    } catch { /* ignore */ }
+                  }}
+                  placeholder='{"provider": "openai"}'
+                  rows={2}
+                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary font-mono text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">extraBody (JSON)</label>
+                <textarea
+                  value={modelForm.compat?.extraBody ? JSON.stringify(modelForm.compat.extraBody, null, 2) : ""}
+                  onChange={(e) => {
+                    try {
+                      const val = e.target.value.trim() ? JSON.parse(e.target.value) : undefined;
+                      setModelForm({ ...modelForm, compat: { ...modelForm.compat, extraBody: val } });
+                    } catch { /* ignore */ }
+                  }}
+                  placeholder='{"custom_param": true}'
+                  rows={2}
+                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary font-mono text-xs"
                 />
               </div>
             </div>
