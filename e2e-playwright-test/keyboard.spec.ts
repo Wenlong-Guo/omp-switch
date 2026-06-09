@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
+import { getProviders } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -9,12 +10,18 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('Keyboard Shortcuts', () => {
   test('Escape closes model editor dialog', async ({ page }) => {
+    const before = await getProviders(page);
+
     await page.getByRole('button', { name: '添加 Provider' }).click();
     await page.getByTestId('add-model-btn').click();
     await expect(page.getByTestId('model-editor-dialog')).toBeVisible();
 
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('model-editor-dialog')).not.toBeVisible();
+
+    // Backend verify: no provider state changed by cancel
+    const after = await getProviders(page);
+    expect(after.length).toBe(before.length);
   });
 
   test('Escape closes confirm dialog', async ({ page }) => {
@@ -25,5 +32,9 @@ test.describe('Keyboard Shortcuts', () => {
     await page.keyboard.press('Escape');
     await expect(page.getByRole('heading', { name: '确认删除' })).not.toBeVisible();
     await expect(page.getByRole('heading', { name: 'OpenAI' })).toBeVisible();
+
+    // Backend verify: provider still exists after cancel
+    const providers = await getProviders(page);
+    expect(providers.some((p: any) => p.id === 'openai')).toBe(true);
   });
 });

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
+import { verifyProviderExists } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -18,6 +19,10 @@ test.describe('Edge Input', () => {
 
     await expect(page.getByText('保存成功')).toBeVisible();
     await expect(page.getByRole('heading', { name: longName })).toBeVisible();
+
+    // Backend verify: name persisted correctly
+    const saved = await verifyProviderExists(page, 'long-name-test');
+    expect(saved.name).toBe(longName);
   });
 
   test('chinese name accepted', async ({ page }) => {
@@ -29,6 +34,10 @@ test.describe('Edge Input', () => {
 
     await expect(page.getByText('保存成功')).toBeVisible();
     await expect(page.getByRole('heading', { name: '中文测试Provider' })).toBeVisible();
+
+    // Backend verify: Chinese name persisted
+    const saved = await verifyProviderExists(page, 'chinese-test');
+    expect(saved.name).toBe('中文测试Provider');
   });
 
   test('emoji in model name accepted', async ({ page }) => {
@@ -45,5 +54,10 @@ test.describe('Edge Input', () => {
 
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('保存成功')).toBeVisible();
+
+    // Backend verify: emoji model name persisted
+    const saved = await verifyProviderExists(page, 'emoji-test');
+    const model = saved.models.find((m: any) => m.id === 'gpt-emoji');
+    expect(model.name).toBe('GPT-4 🚀');
   });
 });

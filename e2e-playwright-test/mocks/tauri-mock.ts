@@ -46,7 +46,7 @@ export function injectTauriMock(page: any) {
     ];
 
     let providers = [...mockProviders];
-    let settings = { defaultProvider: 'openai', defaultModel: 'gpt-4', thinkingLevel: 'medium' };
+    let settings = { defaultProvider: 'openai', defaultModel: 'gpt-4', defaultThinkingLevel: 'medium' };
     let chatHistory: any[] = [];
 
     (window as any).__TAURI_INTERNALS__ = {
@@ -71,7 +71,7 @@ export function injectTauriMock(page: any) {
             settings.defaultProvider = args.providerId;
             return;
           case 'get_settings':
-            return settings;
+            return { ...settings };
           case 'save_settings':
             settings = { ...settings, ...args.settings };
             return;

@@ -226,11 +226,27 @@ export default function Dashboard() {
                 )}
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setActiveProvider(provider.id)}
-                    className="text-sm px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity flex items-center gap-1"
+                    onClick={async () => {
+                      if ((provider.models?.length ?? 0) === 0) {
+                        toast.show("该 Provider 没有模型，无法设为默认", "error");
+                        return;
+                      }
+                      try {
+                        await setActiveProvider(provider.id);
+                        toast.show("已设为默认 Provider", "success");
+                      } catch {
+                        toast.show("设置失败", "error");
+                      }
+                    }}
+                    disabled={settings?.defaultProvider === provider.id}
+                    className={`text-sm px-3 py-1.5 rounded-md transition-opacity flex items-center gap-1 ${
+                      settings?.defaultProvider === provider.id
+                        ? "bg-muted text-muted-foreground cursor-not-allowed"
+                        : "bg-primary text-primary-foreground hover:opacity-90"
+                    }`}
                   >
                     <Star className="w-3.5 h-3.5" />
-                    设为默认
+                    {settings?.defaultProvider === provider.id ? "当前默认" : "设为默认"}
                   </button>
                   <button
                     onClick={() => setLocation(`/provider/edit/${provider.id}`)}

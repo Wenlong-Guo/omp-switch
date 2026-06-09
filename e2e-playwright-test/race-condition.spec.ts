@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
+import { getProviders, verifyProviderExists, verifyProviderDeleted } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -22,6 +23,11 @@ test.describe('Race Condition', () => {
 
     // Verify provider saved (mock in-memory, no refresh)
     await expect(page.getByTestId('provider-card-race-test')).toBeVisible();
+
+    // Backend verify: exactly one race-test provider
+    const providers = await getProviders(page);
+    const raceTests = providers.filter((p: any) => p.id === 'race-test');
+    expect(raceTests.length).toBe(1);
   });
 
   test('rapid add then delete provider', async ({ page }) => {
@@ -33,6 +39,9 @@ test.describe('Race Condition', () => {
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('保存成功')).toBeVisible();
 
+    // Backend verify: provider exists before delete
+    await verifyProviderExists(page, 'rapid-test');
+
     // Immediately delete
     const card = page.getByTestId('provider-card-rapid-test');
     await card.getByRole('button', { name: '删除' }).click();
@@ -41,5 +50,8 @@ test.describe('Race Condition', () => {
 
     // Verify gone
     await expect(page.getByTestId('provider-card-rapid-test')).not.toBeVisible();
+
+    // Backend verify: provider removed
+    await verifyProviderDeleted(page, 'rapid-test');
   });
 });

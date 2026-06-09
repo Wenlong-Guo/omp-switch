@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
+import { verifyProviderExists, verifyDefaultProvider, invokeBackend } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -29,6 +30,10 @@ test.describe('API Smoke', () => {
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('保存成功')).toBeVisible();
 
+    // Backend verify: provider persisted
+    const saved = await verifyProviderExists(page, 'smoke-test');
+    expect(saved.models.some((m: any) => m.id === 'step-3.7-flash')).toBe(true);
+
     // Step 2: Verify provider card shows model info (expand models)
     const card = page.getByTestId('provider-card-smoke-test');
     await card.getByRole('button', { name: /个模型/ }).click();
@@ -37,5 +42,14 @@ test.describe('API Smoke', () => {
 
     // Step 3: Set as active
     await card.getByRole('button', { name: /设为默认/ }).click();
+
+    // Backend verify: default provider updated
+    await verifyDefaultProvider(page, 'smoke-test');
+
+    // Step 4: Backend chat completion works
+    const result = await invokeBackend(page, 'chat_completion', {
+      messages: [{ role: 'user', content: '1+2 = ?' }],
+    });
+    expect(result.choices[0].message.content).toBe('3');
   });
 });

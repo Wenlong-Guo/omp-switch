@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
+import { verifyProviderExists } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -38,6 +39,10 @@ test.describe('Error Boundary', () => {
     // Verify app still functional (no crash)
     await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
     await expect(page.getByTestId('provider-card-error-test')).toBeVisible();
+
+    // Backend verify: provider persisted despite chat error
+    const saved = await verifyProviderExists(page, 'error-test');
+    expect(saved.name).toBe('Error Test');
   });
 
   test('validation prevents save with empty form', async ({ page }) => {
@@ -47,6 +52,14 @@ test.describe('Error Boundary', () => {
 
     // Should stay on editor page (not redirect to dashboard)
     await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+
+    // Backend verify: no new provider added
+    const providers = await page.evaluate(async () => {
+      const internals = (window as any).__TAURI_INTERNALS__;
+      return await internals.invoke('get_providers');
+    });
+    const emptyIdProvider = providers.find((p: any) => !p.id);
+    expect(emptyIdProvider).toBeFalsy();
   });
 
   test('save provider without api type shows validation error', async ({ page }) => {
@@ -56,5 +69,12 @@ test.describe('Error Boundary', () => {
     await page.getByTestId('save-provider-btn').click();
 
     await expect(page.getByText('请选择 API 类型')).toBeVisible();
+
+    // Backend verify: provider not saved without api type
+    const providers = await page.evaluate(async () => {
+      const internals = (window as any).__TAURI_INTERNALS__;
+      return await internals.invoke('get_providers');
+    });
+    expect(providers.some((p: any) => p.id === 'no-api')).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
+import { verifyProviderExists } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -37,6 +38,10 @@ test.describe('Model Configuration', () => {
     await expect(page.getByText('更新成功')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
 
+    // Backend verify: model persisted in provider
+    let updated = await verifyProviderExists(page, 'openai');
+    expect(updated.models.some((m: any) => m.id === 'gpt-4-turbo')).toBe(true);
+
     // Re-edit and verify model persisted
     await openaiCard.getByRole('button', { name: '编辑' }).click();
     await expect(page.getByTestId('model-item-gpt-4-turbo')).toBeVisible();
@@ -64,6 +69,12 @@ test.describe('Model Configuration', () => {
 
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('更新成功')).toBeVisible();
+
+    // Backend verify: model name and contextWindow updated
+    const updated = await verifyProviderExists(page, 'openai');
+    const model = updated.models.find((m: any) => m.id === 'gpt-4o');
+    expect(model.name).toBe('GPT-4o Updated');
+    expect(model.contextWindow).toBe(256000);
   });
 
   test('delete model from provider', async ({ page }) => {
@@ -82,5 +93,9 @@ test.describe('Model Configuration', () => {
 
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('更新成功')).toBeVisible();
+
+    // Backend verify: model removed from provider
+    const updated = await verifyProviderExists(page, 'openai');
+    expect(updated.models.some((m: any) => m.id === 'temp-model')).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
+import { verifySettings } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -16,5 +17,8 @@ test.describe('Settings', () => {
     await page.getByRole('button', { name: '保存设置' }).click();
 
     await expect(page.getByText('保存成功')).toBeVisible();
+
+    // Backend verify: settings persisted
+    await verifySettings(page, { defaultThinkingLevel: 'high' });
   });
 });

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
+import { verifyProviderExists } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -33,6 +34,10 @@ test.describe('Preset Model Selection', () => {
     // Verify on dashboard
     await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
 
+    // Backend verify: preset provider saved with models
+    const saved = await verifyProviderExists(page, 'step-plan');
+    expect(saved.models.length).toBeGreaterThanOrEqual(1);
+
     // Re-edit and verify model alias persisted
     const card = page.getByTestId('provider-card-step-plan');
     await card.getByRole('button', { name: '编辑' }).click();
@@ -57,5 +62,9 @@ test.describe('Preset Model Selection', () => {
 
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('保存成功')).toBeVisible();
+
+    // Backend verify: provider saved with manually added model
+    const saved = await verifyProviderExists(page, 'openai');
+    expect(saved.models.some((m: any) => m.id === 'gpt-4')).toBe(true);
   });
 });

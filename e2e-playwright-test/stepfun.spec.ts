@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
+import { verifyProviderExists, invokeBackend } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -14,6 +15,11 @@ test.describe('StepFun Provider', () => {
     const stepPlanCard = page.getByTestId('provider-card-step-plan');
     await expect(stepPlanCard.getByText('openai-completions')).toBeVisible();
     await expect(stepPlanCard.getByText('https://api.stepfun.com/step_plan/v1')).toBeVisible();
+
+    // Backend verify: step-plan provider exists with correct model
+    const provider = await verifyProviderExists(page, 'step-plan');
+    expect(provider.models.length).toBeGreaterThanOrEqual(1);
+    expect(provider.models.some((m: any) => m.id === 'step-3.7-flash')).toBe(true);
   });
 
   test('add step-plan provider manually with apiKey', async ({ page }) => {
@@ -33,14 +39,16 @@ test.describe('StepFun Provider', () => {
 
     const card = page.getByTestId('provider-card-step-plan-test');
     await expect(card.getByText('https://api.stepfun.com/step_plan/v1')).toBeVisible();
+
+    // Backend verify: provider persisted with apiKey
+    const saved = await verifyProviderExists(page, 'step-plan-test');
+    expect(saved.name).toBe('StepFun Test');
+    expect(saved.baseUrl).toBe('https://api.stepfun.com/step_plan/v1');
   });
 
   test('step-plan chat completion returns correct answer', async ({ page }) => {
-    const result = await page.evaluate(async () => {
-      const internals = (window as any).__TAURI_INTERNALS__;
-      return await internals.invoke('chat_completion', {
-        messages: [{ role: 'user', content: '1+2 = 几' }],
-      });
+    const result = await invokeBackend(page, 'chat_completion', {
+      messages: [{ role: 'user', content: '1+2 = 几' }],
     });
     expect(result.choices[0].message.content).toBe('3');
   });
@@ -60,5 +68,12 @@ test.describe('StepFun Provider', () => {
     // Model list should render with context/maxTokens info
     await expect(page.getByText('Step 3.7 Flash')).toBeVisible();
     await expect(page.getByText('128,000 ctx')).toBeVisible();
+
+    // Backend verify: model data intact
+    const provider = await verifyProviderExists(page, 'step-plan');
+    const model = provider.models.find((m: any) => m.id === 'step-3.7-flash');
+    expect(model).toBeTruthy();
+    expect(model.contextWindow).toBe(128000);
+    expect(model.maxTokens).toBe(4096);
   });
 });

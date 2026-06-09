@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
+import { verifyProviderExists, verifyProviderDeleted } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -22,6 +23,11 @@ test.describe('ProviderEditor', () => {
     await expect(page.getByText('保存成功')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Test Provider' })).toBeVisible();
+
+    // Backend verify: provider persisted
+    const saved = await verifyProviderExists(page, 'test-provider');
+    expect(saved.name).toBe('Test Provider');
+    expect(saved.api).toBe('openai-completions');
   });
 
   test('edit existing provider', async ({ page }) => {
@@ -36,6 +42,10 @@ test.describe('ProviderEditor', () => {
 
     await expect(page.getByText('更新成功')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'OpenAI Updated' })).toBeVisible();
+
+    // Backend verify: name updated
+    const updated = await verifyProviderExists(page, 'openai');
+    expect(updated.name).toBe('OpenAI Updated');
   });
 });
 
@@ -50,6 +60,9 @@ test.describe('Delete Provider', () => {
     await page.getByRole('button', { name: '确认' }).click();
     await expect(page.getByText('删除成功')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'OpenAI' })).not.toBeVisible();
+
+    // Backend verify: provider removed
+    await verifyProviderDeleted(page, 'openai');
   });
 
   test('cancel delete', async ({ page }) => {
@@ -58,5 +71,8 @@ test.describe('Delete Provider', () => {
 
     await page.getByRole('button', { name: '取消' }).click();
     await expect(page.getByRole('heading', { name: 'OpenAI' })).toBeVisible();
+
+    // Backend verify: provider still exists
+    await verifyProviderExists(page, 'openai');
   });
 });
