@@ -124,7 +124,41 @@ impl<'a> ProviderDao<'a> {
             })
         }).optional()?;
 
-        Ok(provider)
+        if let Some(mut p) = provider {
+            p.models = self.get_models(&conn, id)?;
+            Ok(Some(p))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn get_models(&self, conn: &rusqlite::Connection, provider_id: &str) -> Result<Option<Vec<ModelDefinition>>> {
+        let mut stmt = conn.prepare(
+            "SELECT model_id, name, api_type, reasoning, input_types, cost, context_window, max_tokens, headers, compat
+             FROM provider_models WHERE provider_id = ?1 ORDER BY name"
+        )?;
+
+        let models = stmt.query_map([provider_id], |row| {
+            Ok(ModelDefinition {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                api_type: row.get(2)?,
+                reasoning: row.get::<_, i32>(3)? != 0,
+                input_types: row.get::<_, String>(4).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default(),
+                cost: row.get::<_, String>(5).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(ModelCost { input: 0.0, output: 0.0, cache_read: 0.0, cache_write: 0.0 }),
+                context_window: row.get(6)?,
+                max_tokens: row.get(7)?,
+                headers: row.get::<_, Option<String>>(8)?.and_then(|s| serde_json::from_str(&s).ok()),
+                compat: row.get::<_, Option<String>>(9)?.and_then(|s| serde_json::from_str(&s).ok()),
+            })
+        })?;
+
+        let collected: Vec<ModelDefinition> = models.collect::<Result<Vec<_>>>()?;
+        if collected.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(collected))
+        }
     }
 
     pub fn get_all(&self) -> Result<Vec<ProviderConfig>> {
@@ -154,7 +188,13 @@ impl<'a> ProviderDao<'a> {
             })
         })?;
 
-        providers.collect()
+        let mut result = Vec::new();
+        for p in providers {
+            let mut p = p?;
+            p.models = self.get_models(&conn, &p.id)?;
+            result.push(p);
+        }
+        Ok(result)
     }
 
     pub fn get_enabled(&self) -> Result<Vec<ProviderConfig>> {
