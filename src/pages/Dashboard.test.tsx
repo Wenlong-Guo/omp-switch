@@ -3,8 +3,8 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import Dashboard from "./Dashboard";
 
 const mockProviders = [
-  { id: "openai", name: "OpenAI", enabled: true, isBuiltIn: true, api: "openai-completions", baseUrl: "https://api.openai.com/v1" },
-  { id: "anthropic", name: "Anthropic", enabled: true, isBuiltIn: true, api: "anthropic-messages", baseUrl: "https://api.anthropic.com" },
+  { id: "openai", name: "OpenAI", enabled: true, isBuiltIn: true, api: "openai-completions", baseUrl: "https://api.openai.com/v1", models: [{ id: "gpt-4", name: "GPT-4" }] },
+  { id: "anthropic", name: "Anthropic", enabled: true, isBuiltIn: true, api: "anthropic-messages", baseUrl: "https://api.anthropic.com", models: [{ id: "claude-3", name: "Claude 3" }] },
 ];
 
 vi.mock("@/stores/providerStore", () => ({
@@ -26,6 +26,9 @@ vi.mock("@/stores/settingsStore", () => ({
 }));
 
 describe("Dashboard", () => {
+  afterEach(() => {
+    vi.mocked(useProviderStore).mockRestore?.();
+  });
   it("renders provider list", () => {
     render(<Dashboard />);
     expect(screen.getByText("OpenAI")).toBeInTheDocument();
@@ -46,7 +49,7 @@ describe("Dashboard", () => {
   it("has set active buttons", () => {
     render(<Dashboard />);
     const buttons = screen.getAllByText("设为默认");
-    expect(buttons.length).toBe(2);
+    expect(buttons.length).toBe(1); // anthropic is already default
   });
 
   it("has delete buttons", () => {
@@ -108,9 +111,86 @@ describe("Dashboard", () => {
       isLoading: false,
     } as any);
     render(<Dashboard />);
-    const button = screen.getAllByText("设为默认")[0];
+    const button = screen.getByText("设为默认");
     fireEvent.click(button);
     expect(setActive).toHaveBeenCalled();
+  });
+
+  it("expands model list on click", () => {
+    render(<Dashboard />);
+    const expandBtn = screen.getAllByText(/个模型/)[0].closest("button")!;
+    fireEvent.click(expandBtn);
+    expect(screen.getByText("GPT-4")).toBeInTheDocument();
+  });
+
+  it("filters providers by search", () => {
+    render(<Dashboard />);
+    const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+    fireEvent.change(searchInput, { target: { value: "anthropic" } });
+    expect(screen.queryByText("OpenAI")).not.toBeInTheDocument();
+    expect(screen.getByText("Anthropic")).toBeInTheDocument();
+  });
+
+  it("shows disabled badge for disabled provider", () => {
+    vi.mocked(useProviderStore).mockReturnValue({
+      providers: [{ id: "test", name: "Test", enabled: false, isBuiltIn: false, api: "openai-completions", baseUrl: "", models: [] }],
+      fetchProviders: vi.fn(),
+      deleteProvider: vi.fn(),
+      setActiveProvider: vi.fn(),
+      saveProvider: vi.fn(),
+      isLoading: false,
+    } as any);
+    render(<Dashboard />);
+    expect(screen.getByText("已停用")).toBeInTheDocument();
+  });
+
+  it("shows confirm dialog on delete click", () => {
+    render(<Dashboard />);
+    const deleteButtons = screen.getAllByText("删除");
+    fireEvent.click(deleteButtons[0]);
+    expect(screen.getByText("确认删除")).toBeInTheDocument();
+  });
+
+  it("cancels delete dialog", () => {
+    render(<Dashboard />);
+    fireEvent.click(screen.getAllByText("删除")[0]);
+    const cancelBtn = screen.getByText("取消");
+    fireEvent.click(cancelBtn);
+    expect(screen.queryByText("确认删除")).not.toBeInTheDocument();
+  });
+
+  it("confirms delete", async () => {
+    const deleteFn = vi.fn();
+    vi.mocked(useProviderStore).mockReturnValue({
+      providers: mockProviders,
+      fetchProviders: vi.fn(),
+      deleteProvider: deleteFn,
+      setActiveProvider: vi.fn(),
+      saveProvider: vi.fn(),
+      isLoading: false,
+    } as any);
+    render(<Dashboard />);
+    fireEvent.click(screen.getAllByText("删除")[0]);
+    fireEvent.click(screen.getByText("确认"));
+    await vi.waitFor(() => expect(deleteFn).toHaveBeenCalled());
+  });
+
+  it("exports JSON", () => {
+    const orig = (window as any).URL;
+    (window as any).URL = { createObjectURL: vi.fn(() => "blob:test"), revokeObjectURL: vi.fn() };
+    render(<Dashboard />);
+    fireEvent.click(screen.getByText("导出 JSON"));
+    expect((window as any).URL.createObjectURL).toHaveBeenCalled();
+    (window as any).URL = orig;
+  });
+
+  it("triggers drag events", () => {
+    render(<Dashboard />);
+    const card = screen.getByTestId("provider-card-openai");
+    fireEvent.dragStart(card);
+    fireEvent.dragOver(card);
+    fireEvent.drop(card);
+    fireEvent.dragEnd(card);
   });
 });
 

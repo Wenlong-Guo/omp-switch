@@ -82,4 +82,31 @@ describe("Settings", () => {
     fireEvent.change(input, { target: { value: "openai" } });
     expect(input).toHaveValue("openai");
   });
+
+  it("allows changing default model", () => {
+    render(<Settings />);
+    const input = screen.getByDisplayValue("claude-sonnet-4-20250514");
+    fireEvent.change(input, { target: { value: "gpt-4" } });
+    expect(input).toHaveValue("gpt-4");
+  });
+
+  it("allows changing thinking level", () => {
+    render(<Settings />);
+    const select = screen.getByDisplayValue("Medium");
+    fireEvent.change(select, { target: { value: "high" } });
+    expect(select).toHaveValue("high");
+  });
+
+  it("toggles hide thinking checkbox", () => {
+    render(<Settings />);
+    const checkbox = screen.getByLabelText("隐藏 Thinking 块");
+    fireEvent.click(checkbox);
+    expect(checkbox).toBeChecked();
+  });
+
+  it("navigates back on back button click", () => {
+    render(<Settings />);
+    const backBtn = screen.getByLabelText("返回");
+    fireEvent.click(backBtn);
+  });
 });

@@ -1,17 +1,18 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ProviderEditor from "./ProviderEditor";
+import { useProviderStore } from "@/stores/providerStore";
 
 const mockSave = vi.fn();
 
 vi.mock("@/stores/providerStore", () => ({
-  useProviderStore: () => ({
+  useProviderStore: vi.fn(() => ({
     saveProvider: mockSave,
     providers: [],
     fetchProviders: vi.fn(),
     builtinPresets: [],
     fetchBuiltinPresets: vi.fn(),
-  }),
+  })),
 }));
 
 describe("ProviderEditor", () => {
@@ -178,5 +179,39 @@ describe("ProviderEditor", () => {
     fireEvent.click(screen.getByTestId("add-model-btn"));
     expect(screen.getByTestId("model-id-input")).toBeInTheDocument();
     expect(screen.getByTestId("model-name-input")).toBeInTheDocument();
+  });
+
+  it("changes preset selection", () => {
+    vi.mocked(useProviderStore).mockReturnValue({
+      saveProvider: mockSave,
+      providers: [],
+      fetchProviders: vi.fn(),
+      builtinPresets: [
+        { id: "openai", name: "OpenAI", models: [{ id: "gpt-4", name: "GPT-4" }] },
+      ],
+      fetchBuiltinPresets: vi.fn(),
+    } as any);
+    render(<ProviderEditor />);
+    const select = screen.getByTestId("preset-select");
+    fireEvent.change(select, { target: { value: "openai" } });
+    expect(screen.getByTestId("model-select")).toBeInTheDocument();
+  });
+
+  it("changes model alias", () => {
+    vi.mocked(useProviderStore).mockReturnValue({
+      saveProvider: mockSave,
+      providers: [],
+      fetchProviders: vi.fn(),
+      builtinPresets: [
+        { id: "openai", name: "OpenAI", models: [{ id: "gpt-4", name: "GPT-4" }] },
+      ],
+      fetchBuiltinPresets: vi.fn(),
+    } as any);
+    render(<ProviderEditor />);
+    fireEvent.change(screen.getByTestId("preset-select"), { target: { value: "openai" } });
+    fireEvent.change(screen.getByTestId("model-select"), { target: { value: "gpt-4" } });
+    const aliasInput = screen.getByPlaceholderText("自定义显示名称");
+    fireEvent.change(aliasInput, { target: { value: "My GPT" } });
+    expect(aliasInput).toHaveValue("My GPT");
   });
 });

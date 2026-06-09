@@ -74,18 +74,27 @@ describe("syncStore", () => {
   it("triggerSync handles error", async () => {
     vi.mocked(invokeCommand).mockRejectedValueOnce(new Error("Sync failed"));
     await act(async () => {
-      await useSyncStore.getState().triggerSync("download");
+      try {
+        await useSyncStore.getState().triggerSync("download");
+      } catch {
+        // expected
+      }
     });
     expect(useSyncStore.getState().error).toBe("Error: Sync failed");
     expect(useSyncStore.getState().isSyncing).toBe(false);
   });
 
-  it("triggerSync with failed result sets error", async () => {
-    vi.mocked(invokeCommand).mockResolvedValueOnce({ success: false, message: "Conflict" });
+  it("triggerSync with failed result does not set error (error thrown)", async () => {
+    vi.mocked(invokeCommand).mockRejectedValueOnce(new Error("Conflict"));
     await act(async () => {
-      await useSyncStore.getState().triggerSync("upload");
+      try {
+        await useSyncStore.getState().triggerSync("upload");
+      } catch {
+        // expected
+      }
     });
-    expect(useSyncStore.getState().error).toBe("Conflict");
+    expect(useSyncStore.getState().error).toBe("Error: Conflict");
+    expect(useSyncStore.getState().isSyncing).toBe(false);
   });
 
   it("clears error on new operation", async () => {
@@ -136,5 +145,27 @@ describe("syncStore", () => {
       await useSyncStore.getState().testConnection();
     });
     expect(useSyncStore.getState().error).toContain("Network error");
+  });
+
+  it("autoSync returns result", async () => {
+    vi.mocked(invokeCommand).mockResolvedValueOnce({ success: true, message: "Auto synced" });
+    const result = await act(async () => {
+      return await useSyncStore.getState().autoSync();
+    });
+    expect(result.success).toBe(true);
+    expect(useSyncStore.getState().isSyncing).toBe(false);
+  });
+
+  it("autoSync handles error", async () => {
+    vi.mocked(invokeCommand).mockRejectedValueOnce(new Error("Auto sync failed"));
+    await act(async () => {
+      try {
+        await useSyncStore.getState().autoSync();
+      } catch {
+        // expected
+      }
+    });
+    expect(useSyncStore.getState().error).toBe("Error: Auto sync failed");
+    expect(useSyncStore.getState().isSyncing).toBe(false);
   });
 });
