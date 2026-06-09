@@ -6,6 +6,8 @@ test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
   await page.goto('/');
   await page.waitForLoadState('networkidle');
+  await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
+  await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
 });
 
 test.describe('API Smoke', () => {
@@ -48,8 +50,31 @@ test.describe('API Smoke', () => {
 
     // Step 4: Backend chat completion works
     const result = await invokeBackend(page, 'chat_completion', {
-      messages: [{ role: 'user', content: '1+2 = ?' }],
+      messages: [{ role: 'user', content: '1+2 = 几几?' }],
     });
     expect(result.choices[0].message.content).toBe('3');
+  });
+
+  test('chat completion with different message formats', async ({ page }) => {
+    const result = await invokeBackend(page, 'chat_completion', {
+      messages: [
+        { role: 'system', content: 'You are a calculator' },
+        { role: 'user', content: 'Calculate 5*6' },
+      ],
+    });
+    expect(result.choices[0].message.role).toBe('assistant');
+    expect(result.choices[0].message.content).toBeTruthy();
+  });
+
+  test('backend returns provider list', async ({ page }) => {
+    const providers = await invokeBackend(page, 'get_providers');
+    expect(Array.isArray(providers)).toBe(true);
+    expect(providers.length).toBeGreaterThanOrEqual(3);
+  });
+
+  test('backend version matches UI', async ({ page }) => {
+    const version = await invokeBackend(page, 'get_version');
+    expect(version).toBe('0.1.2');
+    await expect(page.getByText('v0.1.2')).toBeVisible();
   });
 });

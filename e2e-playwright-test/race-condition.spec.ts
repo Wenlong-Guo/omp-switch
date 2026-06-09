@@ -6,6 +6,7 @@ test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
   await page.goto('/');
   await page.waitForLoadState('networkidle');
+  await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
 });
 
 test.describe('Race Condition', () => {
@@ -53,5 +54,42 @@ test.describe('Race Condition', () => {
 
     // Backend verify: provider removed
     await verifyProviderDeleted(page, 'rapid-test');
+  });
+
+  test('rapid expand collapse model list', async ({ page }) => {
+    const stepPlanCard = page.getByTestId('provider-card-step-plan');
+    const btn = stepPlanCard.getByRole('button', { name: /个模型/ });
+
+    await btn.click();
+    await btn.click();
+    await btn.click();
+
+    await expect(stepPlanCard.getByText('Step 3.7 Flash')).toBeVisible();
+  });
+
+  test('rapid set default multiple providers', async ({ page }) => {
+    const stepPlanCard = page.getByTestId('provider-card-step-plan');
+    await stepPlanCard.getByRole('button', { name: '设为默认' }).click();
+
+    // Backend verify: step-plan is default
+    const settings = await page.evaluate(async () => {
+      const internals = (window as any).__TAURI_INTERNALS__;
+      return await internals.invoke('get_settings');
+    });
+    expect(settings.defaultProvider).toBe('step-plan');
+  });
+
+  test('concurrent add and navigate', async ({ page }) => {
+    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByTestId('provider-id-input').fill('concurrent-test');
+    await page.getByTestId('provider-name-input').fill('Concurrent');
+    await page.getByTestId('provider-api-select').selectOption('openai-completions');
+
+    // Navigate away before saving
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+
+    // Backend verify: not saved
+    await verifyProviderDeleted(page, 'concurrent-test');
   });
 });

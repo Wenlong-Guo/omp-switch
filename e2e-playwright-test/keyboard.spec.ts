@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
-import { getProviders } from './utils/backend-verify';
+import { getProviders, verifyProviderExists } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
   await page.goto('/');
   await page.waitForLoadState('networkidle');
+  await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
 });
 
 test.describe('Keyboard Shortcuts', () => {
@@ -37,4 +38,17 @@ test.describe('Keyboard Shortcuts', () => {
     const providers = await getProviders(page);
     expect(providers.some((p: any) => p.id === 'openai')).toBe(true);
   });
+
+  test('Enter submits provider form', async ({ page }) => {
+    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByTestId('provider-id-input').fill('enter-test');
+    await page.getByTestId('provider-name-input').fill('Enter Test');
+    await page.getByTestId('provider-api-select').selectOption('openai-completions');
+
+    await page.keyboard.press('Enter');
+    await expect(page.getByText('保存成功')).toBeVisible();
+
+    await verifyProviderExists(page, 'enter-test');
+  });
+
 });

@@ -6,6 +6,7 @@ test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
   await page.goto('/');
   await page.waitForLoadState('networkidle');
+  await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
 });
 
 test.describe('Preset Model Selection', () => {
@@ -66,5 +67,50 @@ test.describe('Preset Model Selection', () => {
     // Backend verify: provider saved with manually added model
     const saved = await verifyProviderExists(page, 'openai');
     expect(saved.models.some((m: any) => m.id === 'gpt-4')).toBe(true);
+  });
+
+  test('change preset re-fills form', async ({ page }) => {
+    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByTestId('preset-select').selectOption('openai');
+    await expect(page.locator('input[placeholder="openai"]')).toHaveValue('openai');
+    await expect(page.locator('input[placeholder="OpenAI"]')).toHaveValue('OpenAI');
+
+    // Switch to step-plan
+    await page.getByTestId('preset-select').selectOption('step-plan');
+    await expect(page.locator('input[placeholder="openai"]')).toHaveValue('step-plan');
+    await expect(page.locator('input[placeholder="OpenAI"]')).toHaveValue('StepFun (Step Plan)');
+  });
+
+  test('manual config clears form', async ({ page }) => {
+    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByTestId('preset-select').selectOption('openai');
+    await expect(page.locator('input[placeholder="openai"]')).toHaveValue('openai');
+
+    await page.getByTestId('preset-select').selectOption('');
+    await expect(page.locator('input[placeholder="openai"]')).toHaveValue('');
+  });
+
+  test('preset with multiple models', async ({ page }) => {
+    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByTestId('preset-select').selectOption('step-plan');
+
+    // Should have model select with options
+    await page.getByTestId('model-select').selectOption('step-4.0');
+    await page.getByTestId('save-provider-btn').click();
+    await expect(page.getByText('保存成功')).toBeVisible();
+
+    const saved = await verifyProviderExists(page, 'step-plan');
+    expect(saved.models.length).toBeGreaterThanOrEqual(2);
+  });
+
+  test('save preset provider and verify backend', async ({ page }) => {
+    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByTestId('preset-select').selectOption('anthropic');
+    await page.getByTestId('save-provider-btn').click();
+    await expect(page.getByText('保存成功')).toBeVisible();
+
+    const saved = await verifyProviderExists(page, 'anthropic');
+    expect(saved.api).toBe('anthropic-messages');
+    expect(saved.baseUrl).toBe('https://api.anthropic.com');
   });
 });

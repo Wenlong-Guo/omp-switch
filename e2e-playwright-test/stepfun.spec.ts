@@ -6,6 +6,7 @@ test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
   await page.goto('/');
   await page.waitForLoadState('networkidle');
+  await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
 });
 
 test.describe('StepFun Provider', () => {
@@ -75,5 +76,32 @@ test.describe('StepFun Provider', () => {
     expect(model).toBeTruthy();
     expect(model.contextWindow).toBe(128000);
     expect(model.maxTokens).toBe(4096);
+  });
+
+  test('step-plan models count correct', async ({ page }) => {
+    const provider = await verifyProviderExists(page, 'step-plan');
+    expect(provider.models.length).toBe(1);
+  });
+
+  test('step-plan provider enabled status', async ({ page }) => {
+    const provider = await verifyProviderExists(page, 'step-plan');
+    expect(provider.enabled).toBe(true);
+  });
+
+  test('step-plan base url correct in backend', async ({ page }) => {
+    const provider = await verifyProviderExists(page, 'step-plan');
+    expect(provider.baseUrl).toBe('https://api.stepfun.com/step_plan/v1');
+  });
+
+  test('edit step-plan and save updates backend', async ({ page }) => {
+    const stepPlanCard = page.getByTestId('provider-card-step-plan');
+    await stepPlanCard.getByRole('button', { name: '编辑' }).click();
+
+    await page.getByTestId('provider-name-input').fill('StepFun Updated');
+    await page.getByTestId('save-provider-btn').click();
+    await expect(page.getByText('更新成功')).toBeVisible();
+
+    const updated = await verifyProviderExists(page, 'step-plan');
+    expect(updated.name).toBe('StepFun Updated');
   });
 });
