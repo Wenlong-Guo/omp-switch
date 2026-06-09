@@ -14,7 +14,7 @@ test.describe('ProviderEditor', () => {
 
     await page.locator('input[placeholder="openai"]').fill('test-provider');
     await page.locator('input[placeholder="OpenAI"]').fill('Test Provider');
-    await page.getByTestId('api-type-select').selectOption('openai-completions');
+    await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.locator('input[placeholder="https://api.openai.com/v1"]').fill('https://api.test.com/v1');
     await page.locator('input[type="password"]').fill('test-api-key-123');
     await page.getByTestId('save-provider-btn').click();
@@ -47,7 +47,7 @@ test.describe('Delete Provider', () => {
     await expect(page.getByRole('heading', { name: '确认删除' })).toBeVisible();
     await expect(page.getByText('确定删除 "OpenAI"？此操作不可撤销。')).toBeVisible();
 
-    await page.getByRole('button', { name: '确认删除' }).click();
+    await page.getByRole('button', { name: '确认' }).click();
     await expect(page.getByText('删除成功')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'OpenAI' })).not.toBeVisible();
   });

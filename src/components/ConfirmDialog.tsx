@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ConfirmDialogProps {
   title: string;
@@ -18,6 +18,14 @@ export default function ConfirmDialog({
   variant = "destructive",
 }: ConfirmDialogProps) {
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
 
   const handleConfirm = async () => {
     setLoading(true);

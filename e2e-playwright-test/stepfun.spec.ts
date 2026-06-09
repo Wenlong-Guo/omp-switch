@@ -22,7 +22,7 @@ test.describe('StepFun Provider', () => {
 
     await page.locator('input[placeholder="openai"]').fill('step-plan-test');
     await page.locator('input[placeholder="OpenAI"]').fill('StepFun Test');
-    await page.getByTestId('api-type-select').selectOption('openai-completions');
+    await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.locator('input[placeholder="https://api.openai.com/v1"]').fill('https://api.stepfun.com/step_plan/v1');
     await page.locator('input[type="password"]').fill('2VpngWbeoYJAnD2JXy4RGRNh9if9Vv6xqxpRomhbLOLVBIQDzqTecYmlPNUp3PtwU');
     await page.getByTestId('save-provider-btn').click();

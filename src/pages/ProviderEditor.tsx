@@ -49,7 +49,6 @@ export default function ProviderEditor() {
     if (!form.id.trim()) return "Provider ID 不能为空";
     if (!form.name.trim()) return "显示名称不能为空";
     if (!form.api) return "请选择 API 类型";
-    if (!form.models || form.models.length === 0) return "至少需要配置一个模型";
     return null;
   };
 

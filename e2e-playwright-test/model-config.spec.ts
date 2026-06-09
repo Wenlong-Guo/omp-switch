@@ -16,11 +16,12 @@ test.describe('Model Configuration', () => {
 
     // Click add model
     await page.getByTestId('add-model-btn').click();
-    await expect(page.getByTestId('model-editor')).toBeVisible();
+    await expect(page.getByTestId('model-editor-dialog')).toBeVisible();
 
     // Fill model form
     await page.getByTestId('model-id-input').fill('gpt-4-turbo');
     await page.getByTestId('model-name-input').fill('GPT-4 Turbo');
+    await page.getByRole('button', { name: '成本与限制' }).click();
     await page.getByTestId('model-context-window').fill('128000');
     await page.getByTestId('model-max-tokens').fill('4096');
     await page.getByTestId('model-reasoning').check();
@@ -52,13 +53,14 @@ test.describe('Model Configuration', () => {
 
     // Edit the model
     await page.getByTestId('edit-model-gpt-4o').click();
-    await expect(page.getByTestId('model-editor')).toBeVisible();
+    await expect(page.getByTestId('model-editor-dialog')).toBeVisible();
     await page.getByTestId('model-name-input').fill('GPT-4o Updated');
+    await page.getByRole('button', { name: '成本与限制' }).click();
     await page.getByTestId('model-context-window').fill('256000');
     await page.getByTestId('save-model-btn').click();
 
     await expect(page.getByText('GPT-4o Updated')).toBeVisible();
-    await expect(page.getByText('Context: 256000')).toBeVisible();
+    await expect(page.getByText('256,000 ctx')).toBeVisible();
 
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('更新成功')).toBeVisible();
