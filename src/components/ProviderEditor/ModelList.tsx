@@ -34,7 +34,7 @@ function ModelCard({ model, index, onEdit, onDelete }: {
         </div>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           <span className="text-xs text-muted-foreground">
-            {model.contextWindow.toLocaleString()} ctx · {model.maxTokens.toLocaleString()} tok
+            {(model.contextWindow ?? 0).toLocaleString()} ctx · {(model.maxTokens ?? 0).toLocaleString()} tok
           </span>
           {badges.map((b) => (
             <span

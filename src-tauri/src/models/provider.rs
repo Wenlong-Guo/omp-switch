@@ -28,6 +28,7 @@ pub struct DiscoveryConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ModelDefinition {
     pub id: String,
     pub name: String,

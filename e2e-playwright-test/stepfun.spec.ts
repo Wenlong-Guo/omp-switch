@@ -44,4 +44,21 @@ test.describe('StepFun Provider', () => {
     });
     expect(result.choices[0].message.content).toBe('3');
   });
+
+  test('edit built-in step-plan provider does not crash', async ({ page }) => {
+    const stepPlanCard = page.getByTestId('provider-card-step-plan');
+    await expect(stepPlanCard).toBeVisible();
+
+    await stepPlanCard.getByRole('button', { name: '编辑' }).click();
+
+    // Should navigate to editor without crash
+    await expect(page.getByRole('heading', { name: /编辑 Provider/ })).toBeVisible();
+    await expect(page.getByTestId('provider-id-input')).toHaveValue('step-plan');
+    await expect(page.getByTestId('provider-name-input')).toHaveValue('StepFun (Step Plan)');
+    await expect(page.getByTestId('provider-api-select')).toHaveValue('openai-completions');
+
+    // Model list should render with context/maxTokens info
+    await expect(page.getByText('Step 3.7 Flash')).toBeVisible();
+    await expect(page.getByText('128,000 ctx')).toBeVisible();
+  });
 });
