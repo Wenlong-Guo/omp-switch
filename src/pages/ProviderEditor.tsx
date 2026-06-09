@@ -2,21 +2,14 @@ import { useEffect, useState } from "react";
 import { useProviderStore } from "@/stores/providerStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useLocation, useParams } from "wouter";
-import { ArrowLeft, Save, Globe, Key, Tag, Type, ToggleRight } from "lucide-react";
-import type { ProviderConfig } from "@/types/provider";
-
-const API_TYPES = [
-  "openai-completions",
-  "openai-responses",
-  "openai-codex-responses",
-  "azure-openai-responses",
-  "anthropic-messages",
-  "google-generative-ai",
-  "google-vertex",
-];
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import type { ProviderConfig, ModelDefinition } from "@/types/provider";
+import ProviderBasicForm from "@/components/ProviderEditor/ProviderBasicForm";
+import ModelList from "@/components/ProviderEditor/ModelList";
+import ModelEditorDialog from "@/components/ProviderEditor/ModelEditorDialog";
 
 export default function ProviderEditor() {
-  const { saveProvider, providers, fetchProviders } = useProviderStore();
+  const { saveProvider, providers, fetchProviders, builtinPresets, fetchBuiltinPresets } = useProviderStore();
   const toast = useToastStore();
   const [, setLocation] = useLocation();
   const params = useParams();
@@ -28,8 +21,15 @@ export default function ProviderEditor() {
     name: "",
     enabled: true,
     isBuiltIn: false,
+    models: [],
   });
+  const [editingModelIdx, setEditingModelIdx] = useState<number | "new" | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Preset/model selection for add mode
+  const [selectedPresetId, setSelectedPresetId] = useState<string>("");
+  const [selectedModelId, setSelectedModelId] = useState<string>("");
+  const [modelAlias, setModelAlias] = useState<string>("");
 
   useEffect(() => {
     if (isEdit) {
@@ -39,11 +39,26 @@ export default function ProviderEditor() {
       } else {
         fetchProviders();
       }
+    } else {
+      fetchBuiltinPresets();
     }
-  }, [isEdit, editId, providers, fetchProviders]);
+  }, [isEdit, editId, providers, fetchProviders, fetchBuiltinPresets]);
+
+  const validateForm = (): string | null => {
+    if (!form.id.trim()) return "Provider ID 不能为空";
+    if (!form.name.trim()) return "显示名称不能为空";
+    if (!form.api) return "请选择 API 类型";
+    if (!form.models || form.models.length === 0) return "至少需要配置一个模型";
+    return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setError(null);
     try {
       await saveProvider(form);
@@ -55,121 +70,178 @@ export default function ProviderEditor() {
     }
   };
 
+  const models = form.models ?? [];
+
+  const startAddModel = () => {
+    setEditingModelIdx("new");
+  };
+
+  const startEditModel = (idx: number) => {
+    setEditingModelIdx(idx);
+  };
+
+  const saveModel = (model: ModelDefinition) => {
+    const next = [...models];
+    if (editingModelIdx === "new") {
+      next.push(model);
+    } else if (typeof editingModelIdx === "number") {
+      next[editingModelIdx] = model;
+    }
+    setForm({ ...form, models: next });
+    setEditingModelIdx(null);
+  };
+
+  const deleteModel = (idx: number) => {
+    const next = [...models];
+    next.splice(idx, 1);
+    setForm({ ...form, models: next });
+  };
+
+  useKeyboardShortcuts({
+    onEscape: () => {
+      if (editingModelIdx !== null) {
+        setEditingModelIdx(null);
+      }
+    },
+    onSave: () => {
+      const formEl = document.querySelector("form");
+      if (formEl) formEl.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    },
+  }, [editingModelIdx]);
+
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <div className="flex items-center gap-2 mb-6">
-        <button
-          onClick={() => setLocation("/")}
-          className="p-1.5 rounded-md hover:bg-muted transition-colors"
-          aria-label="返回"
-        >
-          <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-        </button>
-        <h1 className="text-2xl font-bold">
-          {isEdit ? `编辑 Provider ${form.name}` : "添加 Provider"}
-        </h1>
-      </div>
+    <div className="max-w-3xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">
+        {isEdit ? `编辑 Provider ${form.name}` : "添加 Provider"}
+      </h1>
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md flex items-center gap-2 text-sm border border-red-100">
-          <span className="font-medium">错误:</span> {error}
-        </div>
-      )}
+      {error && <div className="mb-4 p-3 bg-red-50 text-red-700 rounded">{error}</div>}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="bg-muted/20 rounded-lg p-4 space-y-4 border">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Preset selector for add mode */}
+        {!isEdit && (
           <div>
-            <label className="block text-sm font-medium mb-1 flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5 text-muted-foreground" />
-              Provider ID
-            </label>
-            <input
-              value={form.id}
-              onChange={(e) => setForm({ ...form, id: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-muted disabled:cursor-not-allowed bg-background"
-              placeholder="openai"
-              required
-              disabled={isEdit}
-            />
-            <p className="text-xs text-muted-foreground mt-1">唯一标识符，保存后不可修改</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 flex items-center gap-1.5">
-              <Type className="w-3.5 h-3.5 text-muted-foreground" />
-              显示名称
-            </label>
-            <input
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
-              placeholder="OpenAI"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">API 类型</label>
+            <label className="block text-sm font-medium mb-1">选择预设</label>
             <select
-              value={form.api ?? ""}
-              onChange={(e) => setForm({ ...form, api: e.target.value as any })}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+              value={selectedPresetId}
+              onChange={(e) => {
+                const presetId = e.target.value;
+                setSelectedPresetId(presetId);
+                setSelectedModelId("");
+                setModelAlias("");
+                const preset = builtinPresets.find((p) => p.id === presetId);
+                if (preset) {
+                  setForm({
+                    ...form,
+                    id: preset.id,
+                    name: preset.name,
+                    api: preset.api,
+                    baseUrl: preset.baseUrl,
+                    auth: preset.auth,
+                    models: preset.models ? [...preset.models] : [],
+                  });
+                } else {
+                  setForm({ id: "", name: "", enabled: true, isBuiltIn: false, models: [] });
+                }
+              }}
+              data-testid="preset-select"
+              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="">请选择</option>
-              {API_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
+              <option value="">手动配置</option>
+              {builtinPresets.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>
+        )}
 
-          <div>
-            <label className="block text-sm font-medium mb-1 flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-muted-foreground" />
-              Base URL
-            </label>
-            <input
-              value={form.baseUrl ?? ""}
-              onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
-              placeholder="https://api.openai.com/v1"
-            />
+        <ProviderBasicForm
+          form={form}
+          isEdit={isEdit}
+          onChange={setForm}
+        />
+
+        {/* Model selection for add mode when preset has models */}
+        {!isEdit && selectedPresetId && form.models && form.models.length > 0 && (
+          <div className="p-3 border rounded bg-muted/20 space-y-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">选择模型</label>
+              <select
+                value={selectedModelId}
+                onChange={(e) => {
+                  const modelId = e.target.value;
+                  setSelectedModelId(modelId);
+                  const model = form.models?.find((m) => m.id === modelId);
+                  if (model) {
+                    setModelAlias(model.name);
+                  }
+                }}
+                data-testid="model-select"
+                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">请选择模型</option>
+                {form.models.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name} ({m.id})</option>
+                ))}
+              </select>
+            </div>
+
+            {selectedModelId && (
+              <div>
+                <label className="block text-sm font-medium mb-1">模型别名（可选）</label>
+                <input
+                  value={modelAlias}
+                  onChange={(e) => {
+                    setModelAlias(e.target.value);
+                    const nextModels = form.models?.map((m) =>
+                      m.id === selectedModelId ? { ...m, name: e.target.value || m.name } : m
+                    );
+                    setForm({ ...form, models: nextModels });
+                  }}
+                  data-testid="model-alias-input"
+                  placeholder="自定义显示名称"
+                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Models Section */}
+        <div className="space-y-4 pt-4 border-t">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">模型配置</h2>
+            <button
+              type="button"
+              onClick={startAddModel}
+              data-testid="add-model-btn"
+              className="text-sm px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:opacity-90"
+            >
+              + 添加模型
+            </button>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1 flex items-center gap-1.5">
-              <Key className="w-3.5 h-3.5 text-muted-foreground" />
-              API Key
-            </label>
-            <input
-              type="password"
-              value={form.apiKey ?? ""}
-              onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
-              placeholder="sk-..."
-            />
-            <p className="text-xs text-muted-foreground mt-1">密钥将被 AES-256-GCM 加密存储</p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={form.enabled}
-              onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
-              id="enabled"
-              className="w-4 h-4 accent-primary"
-            />
-            <label htmlFor="enabled" className="text-sm flex items-center gap-1.5">
-              <ToggleRight className="w-3.5 h-3.5 text-muted-foreground" />
-              启用此 Provider
-            </label>
-          </div>
+          <ModelList
+            models={models}
+            onEdit={startEditModel}
+            onDelete={deleteModel}
+          />
         </div>
+
+        {/* Model Editor Dialog */}
+        {editingModelIdx !== null && (
+          <ModelEditorDialog
+            model={editingModelIdx === "new" ? undefined : models[editingModelIdx]}
+            onSave={saveModel}
+            onCancel={() => setEditingModelIdx(null)}
+          />
+        )}
 
         <button
           type="submit"
-          className="w-full py-2.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center justify-center gap-2 font-medium transition-opacity"
+          data-testid="save-provider-btn"
+          className="w-full py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
         >
-          <Save className="w-4 h-4" />
           保存 Provider
         </button>
       </form>

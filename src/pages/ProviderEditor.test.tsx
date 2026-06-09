@@ -7,6 +7,10 @@ const mockSave = vi.fn();
 vi.mock("@/stores/providerStore", () => ({
   useProviderStore: () => ({
     saveProvider: mockSave,
+    providers: [],
+    fetchProviders: vi.fn(),
+    builtinPresets: [],
+    fetchBuiltinPresets: vi.fn(),
   }),
 }));
 
@@ -44,7 +48,7 @@ describe("ProviderEditor", () => {
 
   it("has enabled checkbox", () => {
     render(<ProviderEditor />);
-    expect(screen.getByLabelText(/启用此 Provider/)).toBeInTheDocument();
+    expect(screen.getByLabelText("启用 Provider")).toBeInTheDocument();
   });
 
   it("has submit button", () => {
@@ -56,6 +60,11 @@ describe("ProviderEditor", () => {
     render(<ProviderEditor />);
     fireEvent.change(screen.getByPlaceholderText("openai"), { target: { value: "test" } });
     fireEvent.change(screen.getByPlaceholderText("OpenAI"), { target: { value: "Test" } });
+    fireEvent.change(screen.getByTestId("provider-api-select"), { target: { value: "openai-completions" } });
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "gpt-4" } });
+    fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "GPT-4" } });
+    fireEvent.click(screen.getByTestId("save-model-btn"));
     fireEvent.submit(screen.getByText("保存 Provider").closest("form")!);
     expect(mockSave).toHaveBeenCalled();
   });
@@ -67,5 +76,107 @@ describe("ProviderEditor", () => {
     await waitFor(() => {
       expect(screen.getByText(/Provider ID 不能为空/)).toBeInTheDocument();
     }, { timeout: 2000 });
+  });
+
+  it("shows add model button", () => {
+    render(<ProviderEditor />);
+    expect(screen.getByTestId("add-model-btn")).toBeInTheDocument();
+  });
+
+  it("opens model editor on add model click", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    expect(screen.getByTestId("model-editor-dialog")).toBeInTheDocument();
+    expect(screen.getByText("添加模型")).toBeInTheDocument();
+  });
+
+  it("adds a model to the form", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "gpt-4" } });
+    fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "GPT-4" } });
+    fireEvent.click(screen.getByTestId("save-model-btn"));
+    expect(screen.getByTestId("model-item-gpt-4")).toBeInTheDocument();
+    expect(screen.getByText("GPT-4")).toBeInTheDocument();
+  });
+
+  it("deletes a model from the form", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "temp" } });
+    fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "Temp" } });
+    fireEvent.click(screen.getByTestId("save-model-btn"));
+    expect(screen.getByTestId("model-item-temp")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("delete-model-temp"));
+    expect(screen.queryByTestId("model-item-temp")).not.toBeInTheDocument();
+  });
+
+  it("edits a model in the form", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "gpt-4o" } });
+    fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "GPT-4o" } });
+    fireEvent.click(screen.getByTestId("save-model-btn"));
+
+    fireEvent.click(screen.getByTestId("edit-model-gpt-4o"));
+    fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "GPT-4o Updated" } });
+    fireEvent.click(screen.getByTestId("save-model-btn"));
+
+    expect(screen.getByText("GPT-4o Updated")).toBeInTheDocument();
+  });
+
+  it("cancels model editor", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    expect(screen.getByTestId("model-editor-dialog")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("取消"));
+    expect(screen.queryByTestId("model-editor-dialog")).not.toBeInTheDocument();
+  });
+
+  it("shows preset select when builtinPresets available", () => {
+    vi.doMock("@/stores/providerStore", () => ({
+      useProviderStore: () => ({
+        saveProvider: mockSave,
+        providers: [],
+        fetchProviders: vi.fn(),
+        builtinPresets: [{ id: "openai", name: "OpenAI" }],
+        fetchBuiltinPresets: vi.fn(),
+      }),
+    }));
+    render(<ProviderEditor />);
+    expect(screen.getByTestId("preset-select")).toBeInTheDocument();
+  });
+
+  it("saves provider with form data", () => {
+    render(<ProviderEditor />);
+    fireEvent.change(screen.getByPlaceholderText("openai"), { target: { value: "test" } });
+    fireEvent.change(screen.getByPlaceholderText("OpenAI"), { target: { value: "Test" } });
+    fireEvent.change(screen.getByTestId("provider-api-select"), { target: { value: "openai-completions" } });
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "gpt-4" } });
+    fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "GPT-4" } });
+    fireEvent.click(screen.getByTestId("save-model-btn"));
+    fireEvent.submit(screen.getByText("保存 Provider").closest("form")!);
+    expect(mockSave).toHaveBeenCalled();
+    const saved = mockSave.mock.calls[mockSave.mock.calls.length - 1][0];
+    expect(saved.id).toBe("test");
+    expect(saved.name).toBe("Test");
+  });
+
+  it("renders model card with reasoning badge", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "gpt-4" } });
+    fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "GPT-4" } });
+    fireEvent.click(screen.getByTestId("save-model-btn"));
+    expect(screen.getByTestId("model-item-gpt-4")).toBeInTheDocument();
+  });
+
+  it("opens model editor with populated fields", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("add-model-btn"));
+    expect(screen.getByTestId("model-id-input")).toBeInTheDocument();
+    expect(screen.getByTestId("model-name-input")).toBeInTheDocument();
   });
 });

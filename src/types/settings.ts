@@ -6,6 +6,7 @@ export interface AppSettings {
   thinkingBudgets?: Record<ThinkingLevel, number>;
   modelRoles?: ModelRoles;
   retry?: RetryConfig;
+  theme?: "light" | "dark" | "system";
 }
 
 export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";

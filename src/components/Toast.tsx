@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useToastStore } from "@/stores/toastStore";
-import { CheckCircle, XCircle, X } from "lucide-react";
 
 export default function Toast() {
   const { toasts, remove } = useToastStore();
@@ -8,7 +7,7 @@ export default function Toast() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 min-w-[200px]">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={remove} />
       ))}
@@ -23,40 +22,31 @@ function ToastItem({
   toast: { id: string; message: string; type: "success" | "error" };
   onRemove: (id: string) => void;
 }) {
-  const [visible, setVisible] = useState(false);
-
   useEffect(() => {
-    const enter = requestAnimationFrame(() => setVisible(true));
-    return () => cancelAnimationFrame(enter);
-  }, []);
+    const timer = setTimeout(() => onRemove(toast.id), 3000);
+    return () => clearTimeout(timer);
+  }, [toast.id, onRemove]);
 
-  const handleRemove = () => {
-    setVisible(false);
-    setTimeout(() => onRemove(toast.id), 300);
-  };
-
-  const icon =
-    toast.type === "success" ? (
-      <CheckCircle className="w-4 h-4 shrink-0" />
-    ) : (
-      <XCircle className="w-4 h-4 shrink-0" />
-    );
+  const icon = toast.type === "success" ? "✓" : "✕";
 
   return (
     <div
-      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg shadow-lg text-sm text-white min-w-[200px] max-w-sm transition-all duration-300 ${
-        visible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
-      } ${toast.type === "success" ? "bg-green-600" : "bg-red-600"}`}
+      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium border animate-in slide-in-from-right-2 fade-in duration-300 ${
+        toast.type === "success"
+          ? "bg-background text-green-700 border-green-200 dark:border-green-900 dark:text-green-400"
+          : "bg-background text-red-700 border-red-200 dark:border-red-900 dark:text-red-400"
+      }`}
+      onClick={() => onRemove(toast.id)}
+      role="alert"
     >
-      {icon}
-      <span className="flex-1">{toast.message}</span>
-      <button
-        onClick={handleRemove}
-        className="shrink-0 hover:opacity-80"
-        aria-label="关闭"
+      <span
+        className={`flex items-center justify-center w-5 h-5 rounded-full text-xs text-white ${
+          toast.type === "success" ? "bg-green-500" : "bg-red-500"
+        }`}
       >
-        <X className="w-3.5 h-3.5" />
-      </button>
+        {icon}
+      </span>
+      <span>{toast.message}</span>
     </div>
   );
 }

@@ -2,14 +2,15 @@
 
 [English](README.md) | [中文](README.zh.md)
 
-> **版本**: 0.1.1 | **支持平台**: macOS / Windows / Linux
+> **版本**: 0.1.2 | **支持平台**: macOS / Windows / Linux
 
 基于 **Tauri 2 + React + SQLite** 构建的跨平台 AI Provider 配置管理工具。
 
 ## 功能特性
 
-- **Provider 管理**：增删改查 AI 模型 Provider（OpenAI、Anthropic、Google 等），支持内置预设模板
-- **模型配置**：自定义模型定义、模型覆盖（Model Override）、成本与兼容性配置
+- **Provider 管理**：增删改查 AI 模型 Provider（OpenAI、Anthropic、Google、StepFun 等），支持内置预设模板
+- **预设模型选择**：从内置预设中选择 Provider，通过下拉框选择模型，支持自定义别名
+- **完整模型 CRUD**：配置全部 19 个模型参数，包括 ID、名称、API 类型、reasoning、输入类型（文本/图片）、成本（input/output/cacheRead/cacheWrite）、contextWindow、maxTokens、自定义 Headers，以及完整 ModelCompat（supportsStore、supportsDeveloperRole、supportsReasoningEffort、maxTokensField、openRouterRouting、vercelGatewayRouting、extraBody）
 - **全局设置**：默认 Provider、模型、Thinking Level、隐藏 Thinking 块、预算配置
 - **WebDAV 同步**：支持坚果云、NextCloud 等 WebDAV 服务端，实现多端配置同步
 - **文件双向同步**：SQLite 为单一数据源，自动导出 `models.yml` 和 `settings.json`，支持外部编辑器修改后自动回填
@@ -49,16 +50,23 @@ npm run tauri build
 
 ```
 omp-switch/
-├── src/              # React 前端 (Vite)
-│   ├── pages/        # Dashboard、ProviderEditor、Settings
-│   ├── stores/       # Zustand 状态管理
-│   └── components/   # 可复用 UI 组件
-├── src-tauri/        # Rust 后端 (Tauri 2)
-│   ├── src/commands/ # IPC 命令处理器
-│   ├── src/services/ # 业务逻辑
-│   └── src/database/ # SQLite DAO
-├── e2e/              # Playwright CLI E2E 测试
-└── docs/             # 技术文档（中文）
+├── src/                       # React 前端 (Vite)
+│   ├── pages/                 # Dashboard、ProviderEditor、Settings
+│   ├── stores/                # Zustand 状态管理
+│   └── components/            # 可复用 UI 组件
+├── src-tauri/                 # Rust 后端 (Tauri 2)
+│   ├── src/commands/          # IPC 命令处理器
+│   ├── src/services/          # 业务逻辑
+│   └── src/database/          # SQLite DAO
+├── e2e-playwright-test/       # Playwright E2E 测试（17 个用例）
+│   ├── dashboard.spec.ts
+│   ├── provider-crud.spec.ts
+│   ├── model-config.spec.ts
+│   ├── preset-selection.spec.ts
+│   ├── stepfun.spec.ts
+│   ├── settings.spec.ts
+│   └── mocks/
+└── docs/                      # 技术文档（中文）
 ```
 
 ## 测试
@@ -67,8 +75,8 @@ omp-switch/
 # 单元测试 (Vitest)
 npm run test
 
-# E2E 测试 (playwright-cli)
-cd e2e && bash test.sh
+# E2E 测试 (@playwright/test)
+npx playwright test
 ```
 
 ## 下载与安装

@@ -44,6 +44,7 @@ impl DbConnection {
         let migrations = vec![
             ("001_init.sql", include_str!("migrations/001_init.sql")),
             ("002_sync.sql", include_str!("migrations/002_sync.sql")),
+            ("002_model_parameters.sql", include_str!("migrations/002_model_parameters.sql")),
         ];
 
         for (name, sql) in migrations {

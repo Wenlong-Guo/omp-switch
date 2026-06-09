@@ -37,5 +37,9 @@ src-tauri/target/
 # Test coverage
 coverage/
 
-# Windsurf
-.windsurf/
+# Playwright
+test-results/
+playwright-report/
+
+# Devin
+.devin/

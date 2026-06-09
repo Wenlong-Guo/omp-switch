@@ -5,10 +5,12 @@ import { useSettingsStore } from "./settingsStore";
 
 interface ProviderStore {
   providers: ProviderConfig[];
+  builtinPresets: ProviderConfig[];
   isLoading: boolean;
   error: string | null;
 
   fetchProviders: () => Promise<void>;
+  fetchBuiltinPresets: () => Promise<void>;
   saveProvider: (config: ProviderConfig) => Promise<void>;
   deleteProvider: (id: string) => Promise<void>;
   setActiveProvider: (id: string, modelId?: string) => Promise<void>;
@@ -16,6 +18,7 @@ interface ProviderStore {
 
 export const useProviderStore = create<ProviderStore>((set, get) => ({
   providers: [],
+  builtinPresets: [],
   isLoading: false,
   error: null,
 
@@ -24,6 +27,16 @@ export const useProviderStore = create<ProviderStore>((set, get) => ({
     try {
       const providers = await invokeCommand<ProviderConfig[]>("get_providers");
       set({ providers, isLoading: false });
+    } catch (err) {
+      set({ error: String(err), isLoading: false });
+    }
+  },
+
+  fetchBuiltinPresets: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const presets = await invokeCommand<ProviderConfig[]>("get_builtin_presets");
+      set({ builtinPresets: presets, isLoading: false });
     } catch (err) {
       set({ error: String(err), isLoading: false });
     }

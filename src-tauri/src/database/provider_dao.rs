@@ -124,7 +124,46 @@ impl<'a> ProviderDao<'a> {
             })
         }).optional()?;
 
-        Ok(provider)
+        if let Some(mut p) = provider {
+            p.models = self.get_models(&conn, id)?;
+            Ok(Some(p))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn get_models(&self, conn: &rusqlite::Connection, provider_id: &str) -> Result<Option<Vec<ModelDefinition>>> {
+        let mut stmt = conn.prepare(
+            "SELECT model_id, name, api_type, reasoning, input_types, cost, context_window, max_tokens, headers, compat, default_temperature, default_top_p, default_presence_penalty, default_frequency_penalty, default_seed
+             FROM provider_models WHERE provider_id = ?1 ORDER BY name"
+        )?;
+
+        let models = stmt.query_map([provider_id], |row| {
+            Ok(ModelDefinition {
+                id: row.get(0)?,
+                name: row.get(1)?,
+                api_type: row.get(2)?,
+                reasoning: row.get::<_, i32>(3)? != 0,
+                input_types: row.get::<_, String>(4).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default(),
+                cost: row.get::<_, String>(5).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(ModelCost { input: 0.0, output: 0.0, cache_read: 0.0, cache_write: 0.0 }),
+                context_window: row.get(6)?,
+                max_tokens: row.get(7)?,
+                headers: row.get::<_, Option<String>>(8)?.and_then(|s| serde_json::from_str(&s).ok()),
+                compat: row.get::<_, Option<String>>(9)?.and_then(|s| serde_json::from_str(&s).ok()),
+                default_temperature: row.get(10).ok(),
+                default_top_p: row.get(11).ok(),
+                default_presence_penalty: row.get(12).ok(),
+                default_frequency_penalty: row.get(13).ok(),
+                default_seed: row.get(14).ok(),
+            })
+        })?;
+
+        let collected: Vec<ModelDefinition> = models.collect::<Result<Vec<_>>>()?;
+        if collected.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(collected))
+        }
     }
 
     pub fn get_all(&self) -> Result<Vec<ProviderConfig>> {
@@ -154,7 +193,13 @@ impl<'a> ProviderDao<'a> {
             })
         })?;
 
-        providers.collect()
+        let mut result = Vec::new();
+        for p in providers {
+            let mut p = p?;
+            p.models = self.get_models(&conn, &p.id)?;
+            result.push(p);
+        }
+        Ok(result)
     }
 
     pub fn get_enabled(&self) -> Result<Vec<ProviderConfig>> {
@@ -189,8 +234,8 @@ impl<'a> ProviderDao<'a> {
 
     fn insert_model(&self, tx: &rusqlite::Transaction, provider_id: &str, model: &ModelDefinition) -> Result<()> {
         tx.execute(
-            "INSERT INTO provider_models (id, provider_id, model_id, name, api_type, reasoning, input_types, cost, context_window, max_tokens, headers, compat)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+            "INSERT INTO provider_models (id, provider_id, model_id, name, api_type, reasoning, input_types, cost, context_window, max_tokens, headers, compat, default_temperature, default_top_p, default_presence_penalty, default_frequency_penalty, default_seed)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
             params![
                 format!("{}-{}", provider_id, model.id),
                 provider_id,
@@ -204,6 +249,11 @@ impl<'a> ProviderDao<'a> {
                 model.max_tokens,
                 model.headers.as_ref().map(|h| serde_json::to_string(h).unwrap()),
                 model.compat.as_ref().map(|c| serde_json::to_string(c).unwrap()),
+                model.default_temperature,
+                model.default_top_p,
+                model.default_presence_penalty,
+                model.default_frequency_penalty,
+                model.default_seed,
             ],
         )?;
         Ok(())
