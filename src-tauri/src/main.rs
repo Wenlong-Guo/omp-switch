@@ -25,6 +25,15 @@ fn main() {
                 }
             }
 
+            // Remove deprecated step-plan builtin preset to avoid breaking oh-my-pi CLI
+            use omp_switch_lib::database::provider_dao::ProviderDao;
+            let dao = ProviderDao::new(db);
+            if let Ok(Some(provider)) = dao.get_by_id("step-plan") {
+                if provider.is_built_in {
+                    let _ = service.delete("step-plan");
+                }
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

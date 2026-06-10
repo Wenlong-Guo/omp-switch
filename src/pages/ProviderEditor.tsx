@@ -147,6 +147,7 @@ export default function ProviderEditor() {
                     api: preset.api,
                     baseUrl: preset.baseUrl,
                     auth: preset.auth,
+                    apiKey: undefined,
                     models: preset.models ? [...preset.models] : [],
                   });
                 } else {

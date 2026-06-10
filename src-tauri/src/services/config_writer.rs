@@ -37,10 +37,8 @@ impl<'a> ConfigWriter<'a> {
                 config.insert("baseUrl".to_string(), serde_json::Value::String(url));
             }
             if let Some(key) = p.api_key {
-                config.insert("apiKey".to_string(), serde_json::Value::String(key));
-            } else if let Some(auth) = &p.auth {
-                if auth != "none" {
-                    config.insert("apiKey".to_string(), serde_json::Value::String("".to_string()));
+                if !key.is_empty() {
+                    config.insert("apiKey".to_string(), serde_json::Value::String(key));
                 }
             }
             if let Some(api) = p.api_type {
