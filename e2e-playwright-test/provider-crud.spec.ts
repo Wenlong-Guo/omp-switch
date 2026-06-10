@@ -1,12 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
-import { verifyProviderExists, verifyProviderDeleted } from './utils/backend-verify';
+import { verifyProviderExists, verifyProviderDeleted, verifyModelCall } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
   await page.goto('/');
   await page.waitForLoadState('networkidle');
   await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
+});
+
+test.afterEach(async ({ page }) => {
+  await verifyModelCall(page);
 });
 
 test.describe('ProviderEditor', () => {
@@ -37,8 +41,10 @@ test.describe('ProviderEditor', () => {
 
     await expect(page.getByRole('heading', { name: /编辑 Provider/ })).toBeVisible();
     await expect(page.locator('input[placeholder="openai"]')).toBeDisabled();
+    await page.waitForFunction(() => (document.querySelector('input[placeholder="openai"]') as HTMLInputElement)?.value === 'openai');
 
     await page.locator('input[placeholder="OpenAI"]').fill('OpenAI Updated');
+    await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
 
     await expect(page.getByText('更新成功')).toBeVisible();

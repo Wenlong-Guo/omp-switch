@@ -1,13 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
-import { verifyProviderExists, verifyDefaultProvider, invokeBackend } from './utils/backend-verify';
+import { verifyProviderExists, verifyDefaultProvider, invokeBackend, verifyModelCall } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
   await page.goto('/');
   await page.waitForLoadState('networkidle');
   await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
-  await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
+});
+
+test.afterEach(async ({ page }) => {
+  await verifyModelCall(page);
 });
 
 test.describe('API Smoke', () => {
@@ -52,7 +55,7 @@ test.describe('API Smoke', () => {
     const result = await invokeBackend(page, 'chat_completion', {
       messages: [{ role: 'user', content: '1+2 = 几几?' }],
     });
-    expect(result.choices[0].message.content).toBe('3');
+    expect(result.choices[0].message.content).toContain('3');
   });
 
   test('chat completion with different message formats', async ({ page }) => {

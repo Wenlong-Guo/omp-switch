@@ -1,12 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
-import { verifyProviderExists, invokeBackend } from './utils/backend-verify';
+import { verifyProviderExists, invokeBackend, verifyModelCall } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
   await page.goto('/');
   await page.waitForLoadState('networkidle');
   await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
+});
+
+test.afterEach(async ({ page }) => {
+  await verifyModelCall(page);
 });
 
 test.describe('StepFun Provider', () => {
@@ -51,7 +55,7 @@ test.describe('StepFun Provider', () => {
     const result = await invokeBackend(page, 'chat_completion', {
       messages: [{ role: 'user', content: '1+2 = 几' }],
     });
-    expect(result.choices[0].message.content).toBe('3');
+    expect(result.choices[0].message.content).toContain('3');
   });
 
   test('edit built-in step-plan provider does not crash', async ({ page }) => {
@@ -96,10 +100,12 @@ test.describe('StepFun Provider', () => {
   test('edit step-plan and save updates backend', async ({ page }) => {
     const stepPlanCard = page.getByTestId('provider-card-step-plan');
     await stepPlanCard.getByRole('button', { name: '编辑' }).click();
+    await page.waitForSelector('input[placeholder="openai"][disabled]');
 
     await page.getByTestId('provider-name-input').fill('StepFun Updated');
+    await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
-    await expect(page.getByText('更新成功')).toBeVisible();
+    await expect(page.getByText('更新成功').first()).toBeVisible();
 
     const updated = await verifyProviderExists(page, 'step-plan');
     expect(updated.name).toBe('StepFun Updated');

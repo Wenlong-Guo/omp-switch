@@ -51,3 +51,17 @@ export async function verifySettings(page: any, expected: any) {
     expect(settings[key]).toBe(value);
   }
 }
+
+/** Verify real model call through omp chat_completion */
+export async function verifyModelCall(page: any) {
+  const result = await invokeBackend(page, 'chat_completion', {
+    messages: [{ role: 'user', content: '1+2=?' }],
+    provider_id: 'step-plan',
+    model: 'step-3.7-flash',
+  });
+  expect(result).toBeTruthy();
+  expect(result.choices).toBeTruthy();
+  expect(result.choices.length).toBeGreaterThan(0);
+  expect(result.choices[0].message).toBeTruthy();
+  expect(result.choices[0].message.content).toBeTruthy();
+}

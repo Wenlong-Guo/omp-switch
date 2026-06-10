@@ -1,12 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
-import { getProviders, verifyDefaultProvider } from './utils/backend-verify';
+import { getProviders, verifyDefaultProvider, verifyModelCall } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
   await page.goto('/');
   await page.waitForLoadState('networkidle');
   await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
+});
+
+test.afterEach(async ({ page }) => {
+  await verifyModelCall(page);
 });
 
 test.describe('Dashboard', () => {
@@ -105,7 +109,7 @@ test.describe('Dashboard', () => {
     });
     await page.reload();
     await page.waitForLoadState('networkidle');
-  await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
+    await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
 
     const openaiCard = page.getByTestId('provider-card-openai');
     await expect(openaiCard.getByText('已停用')).toBeVisible();

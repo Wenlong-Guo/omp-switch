@@ -30,6 +30,8 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            // Chat commands
+            omp_switch_lib::commands::chat::chat_completion,
             // Provider commands
             omp_switch_lib::commands::provider::get_providers,
             omp_switch_lib::commands::provider::save_provider,

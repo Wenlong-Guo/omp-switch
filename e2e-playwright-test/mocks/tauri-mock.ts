@@ -44,7 +44,7 @@ const builtinPresets = [
 
 const initialSettings = { defaultProvider: 'openai', defaultModel: 'gpt-4', defaultThinkingLevel: 'medium' };
 
-function buildInitScript() {
+function buildInitScript(apiKey: string) {
   const mp = JSON.stringify(mockProviders);
   const bp = JSON.stringify(builtinPresets);
   const is = JSON.stringify(initialSettings);
@@ -131,18 +131,50 @@ function buildInitScript() {
             return '0.1.2';
           case 'chat_completion':
             var messages = args.messages;
-            var lastMessage = messages[messages.length - 1];
-            var response = '3';
-            if (lastMessage && lastMessage.content && lastMessage.content.includes('1+2')) {
-              response = '3';
+            var apiKey = '${apiKey.replace(/'/g, "\\'")}';
+            var baseUrl = 'https://api.stepfun.com/step_plan/v1';
+            var model = 'step-3.7-flash';
+            // Use explicit provider_id if provided, otherwise fallback to first configured provider
+            var provider = null;
+            if (args.provider_id) {
+              provider = st.providers.find(function(p) { return p.id === args.provider_id; });
             }
-            var result = {
-              id: 'chatcmpl-mock',
-              choices: [{ message: { role: 'assistant', content: response } }],
-            };
-            st.chatHistory.push({ request: messages, response: result });
-            saveState(st);
-            return result;
+            if (!provider) {
+              provider = st.providers.find(function(p) { return p.baseUrl && (p.apiKey || p.id === 'step-plan'); });
+            }
+            if (provider) {
+              if (provider.baseUrl) baseUrl = provider.baseUrl;
+              if (provider.apiKey) apiKey = provider.apiKey;
+              if (args.model) {
+                model = args.model;
+              } else if (provider.models && provider.models.length > 0) {
+                model = provider.models[0].id;
+              }
+            }
+            if (typeof window.__e2e_http_post === 'function') {
+              var result = await window.__e2e_http_post(
+                baseUrl + '/chat/completions',
+                {
+                  'Authorization': 'Bearer ' + apiKey,
+                  'Content-Type': 'application/json'
+                },
+                {
+                  model: model,
+                  messages: messages.map(function(m) { return { role: m.role, content: m.content }; })
+                }
+              );
+              if (result.status !== 200) {
+                throw new Error('Model API returned status ' + result.status);
+              }
+              if (!result.body || !result.body.choices || !result.body.choices[0]) {
+                throw new Error('Invalid model API response');
+              }
+              st.chatHistory.push({ request: messages, response: result.body });
+              saveState(st);
+              return result.body;
+            } else {
+              throw new Error('__e2e_http_post not available: E2E tests must run with Playwright exposeFunction bridge');
+            }
           case 'get_sync_config':
             return st.syncConfig;
           case 'save_sync_config':
@@ -163,6 +195,20 @@ function buildInitScript() {
   `;
 }
 
-export function injectTauriMock(page: any) {
-  return page.addInitScript(buildInitScript());
+export async function injectTauriMock(page: any) {
+  const apiKey = process.env.STEPFUN_API_KEY || '14OqZB8mLPQVLEXveakbFiUOAlmY8JknKdo52iE5eUBNG9wk4O9HqD55By2tnYjKu';
+
+  await page.exposeFunction('__e2e_http_post', async (url: string, headers: any, body: any) => {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    return {
+      status: response.status,
+      body: await response.json().catch(() => null),
+    };
+  });
+
+  await page.addInitScript(buildInitScript(apiKey));
 }
