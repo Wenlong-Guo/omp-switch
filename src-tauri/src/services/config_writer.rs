@@ -38,6 +38,10 @@ impl<'a> ConfigWriter<'a> {
             }
             if let Some(key) = p.api_key {
                 config.insert("apiKey".to_string(), serde_json::Value::String(key));
+            } else if let Some(auth) = &p.auth {
+                if auth != "none" {
+                    config.insert("apiKey".to_string(), serde_json::Value::String("".to_string()));
+                }
             }
             if let Some(api) = p.api_type {
                 config.insert("api".to_string(), serde_json::Value::String(api));
