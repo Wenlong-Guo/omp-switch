@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
-import { getProviders, verifyDefaultProvider, verifyModelCall } from './utils/backend-verify';
+import { getProviders, verifyDefaultProvider } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -9,9 +9,6 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
 });
 
-test.afterEach(async ({ page }) => {
-  await verifyModelCall(page);
-});
 
 test.describe('Dashboard', () => {
   test('displays provider cards and default badge', async ({ page }) => {

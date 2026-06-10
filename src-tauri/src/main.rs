@@ -18,12 +18,10 @@ fn main() {
 
             let db = get_db();
             let service = ProviderService::new(db);
-            if let Ok(existing) = service.get_all() {
-                if existing.is_empty() {
-                    let presets = service.get_builtin_presets();
-                    for preset in presets {
-                        let _ = service.save(preset);
-                    }
+            let presets = service.get_builtin_presets();
+            for preset in presets {
+                if service.get_by_id(&preset.id).ok().flatten().is_none() {
+                    let _ = service.save(preset);
                 }
             }
 

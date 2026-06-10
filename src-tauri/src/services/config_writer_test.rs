@@ -129,4 +129,113 @@ mod tests {
         let writer = ConfigWriter::new(&db);
         assert!(writer.write_settings_json().is_ok());
     }
+
+    #[test]
+    fn test_write_models_yaml_with_models() {
+        let db = create_test_db();
+        let service = ProviderService::new(&db);
+        let mut provider = sample_provider("step-plan");
+        provider.api_type = Some("openai-completions".to_string());
+        provider.base_url = Some("https://api.stepfun.com/step_plan/v1".to_string());
+        provider.auth = Some("apiKey".to_string());
+        provider.models = Some(vec![
+            crate::models::provider::ModelDefinition {
+                id: "step-3.7-flash".to_string(),
+                name: "Step 3.7 Flash".to_string(),
+                api_type: Some("openai-completions".to_string()),
+                reasoning: false,
+                input_types: vec!["text".to_string()],
+                cost: crate::models::provider::ModelCost {
+                    input: 0.0,
+                    output: 0.0,
+                    cache_read: 0.0,
+                    cache_write: 0.0,
+                },
+                context_window: 128000,
+                max_tokens: 4096,
+                headers: None,
+                compat: None,
+                default_temperature: None,
+                default_top_p: None,
+                default_presence_penalty: None,
+                default_frequency_penalty: None,
+                default_seed: None,
+            },
+        ]);
+        service.save(provider).unwrap();
+
+        // Verify DAO round-trip preserves api_type and models
+        let dao = crate::database::provider_dao::ProviderDao::new(&db);
+        let retrieved = dao.get_by_id("step-plan").unwrap().unwrap();
+        assert_eq!(retrieved.api_type, Some("openai-completions".to_string()));
+        assert!(retrieved.models.is_some());
+        let models = retrieved.models.unwrap();
+        assert_eq!(models.len(), 1);
+        assert_eq!(models[0].id, "step-3.7-flash");
+        assert_eq!(models[0].api_type, Some("openai-completions".to_string()));
+        assert_eq!(models[0].input_types, vec!["text"]);
+
+        // Verify YAML includes models
+        let writer = ConfigWriter::new(&db);
+        writer.write_models_yaml().unwrap();
+        let yaml_path = crate::utils::fs::get_models_yaml_path();
+        let content = std::fs::read_to_string(&yaml_path).unwrap();
+        assert!(content.contains("step-plan"));
+        assert!(content.contains("models"));
+        assert!(content.contains("step-3.7-flash"));
+        assert!(content.contains("Step 3.7 Flash"));
+        assert!(content.contains("contextWindow"));
+        assert!(content.contains("maxTokens"));
+    }
+
+    #[test]
+    fn test_provider_alias_api_field() {
+        let db = create_test_db();
+        let dao = crate::database::provider_dao::ProviderDao::new(&db);
+
+        // Simulate frontend payload using "api" instead of "apiType"
+        let json = r#"{
+            "id":"alias-test",
+            "name":"Alias Test",
+            "enabled":true,
+            "isBuiltIn":false,
+            "api":"openai-completions",
+            "baseUrl":"https://api.test.com"
+        }"#;
+        let config: crate::models::provider::ProviderConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(config.api_type, Some("openai-completions".to_string()));
+        dao.create(&config).unwrap();
+        let retrieved = dao.get_by_id("alias-test").unwrap().unwrap();
+        assert_eq!(retrieved.api_type, Some("openai-completions".to_string()));
+    }
+
+    #[test]
+    fn test_model_alias_input_field() {
+        let db = create_test_db();
+        let dao = crate::database::provider_dao::ProviderDao::new(&db);
+
+        // Simulate frontend payload using "input" instead of "inputTypes"
+        let json = r#"{
+            "id":"model-alias-test",
+            "name":"Model Alias Test",
+            "enabled":true,
+            "isBuiltIn":false,
+            "api":"openai-completions"
+        }"#;
+        let provider: crate::models::provider::ProviderConfig = serde_json::from_str(json).unwrap();
+        dao.create(&provider).unwrap();
+
+        let model_json = r#"{
+            "id":"test-model",
+            "name":"Test Model",
+            "api":"openai-completions",
+            "reasoning":false,
+            "input":["text","image"],
+            "cost":{"input":0.0,"output":0.0,"cacheRead":0.0,"cacheWrite":0.0},
+            "contextWindow":128000,
+            "maxTokens":4096
+        }"#;
+        let model: crate::models::provider::ModelDefinition = serde_json::from_str(model_json).unwrap();
+        assert_eq!(model.input_types, vec!["text", "image"]);
+    }
 }

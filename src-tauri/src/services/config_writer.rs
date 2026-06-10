@@ -56,6 +56,52 @@ impl<'a> ConfigWriter<'a> {
             if let Some(discovery) = p.discovery {
                 config.insert("discovery".to_string(), serde_json::to_value(discovery).unwrap());
             }
+            if let Some(models) = p.models {
+                let model_values: Vec<serde_json::Value> = models.into_iter().map(|m| {
+                    let mut mc = serde_json::Map::new();
+                    mc.insert("id".to_string(), serde_json::Value::String(m.id));
+                    mc.insert("name".to_string(), serde_json::Value::String(m.name));
+                    if let Some(api) = m.api_type {
+                        mc.insert("api".to_string(), serde_json::Value::String(api));
+                    }
+                    mc.insert("reasoning".to_string(), serde_json::Value::Bool(m.reasoning));
+                    mc.insert("input".to_string(), serde_json::to_value(m.input_types).unwrap());
+                    mc.insert("cost".to_string(), serde_json::to_value(m.cost).unwrap());
+                    mc.insert("contextWindow".to_string(), serde_json::Value::Number(m.context_window.into()));
+                    mc.insert("maxTokens".to_string(), serde_json::Value::Number(m.max_tokens.into()));
+                    if let Some(headers) = m.headers {
+                        mc.insert("headers".to_string(), serde_json::to_value(headers).unwrap());
+                    }
+                    if let Some(compat) = m.compat {
+                        mc.insert("compat".to_string(), serde_json::to_value(compat).unwrap());
+                    }
+                    if let Some(v) = m.default_temperature {
+                        if let Some(n) = serde_json::Number::from_f64(v) {
+                            mc.insert("defaultTemperature".to_string(), serde_json::Value::Number(n));
+                        }
+                    }
+                    if let Some(v) = m.default_top_p {
+                        if let Some(n) = serde_json::Number::from_f64(v) {
+                            mc.insert("defaultTopP".to_string(), serde_json::Value::Number(n));
+                        }
+                    }
+                    if let Some(v) = m.default_presence_penalty {
+                        if let Some(n) = serde_json::Number::from_f64(v) {
+                            mc.insert("defaultPresencePenalty".to_string(), serde_json::Value::Number(n));
+                        }
+                    }
+                    if let Some(v) = m.default_frequency_penalty {
+                        if let Some(n) = serde_json::Number::from_f64(v) {
+                            mc.insert("defaultFrequencyPenalty".to_string(), serde_json::Value::Number(n));
+                        }
+                    }
+                    if let Some(v) = m.default_seed {
+                        mc.insert("defaultSeed".to_string(), serde_json::Value::Number(v.into()));
+                    }
+                    serde_json::Value::Object(mc)
+                }).collect();
+                config.insert("models".to_string(), serde_json::Value::Array(model_values));
+            }
             providers_map.insert(p.id, serde_json::Value::Object(config));
         }
 

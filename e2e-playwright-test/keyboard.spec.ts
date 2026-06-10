@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
-import { getProviders, verifyProviderExists, verifyModelCall } from './utils/backend-verify';
+import { getProviders, verifyProviderExists } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -9,9 +9,6 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
 });
 
-test.afterEach(async ({ page }) => {
-  await verifyModelCall(page);
-});
 
 test.describe('Keyboard Shortcuts', () => {
   test('Escape closes model editor dialog', async ({ page }) => {

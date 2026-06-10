@@ -10,6 +10,7 @@ pub struct ProviderConfig {
     pub is_built_in: bool,
     pub base_url: Option<String>,
     pub api_key: Option<String>,
+    #[serde(alias = "api")]
     pub api_type: Option<String>,
     pub headers: Option<HashMap<String, String>>,
     pub auth_header: Option<bool>,
@@ -32,8 +33,10 @@ pub struct DiscoveryConfig {
 pub struct ModelDefinition {
     pub id: String,
     pub name: String,
+    #[serde(alias = "api")]
     pub api_type: Option<String>,
     pub reasoning: bool,
+    #[serde(alias = "input")]
     pub input_types: Vec<String>,
     pub cost: ModelCost,
     pub context_window: i64,
