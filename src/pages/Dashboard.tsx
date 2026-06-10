@@ -232,7 +232,8 @@ export default function Dashboard() {
                         return;
                       }
                       try {
-                        await setActiveProvider(provider.id);
+                        const firstModelId = provider.models?.[0]?.id;
+                        await setActiveProvider(provider.id, firstModelId);
                         toast.show("已设为默认 Provider", "success");
                       } catch {
                         toast.show("设置失败", "error");

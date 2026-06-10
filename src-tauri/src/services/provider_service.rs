@@ -58,12 +58,15 @@ impl<'a> ProviderService<'a> {
         if provider.is_none() {
             return Err(format!("Provider '{}' 不存在", provider_id));
         }
+        let provider = provider.unwrap();
 
         let settings_dao = crate::database::settings_dao::SettingsDao::new(self.db);
         let mut settings = settings_dao.get().map_err(|e| e.to_string())?.unwrap_or_default();
 
         settings.default_provider = Some(provider_id.to_string());
-        settings.default_model = model_id.map(|s| s.to_string());
+        settings.default_model = model_id.map(|s| s.to_string()).or_else(|| {
+            provider.models.as_ref().and_then(|models| models.first().map(|m| m.id.clone()))
+        });
 
         settings_dao.update(&settings).map_err(|e| e.to_string())?;
 
