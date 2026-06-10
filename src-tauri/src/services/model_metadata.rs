@@ -2,6 +2,12 @@ use crate::models::provider::{DiscoveryConfig, ModelCost, ModelDefinition, Provi
 use std::collections::BTreeMap;
 use std::process::Command;
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 pub fn step_plan_provider() -> ProviderConfig {
     ProviderConfig {
         id: "step-plan".to_string(),
@@ -40,18 +46,20 @@ pub fn step_plan_provider() -> ProviderConfig {
 
 pub fn default_builtin_providers() -> Vec<ProviderConfig> {
     vec![
-        ProviderConfig { id: "openai".to_string(), name: "OpenAI".to_string(), enabled: true, is_built_in: true, base_url: Some("https://api.openai.com/v1".to_string()), api_key: None, api_type: Some("openai-completions".to_string()), headers: None, auth_header: None, auth: Some("apiKey".to_string()), discovery: None, model_overrides: None, models: None, created_at: None, updated_at: None },
-        ProviderConfig { id: "anthropic".to_string(), name: "Anthropic".to_string(), enabled: true, is_built_in: true, base_url: Some("https://api.anthropic.com".to_string()), api_key: None, api_type: Some("anthropic-messages".to_string()), headers: None, auth_header: None, auth: Some("apiKey".to_string()), discovery: None, model_overrides: None, models: None, created_at: None, updated_at: None },
-        ProviderConfig { id: "google".to_string(), name: "Google".to_string(), enabled: true, is_built_in: true, base_url: Some("https://generativelanguage.googleapis.com".to_string()), api_key: None, api_type: Some("google-generative-ai".to_string()), headers: None, auth_header: None, auth: Some("apiKey".to_string()), discovery: None, model_overrides: None, models: None, created_at: None, updated_at: None },
+        ProviderConfig { id: "github-copilot".to_string(), name: "GitHub Copilot".to_string(), enabled: true, is_built_in: true, base_url: None, api_key: None, api_type: Some("openai-completions".to_string()), headers: None, auth_header: None, auth: Some("apiKey".to_string()), discovery: None, model_overrides: None, models: None, created_at: None, updated_at: None },
         ProviderConfig { id: "ollama".to_string(), name: "Ollama".to_string(), enabled: true, is_built_in: true, base_url: Some("http://localhost:11434".to_string()), api_key: None, api_type: Some("openai-completions".to_string()), headers: None, auth_header: None, auth: Some("none".to_string()), discovery: Some(DiscoveryConfig { discovery_type: "ollama".to_string() }), model_overrides: None, models: None, created_at: None, updated_at: None },
-        ProviderConfig { id: "lmstudio".to_string(), name: "LM Studio".to_string(), enabled: true, is_built_in: true, base_url: Some("http://localhost:1234/v1".to_string()), api_key: None, api_type: Some("openai-completions".to_string()), headers: None, auth_header: None, auth: Some("none".to_string()), discovery: Some(DiscoveryConfig { discovery_type: "lmstudio".to_string() }), model_overrides: None, models: None, created_at: None, updated_at: None },
+        ProviderConfig { id: "lm-studio".to_string(), name: "LM Studio".to_string(), enabled: true, is_built_in: true, base_url: Some("http://localhost:1234/v1".to_string()), api_key: None, api_type: Some("openai-completions".to_string()), headers: None, auth_header: None, auth: Some("none".to_string()), discovery: Some(DiscoveryConfig { discovery_type: "lmstudio".to_string() }), model_overrides: None, models: None, created_at: None, updated_at: None },
         ProviderConfig { id: "llama-cpp".to_string(), name: "Llama CPP".to_string(), enabled: true, is_built_in: true, base_url: Some("http://localhost:8080/v1".to_string()), api_key: None, api_type: Some("openai-completions".to_string()), headers: None, auth_header: None, auth: Some("none".to_string()), discovery: None, model_overrides: None, models: None, created_at: None, updated_at: None },
         step_plan_provider(),
     ]
 }
 
 pub fn load_omp_provider_models() -> Vec<ProviderConfig> {
-    let output = Command::new("omp").arg("--list-models").output();
+    let mut command = Command::new("omp");
+    command.arg("--list-models");
+    #[cfg(windows)]
+    command.creation_flags(CREATE_NO_WINDOW);
+    let output = command.output();
     let Ok(output) = output else { return vec![]; };
     if !output.status.success() { return vec![]; }
     parse_omp_list_models(&String::from_utf8_lossy(&output.stdout))

@@ -32,7 +32,7 @@ test.describe('UI States - Empty', () => {
   });
 
   test('version is displayed in sidebar', async ({ page }) => {
-    await expect(page.getByText('v0.1.2')).toBeVisible();
+    await expect(page.getByText('v0.1.3')).toBeVisible();
   });
 
   test('export button is visible', async ({ page }) => {
@@ -138,7 +138,7 @@ test.describe('UI States - Cards', () => {
   test('expand model list button', async ({ page }) => {
     const stepPlanCard = page.getByTestId('provider-card-step-plan');
     await stepPlanCard.getByRole('button', { name: /个模型/ }).click();
-    await expect(stepPlanCard.getByText('Step 3.7 Flash')).toBeVisible();
+    await expect(stepPlanCard.getByText('step-3.7-flash', { exact: true })).toBeVisible();
   });
 
   test('collapse model list', async ({ page }) => {
@@ -146,7 +146,7 @@ test.describe('UI States - Cards', () => {
     const btn = stepPlanCard.getByRole('button', { name: /个模型/ });
     await btn.click();
     await btn.click();
-    await expect(stepPlanCard.getByText('Step 3.7 Flash')).not.toBeVisible();
+    await expect(stepPlanCard.getByText('step-3.7-flash', { exact: true })).not.toBeVisible();
   });
 
   test('provider card hover state', async ({ page }) => {

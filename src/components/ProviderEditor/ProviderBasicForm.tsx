@@ -66,6 +66,8 @@ export default function ProviderBasicForm({ form, isEdit, onChange, presets, sel
           onChange={(e) => update("id", e.target.value)}
           className="w-full px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:bg-muted disabled:cursor-not-allowed transition-colors"
           placeholder="openai"
+          pattern="[A-Za-z0-9-]+"
+          title="只能包含字母、数字和横线"
           required
           disabled={isEdit}
           data-testid="provider-id-input"
@@ -78,7 +80,7 @@ export default function ProviderBasicForm({ form, isEdit, onChange, presets, sel
           value={form.name}
           onChange={(e) => update("name", e.target.value)}
           className="w-full px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
-          placeholder="OpenAI"
+          placeholder="默认同步供应商 ID"
           required
           data-testid="provider-name-input"
         />

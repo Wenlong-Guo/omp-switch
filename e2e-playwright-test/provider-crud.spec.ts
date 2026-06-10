@@ -16,7 +16,7 @@ test.describe('ProviderEditor', () => {
     await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
 
     await page.locator('input[placeholder="openai"]').fill('test-provider');
-    await page.locator('input[placeholder="OpenAI"]').fill('Test Provider');
+    await page.getByTestId('provider-name-input').fill('Test Provider');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.locator('input[placeholder="https://api.openai.com/v1"]').fill('https://api.test.com/v1');
     await page.locator('input[type="password"]').fill('test-api-key-123');
@@ -40,7 +40,7 @@ test.describe('ProviderEditor', () => {
     await expect(page.locator('input[placeholder="openai"]')).toBeDisabled();
     await page.waitForFunction(() => (document.querySelector('input[placeholder="openai"]') as HTMLInputElement)?.value === 'openai');
 
-    await page.locator('input[placeholder="OpenAI"]').fill('OpenAI Updated');
+    await page.getByTestId('provider-name-input').fill('OpenAI Updated');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
 

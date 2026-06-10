@@ -4,6 +4,8 @@ use crate::models::provider::ProviderConfig;
 pub enum ValidationError {
     #[error("Provider ID 不能为空")]
     EmptyId,
+    #[error("供应商 ID 只能包含字母、数字和横线")]
+    InvalidId,
     #[error("Provider 名称不能为空")]
     EmptyName,
     #[error("无效的 API 类型: {0}")]
@@ -29,6 +31,9 @@ const VALID_API_TYPES: &[&str] = &[
 pub fn validate_provider(config: &ProviderConfig) -> Result<(), ValidationError> {
     if config.id.trim().is_empty() {
         return Err(ValidationError::EmptyId);
+    }
+    if !config.id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
+        return Err(ValidationError::InvalidId);
     }
     if config.name.trim().is_empty() {
         return Err(ValidationError::EmptyName);

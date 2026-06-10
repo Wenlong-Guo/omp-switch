@@ -9,6 +9,8 @@ import ProviderBasicForm from "@/components/ProviderEditor/ProviderBasicForm";
 import ModelList from "@/components/ProviderEditor/ModelList";
 import ModelEditorDialog from "@/components/ProviderEditor/ModelEditorDialog";
 
+const PROVIDER_ID_PATTERN = /^[A-Za-z0-9-]+$/;
+
 export default function ProviderEditor() {
   const { saveProvider, providers, fetchProviders, builtinPresets, fetchBuiltinPresets } = useProviderStore();
   const toast = useToastStore();
@@ -22,6 +24,8 @@ export default function ProviderEditor() {
     name: "",
     enabled: true,
     isBuiltIn: false,
+    api: "openai-completions",
+    auth: "apiKey",
     models: [],
   });
   const [editingModelIdx, setEditingModelIdx] = useState<number | "new" | null>(null);
@@ -31,6 +35,7 @@ export default function ProviderEditor() {
   const [selectedPresetId, setSelectedPresetId] = useState<string>("");
   const [selectedModelId, setSelectedModelId] = useState<string>("");
   const [modelAlias, setModelAlias] = useState<string>("");
+  const [nameTouched, setNameTouched] = useState(false);
 
   useEffect(() => {
     if (isEdit) {
@@ -47,9 +52,50 @@ export default function ProviderEditor() {
 
   const validateForm = (): string | null => {
     if (!form.id.trim()) return "供应商 ID 不能为空";
+    if (!PROVIDER_ID_PATTERN.test(form.id.trim())) return "供应商 ID 只能包含字母、数字和横线";
     if (!form.name.trim()) return "显示名称不能为空";
     if (!form.api) return "请选择接口格式";
     return null;
+  };
+
+  const handleFormChange = (next: ProviderConfig) => {
+    const idChanged = next.id !== form.id;
+    const nameChanged = next.name !== form.name;
+    const touched = nameTouched || (nameChanged && !idChanged);
+    setNameTouched(touched);
+    setForm({
+      ...next,
+      name: idChanged && !touched ? next.id : next.name,
+    });
+  };
+
+  const applyPreset = (presetId: string) => {
+    setSelectedPresetId(presetId);
+    setSelectedModelId("");
+    setModelAlias("");
+
+    if (!presetId) return;
+
+    if (presetId === "openai-compatible") {
+      setForm({ ...form, api: "openai-completions" });
+      return;
+    }
+
+    const preset = builtinPresets.find((p) => p.id === presetId);
+    if (!preset) return;
+
+    const replacePresetIdentity = !form.id || form.id === selectedPresetId;
+    const nextId = replacePresetIdentity ? preset.id : form.id;
+    setForm({
+      ...form,
+      id: nextId,
+      name: replacePresetIdentity ? (preset.name || nextId) : (nameTouched && form.name ? form.name : form.name || nextId),
+      api: preset.api ?? "openai-completions",
+      baseUrl: form.baseUrl || preset.baseUrl,
+      auth: preset.auth ?? form.auth,
+      apiKey: form.apiKey,
+      models: form.models && form.models.length > 0 ? form.models : (preset.models ? [...preset.models] : form.models),
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,38 +172,19 @@ export default function ProviderEditor() {
 
       {error && <div className="mb-4 p-3 bg-red-900/30 text-red-400 rounded-md border border-red-800 flex items-center gap-2 text-sm"><span className="font-medium">错误:</span> {error}</div>}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {/* Preset selector for add mode */}
         {!isEdit && (
           <div>
             <label className="block text-sm font-medium mb-1">选择预设</label>
             <select
               value={selectedPresetId}
-              onChange={(e) => {
-                const presetId = e.target.value;
-                setSelectedPresetId(presetId);
-                setSelectedModelId("");
-                setModelAlias("");
-                const preset = builtinPresets.find((p) => p.id === presetId);
-                if (preset) {
-                  setForm({
-                    ...form,
-                    id: preset.id,
-                    name: preset.name,
-                    api: preset.api,
-                    baseUrl: preset.baseUrl,
-                    auth: preset.auth,
-                    apiKey: undefined,
-                    models: preset.models ? [...preset.models] : [],
-                  });
-                } else {
-                  setForm({ id: "", name: "", enabled: true, isBuiltIn: false, models: [] });
-                }
-              }}
+              onChange={(e) => applyPreset(e.target.value)}
               data-testid="preset-select"
-              className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-3 py-2 border rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">手动配置</option>
+              <option value="openai-compatible">OpenAI 兼容接口格式</option>
               {builtinPresets.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
@@ -168,7 +195,7 @@ export default function ProviderEditor() {
         <ProviderBasicForm
           form={form}
           isEdit={isEdit}
-          onChange={setForm}
+          onChange={handleFormChange}
         />
 
         {/* Model selection for add mode when preset has models */}
@@ -187,7 +214,7 @@ export default function ProviderEditor() {
                   }
                 }}
                 data-testid="model-select"
-                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full px-3 py-2 border rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">请选择模型</option>
                 {form.models.map((m) => (

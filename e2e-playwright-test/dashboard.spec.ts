@@ -54,7 +54,7 @@ test.describe('Dashboard', () => {
   test('expand model list shows models', async ({ page }) => {
     const stepPlanCard = page.getByTestId('provider-card-step-plan');
     await stepPlanCard.getByRole('button', { name: /个模型/ }).click();
-    await expect(stepPlanCard.getByText('Step 3.7 Flash')).toBeVisible();
+    await expect(stepPlanCard.getByText('step-3.7-flash', { exact: true })).toBeVisible();
   });
 
   test('provider without model cannot set default', async ({ page }) => {

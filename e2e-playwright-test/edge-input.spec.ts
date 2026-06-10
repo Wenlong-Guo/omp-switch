@@ -63,15 +63,14 @@ test.describe('Edge Input', () => {
     expect(model.name).toBe('GPT-4 🚀');
   });
 
-  test('special chars in provider id', async ({ page }) => {
+  test('special chars in provider id are rejected', async ({ page }) => {
     await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('test_123-special');
     await page.getByTestId('provider-name-input').fill('Special Chars');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
 
-    await expect(page.getByText('保存成功')).toBeVisible();
-    await verifyProviderExists(page, 'test_123-special');
+    await expect(page.getByText('供应商 ID 只能包含字母、数字和横线')).toBeVisible();
   });
 
   test('empty model id rejected', async ({ page }) => {

@@ -74,7 +74,7 @@ test.describe('API Smoke', () => {
 
   test('backend version matches UI', async ({ page }) => {
     const version = await invokeBackend(page, 'get_version');
-    expect(version).toBe('0.1.2');
-    await expect(page.getByText('v0.1.2')).toBeVisible();
+    expect(version).toBe('0.1.3');
+    await expect(page.getByText('v0.1.3')).toBeVisible();
   });
 });

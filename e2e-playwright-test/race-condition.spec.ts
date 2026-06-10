@@ -65,7 +65,7 @@ test.describe('Race Condition', () => {
     await btn.click();
     await btn.click();
 
-    await expect(stepPlanCard.getByText('Step 3.7 Flash')).toBeVisible();
+    await expect(stepPlanCard.getByText('step-3.7-flash', { exact: true })).toBeVisible();
   });
 
   test('rapid set default multiple providers', async ({ page }) => {

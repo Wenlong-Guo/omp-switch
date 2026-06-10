@@ -20,7 +20,7 @@ test.describe('Preset Model Selection', () => {
 
     // Verify preset info auto-filled
     await expect(page.locator('input[placeholder="openai"]')).toHaveValue('step-plan');
-    await expect(page.locator('input[placeholder="OpenAI"]')).toHaveValue('StepFun (Step Plan)');
+    await expect(page.getByTestId('provider-name-input')).toHaveValue('StepFun (Step Plan)');
 
     // Select model from dropdown
     await page.getByTestId('model-select').selectOption('step-3.7-flash');
@@ -74,21 +74,35 @@ test.describe('Preset Model Selection', () => {
     await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('preset-select').selectOption('openai');
     await expect(page.locator('input[placeholder="openai"]')).toHaveValue('openai');
-    await expect(page.locator('input[placeholder="OpenAI"]')).toHaveValue('OpenAI');
+    await expect(page.getByTestId('provider-name-input')).toHaveValue('OpenAI');
 
     // Switch to step-plan
     await page.getByTestId('preset-select').selectOption('step-plan');
     await expect(page.locator('input[placeholder="openai"]')).toHaveValue('step-plan');
-    await expect(page.locator('input[placeholder="OpenAI"]')).toHaveValue('StepFun (Step Plan)');
+    await expect(page.getByTestId('provider-name-input')).toHaveValue('StepFun (Step Plan)');
   });
 
-  test('manual config clears form', async ({ page }) => {
+  test('manual config preserves filled form', async ({ page }) => {
     await page.getByRole('button', { name: '添加供应商' }).click();
+    await page.getByTestId('provider-id-input').fill('keep-provider');
+    await page.getByTestId('provider-name-input').fill('Keep Provider');
+    await page.locator('input[placeholder="https://api.openai.com/v1"]').fill('https://keep.example.com/v1');
     await page.getByTestId('preset-select').selectOption('openai');
-    await expect(page.locator('input[placeholder="openai"]')).toHaveValue('openai');
 
     await page.getByTestId('preset-select').selectOption('');
-    await expect(page.locator('input[placeholder="openai"]')).toHaveValue('');
+    await expect(page.getByTestId('provider-id-input')).toHaveValue('keep-provider');
+    await expect(page.getByTestId('provider-name-input')).toHaveValue('Keep Provider');
+    await expect(page.locator('input[placeholder="https://api.openai.com/v1"]')).toHaveValue('https://keep.example.com/v1');
+  });
+
+  test('openai compatible preset only changes interface format', async ({ page }) => {
+    await page.getByRole('button', { name: '添加供应商' }).click();
+    await page.getByTestId('provider-id-input').fill('compatible-test');
+    await page.getByTestId('provider-name-input').fill('Compatible Test');
+    await page.getByTestId('preset-select').selectOption('openai-compatible');
+    await expect(page.getByTestId('provider-id-input')).toHaveValue('compatible-test');
+    await expect(page.getByTestId('provider-name-input')).toHaveValue('Compatible Test');
+    await expect(page.getByTestId('provider-api-select')).toHaveValue('openai-completions');
   });
 
   test('preset with multiple models', async ({ page }) => {

@@ -145,27 +145,27 @@ mod tests {
     }
 
     #[test]
-    fn test_builtin_presets_contain_openai() {
+    fn test_builtin_presets_contain_github_copilot() {
         let db = create_test_db();
         let service = ProviderService::new(&db);
         let presets = service.get_builtin_presets();
-        assert!(presets.iter().any(|p| p.id == "openai"));
+        assert!(presets.iter().any(|p| p.id == "github-copilot"));
     }
 
     #[test]
-    fn test_builtin_presets_contain_anthropic() {
+    fn test_builtin_presets_contain_step_plan() {
         let db = create_test_db();
         let service = ProviderService::new(&db);
         let presets = service.get_builtin_presets();
-        assert!(presets.iter().any(|p| p.id == "anthropic"));
+        assert!(presets.iter().any(|p| p.id == "step-plan"));
     }
 
     #[test]
-    fn test_builtin_presets_contain_google() {
+    fn test_builtin_presets_contain_lm_studio() {
         let db = create_test_db();
         let service = ProviderService::new(&db);
         let presets = service.get_builtin_presets();
-        assert!(presets.iter().any(|p| p.id == "google"));
+        assert!(presets.iter().any(|p| p.id == "lm-studio"));
     }
 
     #[test]

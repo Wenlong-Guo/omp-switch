@@ -77,16 +77,30 @@ impl<'a> ProviderService<'a> {
     }
 
     pub fn get_builtin_presets(&self) -> Vec<ProviderConfig> {
-        let mut presets = crate::services::model_metadata::default_builtin_providers();
-        for provider in crate::services::model_metadata::load_omp_provider_models() {
+        let mut presets = crate::services::model_metadata::load_omp_provider_models();
+        for provider in crate::services::model_metadata::default_builtin_providers() {
             if let Some(existing) = presets.iter_mut().find(|p| p.id == provider.id) {
-                if provider.models.is_some() {
-                    existing.models = provider.models;
+                if existing.base_url.is_none() {
+                    existing.base_url = provider.base_url;
+                }
+                if existing.auth.is_none() {
+                    existing.auth = provider.auth;
                 }
             } else {
                 presets.push(provider);
             }
         }
         presets
+    }
+
+    pub fn prune_deprecated_builtin_presets(&self) {
+        let deprecated = ["openai", "anthropic", "google", "lmstudio"];
+        for id in deprecated {
+            if let Ok(Some(provider)) = self.get_by_id(id) {
+                if provider.is_built_in {
+                    let _ = self.delete(id);
+                }
+            }
+        }
     }
 }

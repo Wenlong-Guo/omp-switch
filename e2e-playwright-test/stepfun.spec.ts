@@ -32,7 +32,7 @@ test.describe('StepFun Provider', () => {
     await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
 
     await page.locator('input[placeholder="openai"]').fill('step-plan-test');
-    await page.locator('input[placeholder="OpenAI"]').fill('StepFun Test');
+    await page.getByTestId('provider-name-input').fill('StepFun Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.locator('input[placeholder="https://api.openai.com/v1"]').fill('https://api.stepfun.com/step_plan/v1');
     await page.locator('input[type="password"]').fill('2VpngWbeoYJAnD2JXy4RGRNh9if9Vv6xqxpRomhbLOLVBIQDzqTecYmlPNUp3PtwU');
@@ -71,7 +71,7 @@ test.describe('StepFun Provider', () => {
     await expect(page.getByTestId('provider-api-select')).toHaveValue('openai-completions');
 
     // Model list should render with context/maxTokens info
-    await expect(page.getByText('Step 3.7 Flash')).toBeVisible();
+    await expect(page.getByText('step-3.7-flash', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('128,000 ctx')).toBeVisible();
 
     // Backend verify: model data intact

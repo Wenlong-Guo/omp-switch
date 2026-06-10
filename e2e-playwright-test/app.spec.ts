@@ -12,11 +12,11 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('App', () => {
   test('dynamic version display', async ({ page }) => {
-    await expect(page.getByText('v0.1.2')).toBeVisible();
+    await expect(page.getByText('v0.1.3')).toBeVisible();
 
     // Backend verify: version matches backend
     const version = await invokeBackend(page, 'get_version');
-    expect(version).toBe('0.1.2');
+    expect(version).toBe('0.1.3');
   });
 
   test('sidebar navigation to settings and back', async ({ page }) => {

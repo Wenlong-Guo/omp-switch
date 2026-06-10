@@ -105,24 +105,22 @@ test.describe('Provider Advanced - Add', () => {
     await verifyProviderExists(page, 'my-provider-123');
   });
 
-  test('add provider with underscore id', async ({ page }) => {
+  test('reject provider with underscore id', async ({ page }) => {
     await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('my_provider_123');
     await page.getByTestId('provider-name-input').fill('Underscore ID');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
-    await expect(page.getByText('保存成功')).toBeVisible();
-    await verifyProviderExists(page, 'my_provider_123');
+    await expect(page.getByText('供应商 ID 只能包含字母、数字和横线')).toBeVisible();
   });
 
-  test('add provider with dot id', async ({ page }) => {
+  test('reject provider with dot id', async ({ page }) => {
     await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('my.provider.123');
     await page.getByTestId('provider-name-input').fill('Dot ID');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
-    await expect(page.getByText('保存成功')).toBeVisible();
-    await verifyProviderExists(page, 'my.provider.123');
+    await expect(page.getByText('供应商 ID 只能包含字母、数字和横线')).toBeVisible();
   });
 
   test('add provider with all uppercase id', async ({ page }) => {

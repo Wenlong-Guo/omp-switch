@@ -1,6 +1,10 @@
 const mockProviders = [
   { id: 'openai', name: 'OpenAI', api: 'openai-completions', baseUrl: 'https://api.openai.com/v1', enabled: true, isBuiltIn: true },
   { id: 'anthropic', name: 'Anthropic', api: 'anthropic-messages', baseUrl: 'https://api.anthropic.com', enabled: true, isBuiltIn: true },
+  { id: 'github-copilot', name: 'GitHub Copilot', api: 'openai-completions', enabled: true, isBuiltIn: true },
+  { id: 'llama-cpp', name: 'Llama CPP', api: 'openai-completions', baseUrl: 'http://localhost:8080/v1', enabled: true, isBuiltIn: true, auth: 'none' },
+  { id: 'lm-studio', name: 'LM Studio', api: 'openai-completions', baseUrl: 'http://localhost:1234/v1', enabled: true, isBuiltIn: true, auth: 'none' },
+  { id: 'ollama', name: 'Ollama', api: 'openai-completions', baseUrl: 'http://localhost:11434', enabled: true, isBuiltIn: true, auth: 'none' },
   {
     id: 'step-plan',
     name: 'StepFun (Step Plan)',
@@ -12,10 +16,10 @@ const mockProviders = [
     models: [
       {
         id: 'step-3.7-flash',
-        name: 'Step 3.7 Flash',
+        name: 'step-3.7-flash',
         api: 'openai-completions',
-        reasoning: false,
-        input: ['text'],
+        reasoning: true,
+        input: ['text', 'image'],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
         contextWindow: 128000,
         maxTokens: 4096,
@@ -27,6 +31,10 @@ const mockProviders = [
 const builtinPresets = [
   { id: 'openai', name: 'OpenAI', api: 'openai-completions', baseUrl: 'https://api.openai.com/v1', enabled: true, isBuiltIn: true, auth: 'apiKey' },
   { id: 'anthropic', name: 'Anthropic', api: 'anthropic-messages', baseUrl: 'https://api.anthropic.com', enabled: true, isBuiltIn: true, auth: 'apiKey' },
+  { id: 'github-copilot', name: 'GitHub Copilot', api: 'openai-completions', enabled: true, isBuiltIn: true, auth: 'apiKey' },
+  { id: 'llama-cpp', name: 'Llama CPP', api: 'openai-completions', baseUrl: 'http://localhost:8080/v1', enabled: true, isBuiltIn: true, auth: 'none' },
+  { id: 'lm-studio', name: 'LM Studio', api: 'openai-completions', baseUrl: 'http://localhost:1234/v1', enabled: true, isBuiltIn: true, auth: 'none' },
+  { id: 'ollama', name: 'Ollama', api: 'openai-completions', baseUrl: 'http://localhost:11434', enabled: true, isBuiltIn: true, auth: 'none' },
   {
     id: 'step-plan',
     name: 'StepFun (Step Plan)',
@@ -36,7 +44,7 @@ const builtinPresets = [
     isBuiltIn: true,
     auth: 'apiKey',
     models: [
-      { id: 'step-3.7-flash', name: 'Step 3.7 Flash', api: 'openai-completions', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 4096 },
+      { id: 'step-3.7-flash', name: 'step-3.7-flash', api: 'openai-completions', reasoning: true, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 4096 },
       { id: 'step-4.0', name: 'Step 4.0', api: 'openai-completions', reasoning: true, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 256000, maxTokens: 8192 },
     ],
   },
@@ -125,10 +133,10 @@ function buildInitScript(apiKey: string) {
             saveState(st);
             return;
           case 'get_version':
-            return '0.1.2';
+            return '0.1.3';
           case 'plugin:app|version':
           case 'plugin:app|version|none':
-            return '0.1.2';
+            return '0.1.3';
           case 'chat_completion':
             var messages = args.messages;
             var apiKey = '${apiKey.replace(/'/g, "\\'")}';

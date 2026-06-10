@@ -64,20 +64,21 @@ test.describe('Error Boundary', () => {
     expect(emptyIdProvider).toBeFalsy();
   });
 
-  test('save provider without api type shows validation error', async ({ page }) => {
+  test('save provider uses default openai compatible api type', async ({ page }) => {
     await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('no-api');
     await page.getByTestId('provider-name-input').fill('No API');
     await page.getByTestId('save-provider-btn').click();
 
-    await expect(page.getByText('请选择接口格式')).toBeVisible();
+    await expect(page.getByText('保存成功')).toBeVisible();
 
-    // Backend verify: provider not saved without api type
+    // Backend verify: provider saved with default OpenAI-compatible api type
     const providers = await page.evaluate(async () => {
       const internals = (window as any).__TAURI_INTERNALS__;
       return await internals.invoke('get_providers');
     });
-    expect(providers.some((p: any) => p.id === 'no-api')).toBe(false);
+    const saved = providers.find((p: any) => p.id === 'no-api');
+    expect(saved?.api).toBe('openai-completions');
   });
 
   test('duplicate provider id on add', async ({ page }) => {
@@ -108,20 +109,14 @@ test.describe('Error Boundary', () => {
     expect(allProviders.some((p: any) => p.id === longId)).toBe(true);
   });
 
-  test('provider id with special chars', async ({ page }) => {
+  test('provider id with special chars is rejected', async ({ page }) => {
     await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('test-123_abc');
     await page.getByTestId('provider-name-input').fill('Special ID');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
 
-    await expect(page.getByText('保存成功')).toBeVisible();
-
-    const allProviders = await page.evaluate(async () => {
-      const internals = (window as any).__TAURI_INTERNALS__;
-      return await internals.invoke('get_providers');
-    });
-    expect(allProviders.some((p: any) => p.id === 'test-123_abc')).toBe(true);
+    await expect(page.getByText('供应商 ID 只能包含字母、数字和横线')).toBeVisible();
   });
 
   test('model without id rejected', async ({ page }) => {

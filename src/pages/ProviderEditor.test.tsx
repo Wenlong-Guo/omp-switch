@@ -28,7 +28,7 @@ describe("ProviderEditor", () => {
 
   it("has name input field", () => {
     render(<ProviderEditor />);
-    expect(screen.getByPlaceholderText("OpenAI")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("默认同步供应商 ID")).toBeInTheDocument();
   });
 
   it("has api type select", () => {
@@ -60,7 +60,7 @@ describe("ProviderEditor", () => {
   it("submits form with data", () => {
     render(<ProviderEditor />);
     fireEvent.change(screen.getByPlaceholderText("openai"), { target: { value: "test" } });
-    fireEvent.change(screen.getByPlaceholderText("OpenAI"), { target: { value: "Test" } });
+    fireEvent.change(screen.getByTestId("provider-name-input"), { target: { value: "Test" } });
     fireEvent.change(screen.getByTestId("provider-api-select"), { target: { value: "openai-completions" } });
     fireEvent.click(screen.getByTestId("add-model-btn"));
     fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "gpt-4" } });
@@ -152,7 +152,7 @@ describe("ProviderEditor", () => {
   it("saves provider with form data", () => {
     render(<ProviderEditor />);
     fireEvent.change(screen.getByPlaceholderText("openai"), { target: { value: "test" } });
-    fireEvent.change(screen.getByPlaceholderText("OpenAI"), { target: { value: "Test" } });
+    fireEvent.change(screen.getByTestId("provider-name-input"), { target: { value: "Test" } });
     fireEvent.change(screen.getByTestId("provider-api-select"), { target: { value: "openai-completions" } });
     fireEvent.click(screen.getByTestId("add-model-btn"));
     fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "gpt-4" } });
@@ -195,6 +195,25 @@ describe("ProviderEditor", () => {
     const select = screen.getByTestId("preset-select");
     fireEvent.change(select, { target: { value: "openai" } });
     expect(screen.getByTestId("model-select")).toBeInTheDocument();
+  });
+
+  it("syncs display name from provider id until name is edited", () => {
+    render(<ProviderEditor />);
+    fireEvent.change(screen.getByTestId("provider-id-input"), { target: { value: "my-provider" } });
+    expect(screen.getByTestId("provider-name-input")).toHaveValue("my-provider");
+    fireEvent.change(screen.getByTestId("provider-name-input"), { target: { value: "Custom Name" } });
+    fireEvent.change(screen.getByTestId("provider-id-input"), { target: { value: "other-provider" } });
+    expect(screen.getByTestId("provider-name-input")).toHaveValue("Custom Name");
+  });
+
+  it("rejects provider id with unsupported characters", async () => {
+    render(<ProviderEditor />);
+    fireEvent.change(screen.getByTestId("provider-id-input"), { target: { value: "bad_id" } });
+    fireEvent.change(screen.getByTestId("provider-name-input"), { target: { value: "Bad" } });
+    fireEvent.submit(screen.getByText("保存供应商").closest("form")!);
+    await waitFor(() => {
+      expect(screen.getByText(/供应商 ID 只能包含字母、数字和横线/)).toBeInTheDocument();
+    });
   });
 
   it("changes model alias", () => {

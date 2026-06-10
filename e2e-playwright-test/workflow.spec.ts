@@ -238,12 +238,13 @@ test.describe('Workflow - Persistence Patterns', () => {
 test.describe('Workflow - Error Recovery', () => {
   test('save invalid then fix and save', async ({ page }) => {
     await page.getByRole('button', { name: '添加供应商' }).click();
-    await page.getByTestId('provider-id-input').fill('fix-me');
+    await page.getByTestId('provider-id-input').fill('fix_me');
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
+    await expect(page.getByText('供应商 ID 只能包含字母、数字和横线')).toBeVisible();
 
+    await page.getByTestId('provider-id-input').fill('fix-me');
     await page.getByTestId('provider-name-input').fill('Fixed');
-    await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('保存成功')).toBeVisible();
     await verifyProviderExists(page, 'fix-me');
