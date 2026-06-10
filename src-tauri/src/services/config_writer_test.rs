@@ -76,6 +76,21 @@ mod tests {
     }
 
     #[test]
+    fn test_write_models_yaml_filters_disabled_providers() {
+        let db = create_test_db();
+        let service = ProviderService::new(&db);
+        let enabled = sample_provider("enabled-provider");
+        let mut disabled = sample_provider("disabled-provider");
+        disabled.enabled = false;
+        service.save(enabled).unwrap();
+        service.save(disabled).unwrap();
+        ConfigWriter::new(&db).write_models_yaml().unwrap();
+        let content = std::fs::read_to_string(crate::utils::fs::get_models_yaml_path()).unwrap();
+        assert!(content.contains("enabled-provider"));
+        assert!(!content.contains("disabled-provider"));
+    }
+
+    #[test]
     fn test_write_models_yaml_with_headers() {
         let db = create_test_db();
         let service = ProviderService::new(&db);

@@ -18,7 +18,7 @@ vi.mock("@/stores/providerStore", () => ({
 describe("ProviderEditor", () => {
   it("renders form title", () => {
     render(<ProviderEditor />);
-    expect(screen.getByText("添加 Provider")).toBeInTheDocument();
+    expect(screen.getByText("添加供应商")).toBeInTheDocument();
   });
 
   it("has id input field", () => {
@@ -33,7 +33,7 @@ describe("ProviderEditor", () => {
 
   it("has api type select", () => {
     render(<ProviderEditor />);
-    expect(screen.getByText("请选择")).toBeInTheDocument();
+    expect(screen.getByText("OpenAI 兼容格式")).toBeInTheDocument();
   });
 
   it("has base url input", () => {
@@ -49,12 +49,12 @@ describe("ProviderEditor", () => {
 
   it("has enabled checkbox", () => {
     render(<ProviderEditor />);
-    expect(screen.getByLabelText("启用 Provider")).toBeInTheDocument();
+    expect(screen.getByLabelText("默认应用配置")).toBeInTheDocument();
   });
 
   it("has submit button", () => {
     render(<ProviderEditor />);
-    expect(screen.getByText("保存 Provider")).toBeInTheDocument();
+    expect(screen.getByText("保存供应商")).toBeInTheDocument();
   });
 
   it("submits form with data", () => {
@@ -66,16 +66,16 @@ describe("ProviderEditor", () => {
     fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "gpt-4" } });
     fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "GPT-4" } });
     fireEvent.click(screen.getByTestId("save-model-btn"));
-    fireEvent.submit(screen.getByText("保存 Provider").closest("form")!);
+    fireEvent.submit(screen.getByText("保存供应商").closest("form")!);
     expect(mockSave).toHaveBeenCalled();
   });
 
   it("shows validation error for empty id", async () => {
-    mockSave.mockRejectedValueOnce(new Error("Provider ID 不能为空"));
+    mockSave.mockRejectedValueOnce(new Error("供应商 ID 不能为空"));
     render(<ProviderEditor />);
-    fireEvent.submit(screen.getByText("保存 Provider").closest("form")!);
+    fireEvent.submit(screen.getByText("保存供应商").closest("form")!);
     await waitFor(() => {
-      expect(screen.getByText(/Provider ID 不能为空/)).toBeInTheDocument();
+      expect(screen.getByText(/供应商 ID 不能为空/)).toBeInTheDocument();
     }, { timeout: 2000 });
   });
 
@@ -158,7 +158,7 @@ describe("ProviderEditor", () => {
     fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "gpt-4" } });
     fireEvent.change(screen.getByTestId("model-name-input"), { target: { value: "GPT-4" } });
     fireEvent.click(screen.getByTestId("save-model-btn"));
-    fireEvent.submit(screen.getByText("保存 Provider").closest("form")!);
+    fireEvent.submit(screen.getByText("保存供应商").closest("form")!);
     expect(mockSave).toHaveBeenCalled();
     const saved = mockSave.mock.calls[mockSave.mock.calls.length - 1][0];
     expect(saved.id).toBe("test");

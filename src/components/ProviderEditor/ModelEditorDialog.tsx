@@ -8,6 +8,7 @@ import CollapsibleSection from "@/components/CollapsibleSection";
 import CheckboxMatrix from "@/components/CheckboxMatrix";
 import ThinkingLevelMapTable from "@/components/ThinkingLevelMapTable";
 import CompatPresetSelector from "@/components/CompatPresetSelector";
+import { applyModelMetadata } from "@/lib/modelMetadata";
 
 interface Props {
   model?: ModelDefinition;
@@ -34,7 +35,10 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const updateField = <K extends keyof ModelDefinition>(key: K, value: ModelDefinition[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+      return key === "id" ? applyModelMetadata(next) : next;
+    });
     if (errors[String(key)]) {
       setErrors((prev) => { const next = { ...prev }; delete next[String(key)]; return next; });
     }
@@ -43,14 +47,13 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!form.id?.trim()) newErrors.id = "模型 ID 不能为空";
-    if (!form.name?.trim()) newErrors.name = "模型名称不能为空";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = () => {
     if (!validate()) return;
-    onSave(form as ModelDefinition);
+    onSave({ ...form, name: form.name?.trim() || form.id } as ModelDefinition);
   };
 
   const cost = (form.cost || { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
@@ -95,7 +98,7 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
                 {errors.id && <p className="text-xs text-red-600 mt-1">{errors.id}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">模型名称 <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium mb-1">模型名称</label>
                 <input
                   value={form.name || ""}
                   onChange={(e) => updateField("name", e.target.value)}
@@ -106,14 +109,14 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
                 {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">API 类型</label>
+                <label className="block text-sm font-medium mb-1">接口格式</label>
                 <select
-                  value={(form.api) ?? ""}
+                  value={(form.api) ?? "openai-completions"}
                   onChange={(e) => updateField("api", e.target.value as ApiType | undefined)}
-                  className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
+                  className="w-full px-3 py-2 border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
                 >
-                  <option value="">继承 Provider</option>
-                  {API_TYPES.map((t) => (
+                  <option value="openai-completions">OpenAI 兼容格式</option>
+                  {API_TYPES.filter((t) => t !== "openai-completions").map((t) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>

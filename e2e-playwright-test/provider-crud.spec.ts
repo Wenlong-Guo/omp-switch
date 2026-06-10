@@ -12,8 +12,8 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('ProviderEditor', () => {
   test('add provider manually', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
-    await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+    await page.getByRole('button', { name: '添加供应商' }).click();
+    await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
 
     await page.locator('input[placeholder="openai"]').fill('test-provider');
     await page.locator('input[placeholder="OpenAI"]').fill('Test Provider');
@@ -23,7 +23,7 @@ test.describe('ProviderEditor', () => {
     await page.getByTestId('save-provider-btn').click();
 
     await expect(page.getByText('保存成功')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '供应商管理' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Test Provider' })).toBeVisible();
 
     // Backend verify: provider persisted
@@ -36,7 +36,7 @@ test.describe('ProviderEditor', () => {
     const openaiCard = page.getByTestId('provider-card-openai');
     await openaiCard.getByRole('button', { name: '编辑' }).click();
 
-    await expect(page.getByRole('heading', { name: /编辑 Provider/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /编辑供应商/ })).toBeVisible();
     await expect(page.locator('input[placeholder="openai"]')).toBeDisabled();
     await page.waitForFunction(() => (document.querySelector('input[placeholder="openai"]') as HTMLInputElement)?.value === 'openai');
 
@@ -81,13 +81,13 @@ test.describe('Delete Provider', () => {
   });
 
   test('cancel add provider', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
-    await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+    await page.getByRole('button', { name: '添加供应商' }).click();
+    await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
 
     await page.getByTestId('provider-id-input').fill('cancel-test');
     await page.getByTestId('provider-name-input').fill('Cancel Test');
     await page.getByLabel('返回').click();
-    await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '供应商管理' })).toBeVisible();
 
     await verifyProviderDeleted(page, 'cancel-test');
   });
@@ -104,7 +104,7 @@ test.describe('Delete Provider', () => {
   });
 
   test('duplicate provider id updates existing', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('openai');
     await page.getByTestId('provider-name-input').fill('Updated OpenAI');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -117,7 +117,7 @@ test.describe('Delete Provider', () => {
 
   test('very long provider id accepted', async ({ page }) => {
     const longId = 'a'.repeat(100);
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill(longId);
     await page.getByTestId('provider-name-input').fill('Long ID Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -127,16 +127,16 @@ test.describe('Delete Provider', () => {
   });
 
   test('empty provider name rejected', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('empty-name');
     await page.getByTestId('provider-name-input').fill('');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
-    await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
   });
 
   test('save provider with multiple models', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('multi-model');
     await page.getByTestId('provider-name-input').fill('Multi Model');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -161,7 +161,7 @@ test.describe('Delete Provider', () => {
   });
 
   test('refresh after add shows new provider', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('refresh-test');
     await page.getByTestId('provider-name-input').fill('Refresh Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');

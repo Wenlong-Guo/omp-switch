@@ -12,17 +12,17 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('UI States - Empty', () => {
   test('empty search shows no results', async ({ page }) => {
-    await page.getByPlaceholder(/搜索 Provider/).fill('zzzzzzzzzzzzzzz');
-    await expect(page.getByText('暂无 Provider')).toBeVisible();
+    await page.getByPlaceholder(/搜索供应商/).fill('zzzzzzzzzzzzzzz');
+    await expect(page.getByText('暂无供应商')).toBeVisible();
   });
 
   test('dashboard heading is visible', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '供应商管理' })).toBeVisible();
   });
 
   test('sidebar has all navigation items', async ({ page }) => {
-    await expect(page.getByRole('button', { name: 'Dashboard' })).toBeVisible();
-    await expect(page.getByRole('button', { name: '添加 Provider' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '供应商', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '添加供应商' })).toBeVisible();
     await expect(page.getByRole('button', { name: '设置' })).toBeVisible();
     await expect(page.getByRole('button', { name: '同步' })).toBeVisible();
   });
@@ -43,14 +43,14 @@ test.describe('UI States - Empty', () => {
     await expect(page.locator('text=导入 JSON')).toBeVisible();
   });
 
-  test('search input placeholder', async ({ page }) => {
-    await expect(page.getByPlaceholder(/搜索 Provider/)).toBeVisible();
+  test('dashboard search input placeholder', async ({ page }) => {
+    await expect(page.getByPlaceholder(/搜索供应商/)).toBeVisible();
   });
 });
 
 test.describe('UI States - Provider Editor', () => {
   test('add provider form shows all fields', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await expect(page.getByTestId('provider-id-input')).toBeVisible();
     await expect(page.getByTestId('provider-name-input')).toBeVisible();
     await expect(page.getByTestId('provider-api-select')).toBeVisible();
@@ -58,35 +58,35 @@ test.describe('UI States - Provider Editor', () => {
   });
 
   test('add provider heading', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
-    await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+    await page.getByRole('button', { name: '添加供应商' }).click();
+    await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
   });
 
   test('edit provider heading', async ({ page }) => {
     const openaiCard = page.getByTestId('provider-card-openai');
     await openaiCard.getByRole('button', { name: '编辑' }).click();
-    await expect(page.getByRole('heading', { name: /编辑 Provider/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /编辑供应商/ })).toBeVisible();
   });
 
   test('provider editor has back button', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await expect(page.getByLabel('返回')).toBeVisible();
   });
 
   test('model editor dialog appears', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('add-model-btn').click();
     await expect(page.getByTestId('model-editor-dialog')).toBeVisible();
   });
 
   test('model editor has cancel button', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('add-model-btn').click();
     await expect(page.getByRole('button', { name: '取消' })).toBeVisible();
   });
 
   test('model editor has save button', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('add-model-btn').click();
     await expect(page.getByTestId('save-model-btn')).toBeVisible();
   });
@@ -158,7 +158,7 @@ test.describe('UI States - Cards', () => {
 
 test.describe('UI States - Toasts', () => {
   test('save provider shows success toast', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('toast-test');
     await page.getByTestId('provider-name-input').fill('Toast Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -217,7 +217,7 @@ test.describe('UI States - Dialogs', () => {
   });
 
   test('model editor dialog has title', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('add-model-btn').click();
     await expect(page.getByTestId('model-editor-dialog')).toBeVisible();
   });

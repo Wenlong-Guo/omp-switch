@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('Provider Advanced - Add', () => {
   test('add provider with anthropic api type', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('anthropic-test');
     await page.getByTestId('provider-name-input').fill('Anthropic Test');
     await page.getByTestId('provider-api-select').selectOption('anthropic-messages');
@@ -23,7 +23,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with google api type', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('google-test');
     await page.getByTestId('provider-name-input').fill('Google Test');
     await page.getByTestId('provider-api-select').selectOption('google-generative-ai');
@@ -34,7 +34,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with azure api type', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('azure-test');
     await page.getByTestId('provider-name-input').fill('Azure Test');
     await page.getByTestId('provider-api-select').selectOption('azure-openai-responses');
@@ -45,7 +45,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with openai-responses api type', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('openai-resp');
     await page.getByTestId('provider-name-input').fill('OpenAI Responses');
     await page.getByTestId('provider-api-select').selectOption('openai-responses');
@@ -55,7 +55,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with openai-codex api type', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('openai-codex');
     await page.getByTestId('provider-name-input').fill('OpenAI Codex');
     await page.getByTestId('provider-api-select').selectOption('openai-codex-responses');
@@ -65,7 +65,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with google-vertex api type', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('vertex-test');
     await page.getByTestId('provider-name-input').fill('Vertex Test');
     await page.getByTestId('provider-api-select').selectOption('google-vertex');
@@ -76,7 +76,7 @@ test.describe('Provider Advanced - Add', () => {
 
   test('add provider with max length id', async ({ page }) => {
     const id = 'a'.repeat(50);
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill(id);
     await page.getByTestId('provider-name-input').fill('Max Length');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -86,7 +86,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with numeric only id', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('123456');
     await page.getByTestId('provider-name-input').fill('Numeric ID');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -96,7 +96,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with hyphen id', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('my-provider-123');
     await page.getByTestId('provider-name-input').fill('Hyphen ID');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -106,7 +106,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with underscore id', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('my_provider_123');
     await page.getByTestId('provider-name-input').fill('Underscore ID');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -116,7 +116,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with dot id', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('my.provider.123');
     await page.getByTestId('provider-name-input').fill('Dot ID');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -126,7 +126,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with all uppercase id', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('ALLUPPER');
     await page.getByTestId('provider-name-input').fill('Uppercase');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -136,7 +136,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with mixed case id', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('MiXeD123');
     await page.getByTestId('provider-name-input').fill('Mixed Case');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -146,7 +146,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with leading number id', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('1abc');
     await page.getByTestId('provider-name-input').fill('Leading Number');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -156,7 +156,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with single char id', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('x');
     await page.getByTestId('provider-name-input').fill('Single Char');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -166,7 +166,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with empty api key', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('no-key');
     await page.getByTestId('provider-name-input').fill('No Key');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -177,7 +177,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with custom base url', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('custom-url');
     await page.getByTestId('provider-name-input').fill('Custom URL');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -189,7 +189,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with localhost base url', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('local-ollama');
     await page.getByTestId('provider-name-input').fill('Local Ollama');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -200,7 +200,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with port in base url', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('port-url');
     await page.getByTestId('provider-name-input').fill('Port URL');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -211,7 +211,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with ipv4 base url', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('ipv4');
     await page.getByTestId('provider-name-input').fill('IPv4');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -223,7 +223,7 @@ test.describe('Provider Advanced - Add', () => {
 
   test('add provider with long name', async ({ page }) => {
     const name = 'N'.repeat(100);
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('long-name');
     await page.getByTestId('provider-name-input').fill(name);
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -234,7 +234,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with unicode name', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('unicode');
     await page.getByTestId('provider-name-input').fill('日本語プロバイダ');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -245,7 +245,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with emoji name', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('emoji-name');
     await page.getByTestId('provider-name-input').fill('Provider 🚀🔥✨');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -256,11 +256,11 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add disabled provider', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('disabled');
     await page.getByTestId('provider-name-input').fill('Disabled Provider');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
-    await page.getByLabel('启用 Provider').uncheck();
+    await page.getByLabel('默认应用配置').uncheck();
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('保存成功')).toBeVisible();
     const saved = await verifyProviderExists(page, 'disabled');
@@ -268,7 +268,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider then edit builtin', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('add-then-edit');
     await page.getByTestId('provider-name-input').fill('Add Then Edit');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -289,7 +289,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with model then expand card', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('with-model');
     await page.getByTestId('provider-name-input').fill('With Model');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -306,7 +306,7 @@ test.describe('Provider Advanced - Add', () => {
   });
 
   test('add provider with full config', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('full-config');
     await page.getByTestId('provider-name-input').fill('Full Config');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -369,7 +369,7 @@ test.describe('Provider Advanced - Edit', () => {
     const openaiCard = page.getByTestId('provider-card-openai');
     await openaiCard.getByRole('button', { name: '编辑' }).click();
     await page.waitForSelector('input[placeholder="openai"][disabled]');
-    await page.getByLabel('启用 Provider').uncheck();
+    await page.getByLabel('默认应用配置').uncheck();
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('更新成功').first()).toBeVisible();
@@ -382,14 +382,14 @@ test.describe('Provider Advanced - Edit', () => {
     await openaiCard.getByRole('button', { name: '编辑' }).click();
     await page.waitForSelector('input[placeholder="openai"][disabled]');
     await page.waitForFunction(() => (document.querySelector('input[placeholder="openai"]') as HTMLInputElement)?.value === 'openai');
-    await page.getByLabel('启用 Provider').uncheck();
+    await page.getByLabel('默认应用配置').uncheck();
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('更新成功').first()).toBeVisible();
     await openaiCard.getByRole('button', { name: '编辑' }).click();
     await page.waitForSelector('input[placeholder="openai"][disabled]');
     await page.waitForFunction(() => (document.querySelector('input[placeholder="openai"]') as HTMLInputElement)?.value === 'openai');
-    await page.getByLabel('启用 Provider').check();
+    await page.getByLabel('默认应用配置').check();
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('更新成功').first()).toBeVisible();
@@ -488,7 +488,7 @@ test.describe('Provider Advanced - Delete', () => {
     await page.getByRole('button', { name: '确认' }).click();
     await expect(page.getByText('删除成功').first()).toBeVisible();
     await verifyProviderDeleted(page, 'openai');
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('openai');
     await page.getByTestId('provider-name-input').fill('OpenAI Reborn');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -529,24 +529,24 @@ test.describe('Provider Advanced - Dashboard', () => {
   });
 
   test('search filters by partial name', async ({ page }) => {
-    await page.getByPlaceholder(/搜索 Provider/).fill('Step');
+    await page.getByPlaceholder(/搜索供应商/).fill('Step');
     await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'OpenAI' })).not.toBeVisible();
   });
 
   test('search filters by partial id', async ({ page }) => {
-    await page.getByPlaceholder(/搜索 Provider/).fill('plan');
+    await page.getByPlaceholder(/搜索供应商/).fill('plan');
     await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
   });
 
   test('search with mixed case', async ({ page }) => {
-    await page.getByPlaceholder(/搜索 Provider/).fill('StEpFuN');
+    await page.getByPlaceholder(/搜索供应商/).fill('StEpFuN');
     await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
   });
 
   test('clear search after typing', async ({ page }) => {
-    await page.getByPlaceholder(/搜索 Provider/).fill('test');
-    await page.getByPlaceholder(/搜索 Provider/).fill('');
+    await page.getByPlaceholder(/搜索供应商/).fill('test');
+    await page.getByPlaceholder(/搜索供应商/).fill('');
     await expect(page.getByRole('heading', { name: 'OpenAI' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Anthropic' })).toBeVisible();
   });

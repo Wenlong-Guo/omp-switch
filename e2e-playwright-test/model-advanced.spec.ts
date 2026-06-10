@@ -64,6 +64,7 @@ test.describe('Model Advanced - Create', () => {
     await page.getByTestId('add-model-btn').click();
     await page.getByTestId('model-id-input').fill('no-reason');
     await page.getByTestId('model-name-input').fill('No Reason');
+    await page.getByTestId('model-reasoning').uncheck();
     await page.getByTestId('save-model-btn').click();
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();

@@ -24,7 +24,7 @@ test.describe('App', () => {
     await expect(page.getByRole('heading', { name: '全局设置' })).toBeVisible();
 
     await page.getByLabel('返回').click();
-    await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '供应商管理' })).toBeVisible();
   });
 
   test('sidebar navigation to sync page', async ({ page }) => {
@@ -33,8 +33,8 @@ test.describe('App', () => {
   });
 
   test('page transition animation completes', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
-    await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+    await page.getByRole('button', { name: '添加供应商' }).click();
+    await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
 
     // Transition should complete without error
     await expect(page.locator('body')).not.toHaveClass(/error/);

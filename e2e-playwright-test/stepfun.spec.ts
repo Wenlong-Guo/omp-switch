@@ -28,8 +28,8 @@ test.describe('StepFun Provider', () => {
   });
 
   test('add step-plan provider manually with apiKey', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
-    await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+    await page.getByRole('button', { name: '添加供应商' }).click();
+    await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
 
     await page.locator('input[placeholder="openai"]').fill('step-plan-test');
     await page.locator('input[placeholder="OpenAI"]').fill('StepFun Test');
@@ -39,7 +39,7 @@ test.describe('StepFun Provider', () => {
     await page.getByTestId('save-provider-btn').click();
 
     await expect(page.getByText('保存成功')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '供应商管理' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'StepFun Test' })).toBeVisible();
 
     const card = page.getByTestId('provider-card-step-plan-test');
@@ -65,7 +65,7 @@ test.describe('StepFun Provider', () => {
     await stepPlanCard.getByRole('button', { name: '编辑' }).click();
 
     // Should navigate to editor without crash
-    await expect(page.getByRole('heading', { name: /编辑 Provider/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /编辑供应商/ })).toBeVisible();
     await expect(page.getByTestId('provider-id-input')).toHaveValue('step-plan');
     await expect(page.getByTestId('provider-name-input')).toHaveValue('StepFun (Step Plan)');
     await expect(page.getByTestId('provider-api-select')).toHaveValue('openai-completions');

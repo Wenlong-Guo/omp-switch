@@ -68,7 +68,7 @@ describe("Dashboard", () => {
       isLoading: false,
     } as any);
     render(<Dashboard />);
-    expect(screen.getByText(/暂无 Provider/)).toBeInTheDocument();
+    expect(screen.getByText(/暂无供应商/)).toBeInTheDocument();
   });
 
   it("shows loading state", () => {
@@ -86,12 +86,12 @@ describe("Dashboard", () => {
 
   it("renders page title", () => {
     render(<Dashboard />);
-    expect(screen.getByText("Provider 管理")).toBeInTheDocument();
+    expect(screen.getByText("供应商管理")).toBeInTheDocument();
   });
 
-  it("shows default provider info", () => {
+  it("does not show default provider info", () => {
     render(<Dashboard />);
-    expect(screen.getByText(/默认: anthropic/)).toBeInTheDocument();
+    expect(screen.queryByText(/默认:/)).not.toBeInTheDocument();
   });
 
   it("renders provider cards in grid", () => {
@@ -123,12 +123,19 @@ describe("Dashboard", () => {
     expect(screen.getByText("GPT-4")).toBeInTheDocument();
   });
 
-  it("filters providers by search", () => {
+  it("toggles provider application from list", () => {
+    const saveProvider = vi.fn();
+    vi.mocked(useProviderStore).mockReturnValue({
+      providers: mockProviders,
+      fetchProviders: vi.fn(),
+      deleteProvider: vi.fn(),
+      setActiveProvider: vi.fn(),
+      saveProvider,
+      isLoading: false,
+    } as any);
     render(<Dashboard />);
-    const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
-    fireEvent.change(searchInput, { target: { value: "anthropic" } });
-    expect(screen.queryByText("OpenAI")).not.toBeInTheDocument();
-    expect(screen.getByText("Anthropic")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("provider-enabled-openai"));
+    expect(saveProvider).toHaveBeenCalledWith(expect.objectContaining({ id: "openai", enabled: false }));
   });
 
   it("shows disabled badge for disabled provider", () => {
@@ -141,7 +148,7 @@ describe("Dashboard", () => {
       isLoading: false,
     } as any);
     render(<Dashboard />);
-    expect(screen.getByText("已停用")).toBeInTheDocument();
+    expect(screen.getByText("未应用")).toBeInTheDocument();
   });
 
   it("shows confirm dialog on delete click", () => {

@@ -59,7 +59,7 @@ export default function ProviderBasicForm({ form, isEdit, onChange, presets, sel
         </Field>
       )}
 
-      <Field label="Provider ID" htmlFor={`${id}-id`}>
+      <Field label="供应商 ID" htmlFor={`${id}-id`}>
         <input
           id={`${id}-id`}
           value={form.id}
@@ -84,16 +84,16 @@ export default function ProviderBasicForm({ form, isEdit, onChange, presets, sel
         />
       </Field>
 
-      <Field label="API 类型" htmlFor={`${id}-api`}>
+      <Field label="接口格式" htmlFor={`${id}-api`}>
         <select
           id={`${id}-api`}
-          value={form.api ?? ""}
+          value={form.api ?? "openai-completions"}
           onChange={(e) => update("api", e.target.value ? (e.target.value as ApiType) : undefined)}
           data-testid="provider-api-select"
-          className="w-full px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
+          className="w-full px-3 py-2 border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
         >
-          <option value="">请选择</option>
-          {API_TYPES.map((t) => (
+          <option value="openai-completions">OpenAI 兼容格式</option>
+          {API_TYPES.filter((t) => t !== "openai-completions").map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
         </select>
@@ -128,7 +128,7 @@ export default function ProviderBasicForm({ form, isEdit, onChange, presets, sel
           onChange={(e) => update("enabled", e.target.checked)}
           className="h-4 w-4 rounded border-primary accent-primary"
         />
-        <label htmlFor={`${id}-enabled`} className="text-sm font-medium">启用 Provider</label>
+        <label htmlFor={`${id}-enabled`} className="text-sm font-medium">默认应用配置</label>
       </div>
     </div>
   );

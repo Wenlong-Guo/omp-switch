@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 test.describe('Data Persistence', () => {
   test('provider survives page refresh', async ({ page }) => {
     // Add provider
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('persist-test');
     await page.getByTestId('provider-name-input').fill('Persist Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');

@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('Edge Input', () => {
   test('200-character name accepted', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('long-name-test');
     const longName = 'A'.repeat(200);
     await page.getByTestId('provider-name-input').fill(longName);
@@ -28,7 +28,7 @@ test.describe('Edge Input', () => {
   });
 
   test('chinese name accepted', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('chinese-test');
     await page.getByTestId('provider-name-input').fill('中文测试Provider');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -43,7 +43,7 @@ test.describe('Edge Input', () => {
   });
 
   test('emoji in model name accepted', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('emoji-test');
     await page.getByTestId('provider-name-input').fill('Emoji Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -64,7 +64,7 @@ test.describe('Edge Input', () => {
   });
 
   test('special chars in provider id', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('test_123-special');
     await page.getByTestId('provider-name-input').fill('Special Chars');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -75,7 +75,7 @@ test.describe('Edge Input', () => {
   });
 
   test('empty model id rejected', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('empty-model');
     await page.getByTestId('provider-name-input').fill('Empty Model');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -89,7 +89,7 @@ test.describe('Edge Input', () => {
   });
 
   test('negative cost value accepted', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('negative-cost');
     await page.getByTestId('provider-name-input').fill('Negative Cost');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -112,7 +112,7 @@ test.describe('Edge Input', () => {
   });
 
   test('very long model name', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('long-model-name');
     await page.getByTestId('provider-name-input').fill('Long Model');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -132,7 +132,7 @@ test.describe('Edge Input', () => {
   });
 
   test('zero max tokens', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('zero-tokens');
     await page.getByTestId('provider-name-input').fill('Zero Tokens');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');

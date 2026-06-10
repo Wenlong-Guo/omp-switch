@@ -77,77 +77,16 @@ impl<'a> ProviderService<'a> {
     }
 
     pub fn get_builtin_presets(&self) -> Vec<ProviderConfig> {
-        vec![
-            ProviderConfig {
-                id: "openai".to_string(),
-                name: "OpenAI".to_string(),
-                enabled: true,
-                is_built_in: true,
-                base_url: Some("https://api.openai.com/v1".to_string()),
-                api_key: None,
-                api_type: Some("openai-completions".to_string()),
-                headers: None,
-                auth_header: None,
-                auth: Some("apiKey".to_string()),
-                discovery: None,
-                model_overrides: None,
-                models: None,
-                created_at: None,
-                updated_at: None,
-            },
-            ProviderConfig {
-                id: "anthropic".to_string(),
-                name: "Anthropic".to_string(),
-                enabled: true,
-                is_built_in: true,
-                base_url: Some("https://api.anthropic.com".to_string()),
-                api_key: None,
-                api_type: Some("anthropic-messages".to_string()),
-                headers: None,
-                auth_header: None,
-                auth: Some("apiKey".to_string()),
-                discovery: None,
-                model_overrides: None,
-                models: None,
-                created_at: None,
-                updated_at: None,
-            },
-            ProviderConfig {
-                id: "google".to_string(),
-                name: "Google".to_string(),
-                enabled: true,
-                is_built_in: true,
-                base_url: Some("https://generativelanguage.googleapis.com".to_string()),
-                api_key: None,
-                api_type: Some("google-generative-ai".to_string()),
-                headers: None,
-                auth_header: None,
-                auth: Some("apiKey".to_string()),
-                discovery: None,
-                model_overrides: None,
-                models: None,
-                created_at: None,
-                updated_at: None,
-            },
-            ProviderConfig {
-                id: "ollama".to_string(),
-                name: "Ollama".to_string(),
-                enabled: true,
-                is_built_in: true,
-                base_url: Some("http://localhost:11434".to_string()),
-                api_key: None,
-                api_type: Some("openai-completions".to_string()),
-                headers: None,
-                auth_header: None,
-                auth: Some("none".to_string()),
-                discovery: Some(crate::models::provider::DiscoveryConfig {
-                    discovery_type: "ollama".to_string(),
-                }),
-                model_overrides: None,
-                models: None,
-                created_at: None,
-                updated_at: None,
-            },
-        ]
+        let mut presets = crate::services::model_metadata::default_builtin_providers();
+        for provider in crate::services::model_metadata::load_omp_provider_models() {
+            if let Some(existing) = presets.iter_mut().find(|p| p.id == provider.id) {
+                if provider.models.is_some() {
+                    existing.models = provider.models;
+                }
+            } else {
+                presets.push(provider);
+            }
+        }
+        presets
     }
 }

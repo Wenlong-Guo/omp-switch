@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 test.describe('Workflow - Full Provider Lifecycle', () => {
   test('add provider -> set default -> edit -> delete', async ({ page }) => {
     // Add
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('lifecycle');
     await page.getByTestId('provider-name-input').fill('Lifecycle Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -52,7 +52,7 @@ test.describe('Workflow - Full Provider Lifecycle', () => {
   test('add multiple providers then delete all', async ({ page }) => {
     const ids = ['multi-1', 'multi-2', 'multi-3'];
     for (const id of ids) {
-      await page.getByRole('button', { name: '添加 Provider' }).last().click();
+      await page.getByRole('button', { name: '添加供应商' }).last().click();
       await page.getByTestId('provider-id-input').fill(id);
       await page.getByTestId('provider-name-input').fill(`Multi ${id}`);
       await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -72,7 +72,7 @@ test.describe('Workflow - Full Provider Lifecycle', () => {
   });
 
   test('add provider -> add model -> edit model -> delete model', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('model-flow');
     await page.getByTestId('provider-name-input').fill('Model Flow');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -106,7 +106,7 @@ test.describe('Workflow - Import/Export Roundtrip', () => {
   });
 
   test('add provider then export', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('export-me');
     await page.getByTestId('provider-name-input').fill('Export Me');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -171,21 +171,21 @@ test.describe('Workflow - Navigation Patterns', () => {
     await page.getByRole('button', { name: '设置' }).click();
     await expect(page.getByRole('heading', { name: '全局设置' })).toBeVisible();
     await page.getByLabel('返回').click();
-    await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '供应商管理' })).toBeVisible();
   });
 
   test('dashboard to sync and back', async ({ page }) => {
     await page.getByRole('button', { name: '同步' }).click();
     await expect(page.getByRole('heading', { name: 'WebDAV 同步' })).toBeVisible();
     await page.getByRole('button', { name: '返回' }).click();
-    await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '供应商管理' })).toBeVisible();
   });
 
   test('dashboard to add provider and cancel', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
-    await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+    await page.getByRole('button', { name: '添加供应商' }).click();
+    await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
     await page.getByLabel('返回').click();
-    await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '供应商管理' })).toBeVisible();
   });
 
   test('edit provider then navigate back without saving', async ({ page }) => {
@@ -201,7 +201,7 @@ test.describe('Workflow - Navigation Patterns', () => {
 
 test.describe('Workflow - Persistence Patterns', () => {
   test('provider survives navigation cycle', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('nav-test');
     await page.getByTestId('provider-name-input').fill('Nav Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -237,10 +237,10 @@ test.describe('Workflow - Persistence Patterns', () => {
 
 test.describe('Workflow - Error Recovery', () => {
   test('save invalid then fix and save', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('fix-me');
     await page.getByTestId('save-provider-btn').click();
-    await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
 
     await page.getByTestId('provider-name-input').fill('Fixed');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');

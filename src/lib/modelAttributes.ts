@@ -29,19 +29,19 @@ export const API_TYPES = [
 const attributes: AttributeMeta[] = [
   // basic
   { key: 'id', label: '模型 ID', type: 'text', category: 'basic', defaultValue: '', required: true, source: 'omp-switch' },
-  { key: 'name', label: '模型名称', type: 'text', category: 'basic', defaultValue: '', required: true, source: 'omp-switch' },
-  { key: 'api', label: 'API 类型', type: 'select', category: 'basic', defaultValue: '', required: false, source: 'omp-switch', options: [...API_TYPES] },
+  { key: 'name', label: '模型名称', type: 'text', category: 'basic', defaultValue: '', required: false, source: 'omp-switch' },
+  { key: 'api', label: '接口格式', type: 'select', category: 'basic', defaultValue: 'openai-completions', required: false, source: 'omp-switch', options: [...API_TYPES] },
   { key: 'family', label: '模型家族', type: 'text', category: 'basic', defaultValue: undefined, required: false, source: 'opencode' },
   { key: 'releaseDate', label: '发布日期', type: 'text', category: 'basic', defaultValue: undefined, required: false, source: 'opencode' },
   { key: 'status', label: '状态', type: 'select', category: 'basic', defaultValue: undefined, required: false, source: 'opencode', options: [...STATUS_OPTIONS] },
   { key: 'provider', label: 'Provider 覆盖', type: 'json', category: 'basic', defaultValue: undefined, required: false, source: 'opencode' },
 
   // capability
-  { key: 'reasoning', label: '支持 Reasoning', type: 'boolean', category: 'capability', defaultValue: false, required: false, source: 'omp-switch' },
+  { key: 'reasoning', label: '支持 Reasoning', type: 'boolean', category: 'capability', defaultValue: true, required: false, source: 'omp-switch' },
   { key: 'temperature', label: '支持 Temperature', type: 'boolean', category: 'capability', defaultValue: true, required: false, source: 'opencode' },
   { key: 'toolCall', label: '支持 Tool Call', type: 'boolean', category: 'capability', defaultValue: false, required: false, source: 'opencode' },
   { key: 'attachment', label: '支持附件', type: 'boolean', category: 'capability', defaultValue: false, required: false, source: 'opencode' },
-  { key: 'input', label: '输入类型', type: 'multiselect', category: 'capability', defaultValue: ['text'], required: false, source: 'omp-switch', options: ['text', 'image'] },
+  { key: 'input', label: '输入类型', type: 'multiselect', category: 'capability', defaultValue: ['text', 'image'], required: false, source: 'omp-switch', options: ['text', 'image'] },
   { key: 'modalities', label: '模态', type: 'multiselect', category: 'capability', defaultValue: undefined, required: false, source: 'opencode', options: [...MODALITY_OPTIONS] },
   { key: 'interleaved', label: '交错输出', type: 'json', category: 'capability', defaultValue: undefined, required: false, source: 'opencode' },
 

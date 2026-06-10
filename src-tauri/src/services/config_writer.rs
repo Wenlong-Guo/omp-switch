@@ -27,7 +27,7 @@ impl<'a> ConfigWriter<'a> {
 
     pub fn write_models_yaml(&self) -> Result<()> {
         let dao = ProviderDao::new(self.db);
-        let providers = dao.get_all()?;
+        let providers = dao.get_enabled()?;
 
         let mut providers_map = HashMap::new();
         for p in providers {

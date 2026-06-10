@@ -229,7 +229,13 @@ impl<'a> ProviderDao<'a> {
             })
         })?;
 
-        providers.collect()
+        let mut result = Vec::new();
+        for p in providers {
+            let mut p = p?;
+            p.models = self.get_models(&conn, &p.id)?;
+            result.push(p);
+        }
+        Ok(result)
     }
 
     fn insert_model(&self, tx: &rusqlite::Transaction, provider_id: &str, model: &ModelDefinition) -> Result<()> {

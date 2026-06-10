@@ -99,6 +99,10 @@ describe("modelAttributes", () => {
       expect(meta).toBeDefined();
       expect(meta?.category).toBe("compat");
     });
+
+    it("model name is optional", () => {
+      expect(getAttributeMeta("name")?.required).toBe(false);
+    });
   });
 
   describe("getDefaultModel", () => {
@@ -106,7 +110,9 @@ describe("modelAttributes", () => {
       const defaults = getDefaultModel();
       expect(defaults.id).toBe("");
       expect(defaults.name).toBe("");
-      expect(defaults.reasoning).toBe(false);
+      expect(defaults.reasoning).toBe(true);
+      expect(defaults.input).toEqual(["text", "image"]);
+      expect(defaults.api).toBe("openai-completions");
       expect(defaults.contextWindow).toBe(128000);
       expect(defaults.maxTokens).toBe(16384);
     });

@@ -67,7 +67,7 @@ export default function Dashboard() {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Provider 管理</h1>
+        <h1 className="text-2xl font-bold">供应商管理</h1>
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
@@ -116,9 +116,6 @@ export default function Dashboard() {
               }}
             />
           </label>
-          <div className="text-sm text-muted-foreground">
-            默认: {settings?.defaultProvider ?? "未设置"}
-          </div>
         </div>
       </div>
 
@@ -128,7 +125,7 @@ export default function Dashboard() {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="搜索 Provider (名称/ID/API)...  ⌘K"
+          placeholder="搜索供应商 (名称/ID/接口格式)..."
           className="w-full max-w-md px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
         />
       </div>
@@ -188,7 +185,7 @@ export default function Dashboard() {
                     )}
                     {!provider.enabled && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 font-medium">
-                        已停用
+                        未应用
                       </span>
                     )}
                   </div>
@@ -228,7 +225,7 @@ export default function Dashboard() {
                   <button
                     onClick={async () => {
                       if ((provider.models?.length ?? 0) === 0) {
-                        toast.show("该 Provider 没有模型，无法设为默认", "error");
+                        toast.show("该供应商没有模型，无法设为默认", "error");
                         return;
                       }
                       try {
@@ -249,6 +246,19 @@ export default function Dashboard() {
                     <Star className="w-3.5 h-3.5" />
                     {settings?.defaultProvider === provider.id ? "当前默认" : "设为默认"}
                   </button>
+                  <label className="text-sm px-3 py-1.5 border rounded-md hover:bg-muted transition-colors flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={provider.enabled}
+                      onChange={async (e) => {
+                        await saveProvider({ ...provider, enabled: e.target.checked });
+                        toast.show(e.target.checked ? "已应用配置" : "已移除配置", "success");
+                      }}
+                      data-testid={`provider-enabled-${provider.id}`}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    应用
+                  </label>
                   <button
                     onClick={() => setLocation(`/provider/edit/${provider.id}`)}
                     className="text-sm px-3 py-1.5 border rounded-md hover:bg-muted transition-colors flex items-center gap-1"
@@ -273,14 +283,14 @@ export default function Dashboard() {
       {!isLoading && filteredProviders.length === 0 && (
         <div className="text-center py-16 text-muted-foreground border rounded-xl border-dashed">
           <div className="text-4xl mb-3">🤖</div>
-          <p className="text-base font-medium">暂无 Provider</p>
-          <p className="text-sm mt-1 opacity-60 mb-4">添加第一个 AI Provider 开始配置</p>
+          <p className="text-base font-medium">暂无供应商</p>
+          <p className="text-sm mt-1 opacity-60 mb-4">添加第一个 AI 供应商开始配置</p>
           <button
             onClick={() => setLocation("/provider/new")}
             className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 text-sm transition-opacity"
           >
             <Plus className="w-4 h-4" />
-            添加 Provider
+            添加供应商
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

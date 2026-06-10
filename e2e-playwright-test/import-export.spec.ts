@@ -95,7 +95,7 @@ test.describe('Import Export', () => {
 
   test('export then re-import roundtrip', async ({ page }) => {
     // Add a provider first
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('roundtrip-test');
     await page.getByTestId('provider-name-input').fill('Roundtrip Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');

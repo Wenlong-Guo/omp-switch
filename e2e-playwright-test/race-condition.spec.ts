@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('Race Condition', () => {
   test('rapid double-click save does not duplicate provider', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('race-test');
     await page.getByTestId('provider-name-input').fill('Race Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -34,7 +34,7 @@ test.describe('Race Condition', () => {
 
   test('rapid add then delete provider', async ({ page }) => {
     // Add provider
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('rapid-test');
     await page.getByTestId('provider-name-input').fill('Rapid Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -81,7 +81,7 @@ test.describe('Race Condition', () => {
   });
 
   test('concurrent add and navigate', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('concurrent-test');
     await page.getByTestId('provider-name-input').fill('Concurrent');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');

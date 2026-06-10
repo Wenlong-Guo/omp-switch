@@ -12,8 +12,8 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('Preset Model Selection', () => {
   test('select preset and model with alias', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
-    await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+    await page.getByRole('button', { name: '添加供应商' }).click();
+    await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
 
     // Select StepFun preset
     await page.getByTestId('preset-select').selectOption('step-plan');
@@ -31,7 +31,7 @@ test.describe('Preset Model Selection', () => {
     // Save provider
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('保存成功')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '供应商管理' })).toBeVisible();
 
     // Verify on dashboard
     await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
@@ -47,7 +47,7 @@ test.describe('Preset Model Selection', () => {
   });
 
   test('select preset without model then manual add', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
 
     // Select OpenAI preset (no models in mock)
     await page.getByTestId('preset-select').selectOption('openai');
@@ -71,7 +71,7 @@ test.describe('Preset Model Selection', () => {
   });
 
   test('change preset re-fills form', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('preset-select').selectOption('openai');
     await expect(page.locator('input[placeholder="openai"]')).toHaveValue('openai');
     await expect(page.locator('input[placeholder="OpenAI"]')).toHaveValue('OpenAI');
@@ -83,7 +83,7 @@ test.describe('Preset Model Selection', () => {
   });
 
   test('manual config clears form', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('preset-select').selectOption('openai');
     await expect(page.locator('input[placeholder="openai"]')).toHaveValue('openai');
 
@@ -92,7 +92,7 @@ test.describe('Preset Model Selection', () => {
   });
 
   test('preset with multiple models', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('preset-select').selectOption('step-plan');
 
     // Should have model select with options
@@ -105,7 +105,7 @@ test.describe('Preset Model Selection', () => {
   });
 
   test('save preset provider and verify backend', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('preset-select').selectOption('anthropic');
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('保存成功')).toBeVisible();

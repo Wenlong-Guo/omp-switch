@@ -75,7 +75,7 @@ test.describe('WebDAV Sync', () => {
     await page.waitForLoadState('networkidle');
 
     await page.getByRole('button', { name: '返回' }).click();
-    await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '供应商管理' })).toBeVisible();
   });
 
   test('sync disabled by default', async ({ page }) => {

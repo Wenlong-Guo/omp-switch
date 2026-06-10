@@ -14,7 +14,7 @@ test.describe('Keyboard Shortcuts', () => {
   test('Escape closes model editor dialog', async ({ page }) => {
     const before = await getProviders(page);
 
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('add-model-btn').click();
     await expect(page.getByTestId('model-editor-dialog')).toBeVisible();
 
@@ -41,7 +41,7 @@ test.describe('Keyboard Shortcuts', () => {
   });
 
   test('Enter submits provider form', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('enter-test');
     await page.getByTestId('provider-name-input').fill('Enter Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');

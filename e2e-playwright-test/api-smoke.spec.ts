@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 test.describe('API Smoke', () => {
   test('chat completion returns valid response', async ({ page }) => {
     // Step 1: Create provider with model
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('smoke-test');
     await page.getByTestId('provider-name-input').fill('Smoke Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');

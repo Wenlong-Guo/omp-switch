@@ -46,9 +46,9 @@ export default function ProviderEditor() {
   }, [isEdit, editId, providers, fetchProviders, fetchBuiltinPresets]);
 
   const validateForm = (): string | null => {
-    if (!form.id.trim()) return "Provider ID 不能为空";
+    if (!form.id.trim()) return "供应商 ID 不能为空";
     if (!form.name.trim()) return "显示名称不能为空";
-    if (!form.api) return "请选择 API 类型";
+    if (!form.api) return "请选择接口格式";
     return null;
   };
 
@@ -120,7 +120,7 @@ export default function ProviderEditor() {
           <ArrowLeft className="w-5 h-5 text-muted-foreground" />
         </button>
         <h1 className="text-2xl font-bold">
-          {isEdit ? `编辑 Provider ${form.name}` : "添加 Provider"}
+          {isEdit ? `编辑供应商 ${form.name}` : "添加供应商"}
         </h1>
       </div>
 
@@ -210,7 +210,7 @@ export default function ProviderEditor() {
                   }}
                   data-testid="model-alias-input"
                   placeholder="自定义显示名称"
-                  className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 border rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             )}
@@ -253,7 +253,7 @@ export default function ProviderEditor() {
           className="w-full py-2.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center justify-center gap-2 font-medium transition-opacity"
         >
           <Save className="w-4 h-4" />
-          保存 Provider
+          保存供应商
         </button>
       </form>
     </div>

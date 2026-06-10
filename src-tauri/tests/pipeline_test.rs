@@ -27,10 +27,10 @@ fn step_plan_provider() -> omp_switch_lib::models::provider::ProviderConfig {
         models: Some(vec![
             omp_switch_lib::models::provider::ModelDefinition {
                 id: "step-3.7-flash".to_string(),
-                name: "Step 3.7 Flash".to_string(),
+                name: "step-3.7-flash".to_string(),
                 api_type: Some("openai-completions".to_string()),
-                reasoning: false,
-                input_types: vec!["text".to_string()],
+                reasoning: true,
+                input_types: vec!["text".to_string(), "image".to_string()],
                 cost: omp_switch_lib::models::provider::ModelCost {
                     input: 0.0,
                     output: 0.0,
@@ -100,7 +100,7 @@ fn test_full_pipeline_yaml_has_models() {
     assert!(content.contains("step-plan"), "YAML should contain step-plan provider");
     assert!(content.contains("models"), "YAML should have models array");
     assert!(content.contains("step-3.7-flash"), "YAML should contain model id");
-    assert!(content.contains("Step 3.7 Flash"), "YAML should contain model name");
+    assert!(content.contains("step-3.7-flash"), "YAML should contain model name");
     assert!(content.contains("contextWindow"), "YAML should contain contextWindow");
     assert!(content.contains("maxTokens"), "YAML should contain maxTokens");
 
@@ -120,6 +120,37 @@ fn test_full_pipeline_yaml_has_models() {
     assert!(model.get("cost").is_some());
     assert!(model.get("contextWindow").is_some());
     assert!(model.get("maxTokens").is_some());
+}
+
+#[test]
+fn test_disabled_provider_is_not_written_to_models_yaml() {
+    let db = omp_switch_lib::database::connection::DbConnection::in_memory().unwrap();
+    clear_db(&db);
+    let service = omp_switch_lib::services::provider_service::ProviderService::new(&db);
+
+    let enabled = step_plan_provider();
+    let mut disabled = step_plan_provider();
+    disabled.id = "disabled-step".to_string();
+    disabled.enabled = false;
+
+    service.save(enabled).unwrap();
+    service.save(disabled).unwrap();
+
+    let content = std::fs::read_to_string(omp_switch_lib::utils::fs::get_models_yaml_path()).unwrap();
+    assert!(content.contains("step-plan"));
+    assert!(!content.contains("disabled-step"));
+}
+
+#[test]
+fn test_omp_list_models_parser_discovers_github_copilot() {
+    let text = "Provider models\nprovider model context max-out thinking images\ngithub-copilot gpt-5.5 400K 128K low,medium,high,xhigh yes\n";
+    let providers = omp_switch_lib::services::model_metadata::parse_omp_list_models(text);
+    assert_eq!(providers.len(), 1);
+    assert_eq!(providers[0].id, "github-copilot");
+    let model = &providers[0].models.as_ref().unwrap()[0];
+    assert_eq!(model.id, "gpt-5.5");
+    assert_eq!(model.context_window, 400000);
+    assert!(model.reasoning);
 }
 
 #[test]

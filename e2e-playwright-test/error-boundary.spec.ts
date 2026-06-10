@@ -24,7 +24,7 @@ test.describe('Error Boundary', () => {
     });
 
     // Save provider with invalid key
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('error-test');
     await page.getByTestId('provider-name-input').fill('Error Test');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -39,7 +39,7 @@ test.describe('Error Boundary', () => {
     await expect(page.getByText('保存成功')).toBeVisible();
 
     // Verify app still functional (no crash)
-    await expect(page.getByRole('heading', { name: 'Provider 管理' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '供应商管理' })).toBeVisible();
     await expect(page.getByTestId('provider-card-error-test')).toBeVisible();
 
     // Backend verify: provider persisted despite chat error
@@ -48,12 +48,12 @@ test.describe('Error Boundary', () => {
   });
 
   test('validation prevents save with empty form', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     // id is initially empty, just click save
     await page.getByTestId('save-provider-btn').click();
 
     // Should stay on editor page (not redirect to dashboard)
-    await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
 
     // Backend verify: no new provider added
     const providers = await page.evaluate(async () => {
@@ -65,12 +65,12 @@ test.describe('Error Boundary', () => {
   });
 
   test('save provider without api type shows validation error', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('no-api');
     await page.getByTestId('provider-name-input').fill('No API');
     await page.getByTestId('save-provider-btn').click();
 
-    await expect(page.getByText('请选择 API 类型')).toBeVisible();
+    await expect(page.getByText('请选择接口格式')).toBeVisible();
 
     // Backend verify: provider not saved without api type
     const providers = await page.evaluate(async () => {
@@ -81,7 +81,7 @@ test.describe('Error Boundary', () => {
   });
 
   test('duplicate provider id on add', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('openai');
     await page.getByTestId('provider-name-input').fill('Duplicate');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -93,7 +93,7 @@ test.describe('Error Boundary', () => {
 
   test('very long provider id', async ({ page }) => {
     const longId = 'x'.repeat(500);
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill(longId);
     await page.getByTestId('provider-name-input').fill('Long ID');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -109,7 +109,7 @@ test.describe('Error Boundary', () => {
   });
 
   test('provider id with special chars', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('test-123_abc');
     await page.getByTestId('provider-name-input').fill('Special ID');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -125,7 +125,7 @@ test.describe('Error Boundary', () => {
   });
 
   test('model without id rejected', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('no-model-id');
     await page.getByTestId('provider-name-input').fill('No Model ID');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
@@ -140,7 +140,7 @@ test.describe('Error Boundary', () => {
   });
 
   test('save without model if provider has none', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
+    await page.getByRole('button', { name: '添加供应商' }).click();
     await page.getByTestId('provider-id-input').fill('no-models');
     await page.getByTestId('provider-name-input').fill('No Models');
     await page.getByTestId('provider-api-select').selectOption('openai-completions');

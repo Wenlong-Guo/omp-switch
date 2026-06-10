@@ -15,7 +15,7 @@ test.describe('Dashboard', () => {
     await expect(page.getByRole('heading', { name: 'OpenAI' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Anthropic' })).toBeVisible();
     await expect(page.getByText('默认', { exact: true })).toBeVisible();
-    await expect(page.getByText('默认: openai')).toBeVisible();
+    await expect(page.getByText('默认: openai')).not.toBeVisible();
 
     // Backend verify: provider list matches
     const providers = await getProviders(page);
@@ -29,26 +29,26 @@ test.describe('Dashboard', () => {
     const stepPlanCard = page.getByTestId('provider-card-step-plan');
     await stepPlanCard.getByRole('button', { name: '设为默认' }).click();
     await expect(stepPlanCard.getByText('默认', { exact: true })).toBeVisible();
-    await expect(page.getByText('默认: step-plan')).toBeVisible();
+    await expect(page.getByText('默认: step-plan')).not.toBeVisible();
 
     // Backend verify: defaultProvider updated in settings
     await verifyDefaultProvider(page, 'step-plan');
   });
 
   test('navigate to add provider', async ({ page }) => {
-    await page.getByRole('button', { name: '添加 Provider' }).click();
-    await expect(page.getByRole('heading', { name: '添加 Provider' })).toBeVisible();
+    await page.getByRole('button', { name: '添加供应商' }).click();
+    await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
   });
 
   test('search filters providers by name', async ({ page }) => {
-    await page.getByPlaceholder(/搜索 Provider/).fill('StepFun');
+    await page.getByPlaceholder(/搜索供应商/).fill('StepFun');
     await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'OpenAI' })).not.toBeVisible();
   });
 
   test('search with no results shows empty state', async ({ page }) => {
-    await page.getByPlaceholder(/搜索 Provider/).fill('zzzzzzzz');
-    await expect(page.getByText('暂无 Provider')).toBeVisible();
+    await page.getByPlaceholder(/搜索供应商/).fill('zzzzzzzz');
+    await expect(page.getByText('暂无供应商')).toBeVisible();
   });
 
   test('expand model list shows models', async ({ page }) => {
@@ -61,7 +61,7 @@ test.describe('Dashboard', () => {
     // anthropic mock has no models
     const anthropicCard = page.getByTestId('provider-card-anthropic');
     await anthropicCard.getByRole('button', { name: '设为默认' }).click();
-    await expect(page.getByText('该 Provider 没有模型，无法设为默认')).toBeVisible();
+    await expect(page.getByText('该供应商没有模型，无法设为默认')).toBeVisible();
 
     // Backend verify: defaultProvider unchanged
     const settings = await page.evaluate(async () => {
@@ -87,10 +87,10 @@ test.describe('Dashboard', () => {
   });
 
   test('clear search restores all providers', async ({ page }) => {
-    await page.getByPlaceholder(/搜索 Provider/).fill('StepFun');
+    await page.getByPlaceholder(/搜索供应商/).fill('StepFun');
     await expect(page.getByRole('heading', { name: 'OpenAI' })).not.toBeVisible();
 
-    await page.getByPlaceholder(/搜索 Provider/).fill('');
+    await page.getByPlaceholder(/搜索供应商/).fill('');
     await expect(page.getByRole('heading', { name: 'OpenAI' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Anthropic' })).toBeVisible();
   });
@@ -109,6 +109,6 @@ test.describe('Dashboard', () => {
     await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
 
     const openaiCard = page.getByTestId('provider-card-openai');
-    await expect(openaiCard.getByText('已停用')).toBeVisible();
+    await expect(openaiCard.getByText('未应用')).toBeVisible();
   });
 });

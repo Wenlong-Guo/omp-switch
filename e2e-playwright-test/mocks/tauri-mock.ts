@@ -196,7 +196,7 @@ function buildInitScript(apiKey: string) {
 }
 
 export async function injectTauriMock(page: any) {
-  const apiKey = process.env.STEPFUN_API_KEY || '14OqZB8mLPQVLEXveakbFiUOAlmY8JknKdo52iE5eUBNG9wk4O9HqD55By2tnYjKu';
+  const apiKey = process.env.STEPFUN_API_KEY || '';
 
   await page.exposeFunction('__e2e_http_post', async (url: string, headers: any, body: any) => {
     const response = await fetch(url, {
