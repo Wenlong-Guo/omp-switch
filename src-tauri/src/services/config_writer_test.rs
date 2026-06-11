@@ -3,7 +3,7 @@ mod tests {
     use super::super::config_writer::ConfigWriter;
     use super::super::provider_service::ProviderService;
     use crate::database::connection::DbConnection;
-    use crate::models::provider::ProviderConfig;
+    use crate::models::provider::{ModelCompat, ProviderConfig};
 
     fn create_test_db() -> DbConnection {
         DbConnection::in_memory().unwrap()
@@ -125,6 +125,79 @@ mod tests {
         service.save(provider).unwrap();
         let writer = ConfigWriter::new(&db);
         assert!(writer.write_models_yaml().is_ok());
+    }
+
+    #[test]
+    fn test_write_models_yaml_omits_empty_compat_fields() {
+        let db = create_test_db();
+        let service = ProviderService::new(&db);
+        let mut provider = sample_provider("step-plan");
+        provider.models = Some(vec![
+            crate::models::provider::ModelDefinition {
+                id: "Step-3.7-flash".to_string(),
+                name: "Step-3.7-flash".to_string(),
+                api_type: Some("openai-completions".to_string()),
+                reasoning: true,
+                input_types: vec!["text".to_string(), "image".to_string()],
+                cost: crate::models::provider::ModelCost {
+                    input: 0.0,
+                    output: 0.0,
+                    cache_read: 0.0,
+                    cache_write: 0.0,
+                },
+                context_window: 128000,
+                max_tokens: 16384,
+                headers: None,
+                compat: Some(ModelCompat {
+                    supports_store: None,
+                    supports_developer_role: None,
+                    supports_reasoning_effort: None,
+                    max_tokens_field: None,
+                    open_router_routing: None,
+                    vercel_gateway_routing: None,
+                    extra_body: None,
+                }),
+                default_temperature: None,
+                default_top_p: None,
+                default_presence_penalty: None,
+                default_frequency_penalty: None,
+                default_seed: None,
+            },
+        ]);
+        service.save(provider).unwrap();
+
+        let content = std::fs::read_to_string(crate::utils::fs::get_models_yaml_path()).unwrap();
+        assert!(content.contains("step-plan"));
+        assert!(!content.contains("compat:"));
+        assert!(!content.contains("null"));
+    }
+
+    #[test]
+    fn test_write_models_yaml_uses_valid_lm_studio_discovery_type() {
+        let provider = crate::services::model_metadata::default_builtin_providers()
+            .into_iter()
+            .find(|provider| provider.id == "lm-studio")
+            .unwrap();
+
+        assert_eq!(
+            provider.discovery.unwrap().discovery_type,
+            "lm-studio".to_string()
+        );
+    }
+
+    #[test]
+    fn test_write_models_yaml_normalizes_legacy_lmstudio_discovery_type() {
+        let db = create_test_db();
+        let service = ProviderService::new(&db);
+        let mut provider = sample_provider("lm-studio");
+        provider.discovery = Some(crate::models::provider::DiscoveryConfig {
+            discovery_type: "lmstudio".to_string(),
+        });
+        service.save(provider).unwrap();
+
+        let content = std::fs::read_to_string(crate::utils::fs::get_models_yaml_path()).unwrap();
+        assert!(content.contains("type: lm-studio"));
+        assert!(!content.contains("type: lmstudio"));
     }
 
     #[test]

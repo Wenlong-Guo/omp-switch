@@ -56,7 +56,7 @@ impl<'a> ConfigWriter<'a> {
                 config.insert("auth".to_string(), serde_json::Value::String(auth));
             }
             if let Some(discovery) = p.discovery {
-                config.insert("discovery".to_string(), serde_json::to_value(discovery).unwrap());
+                config.insert("discovery".to_string(), serialize_discovery(discovery));
             }
             if let Some(models) = p.models {
                 let model_values: Vec<serde_json::Value> = models.into_iter().map(|m| {
@@ -75,7 +75,9 @@ impl<'a> ConfigWriter<'a> {
                         mc.insert("headers".to_string(), serde_json::to_value(headers).unwrap());
                     }
                     if let Some(compat) = m.compat {
-                        mc.insert("compat".to_string(), serde_json::to_value(compat).unwrap());
+                        if let Some(compat_value) = serialize_compat(compat) {
+                            mc.insert("compat".to_string(), compat_value);
+                        }
                     }
                     if let Some(v) = m.default_temperature {
                         if let Some(n) = serde_json::Number::from_f64(v) {
@@ -132,4 +134,23 @@ impl<'a> ConfigWriter<'a> {
         }
         Ok(())
     }
+}
+
+fn serialize_compat(compat: crate::models::provider::ModelCompat) -> Option<serde_json::Value> {
+    let mut value = serde_json::to_value(compat).ok()?;
+    let object = value.as_object_mut()?;
+    object.retain(|_, v| !v.is_null());
+
+    if object.is_empty() {
+        None
+    } else {
+        Some(value)
+    }
+}
+
+fn serialize_discovery(mut discovery: crate::models::provider::DiscoveryConfig) -> serde_json::Value {
+    if discovery.discovery_type == "lmstudio" {
+        discovery.discovery_type = "lm-studio".to_string();
+    }
+    serde_json::to_value(discovery).unwrap()
 }

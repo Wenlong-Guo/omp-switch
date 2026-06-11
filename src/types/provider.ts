@@ -18,7 +18,7 @@ export interface ProviderConfig {
   headers?: Record<string, string>;
   authHeader?: boolean;
   auth?: "apiKey" | "none";
-  discovery?: { type: "ollama" | "lmstudio" };
+  discovery?: { type: "ollama" | "lm-studio" };
   modelOverrides?: Record<string, ModelOverride>;
   models?: ModelDefinition[];
   createdAt?: string;

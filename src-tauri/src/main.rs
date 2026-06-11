@@ -14,6 +14,7 @@ fn main() {
 
             // Initialize builtin presets on first startup
             use omp_switch_lib::commands::provider::get_db;
+            use omp_switch_lib::services::config_writer::ConfigWriter;
             use omp_switch_lib::services::provider_service::ProviderService;
 
             let db = get_db();
@@ -25,6 +26,7 @@ fn main() {
                 }
             }
             service.prune_deprecated_builtin_presets();
+            let _ = ConfigWriter::new(db).write_models_yaml();
 
             Ok(())
         })
