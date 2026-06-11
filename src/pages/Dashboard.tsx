@@ -1,16 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import { useProviderStore } from "@/stores/providerStore";
-import { useSettingsStore } from "@/stores/settingsStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useLocation } from "wouter";
-import { Plus, ArrowRight, Star, Pencil, Trash2, Download, Upload } from "lucide-react";
+import { Plus, ArrowRight, Pencil, Trash2, Download, Upload, GripVertical, Copy, FlaskConical, BarChart3 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { validateProviderImport } from "@/lib/importValidation";
 import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function Dashboard() {
-  const { providers, fetchProviders, deleteProvider, setActiveProvider, saveProvider, isLoading } = useProviderStore();
-  const { settings, fetchSettings } = useSettingsStore();
+  const { providers, fetchProviders, deleteProvider, saveProvider, isLoading } = useProviderStore();
   const toast = useToastStore();
   const [, setLocation] = useLocation();
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -33,8 +31,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchProviders();
-    fetchSettings();
-  }, [fetchProviders, fetchSettings]);
+  }, [fetchProviders]);
 
   const filteredProviders = orderedProviders.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -131,7 +128,7 @@ export default function Dashboard() {
       </div>
 
       {isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="border rounded-lg p-4 space-y-3 animate-pulse">
               <div className="h-5 bg-muted rounded w-1/3" />
@@ -147,23 +144,19 @@ export default function Dashboard() {
       )}
 
       {!isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           {filteredProviders.map((provider) => {
             const isExpanded = expandedId === provider.id;
             const modelCount = provider.models?.length ?? 0;
             const apiType = provider.api ?? "unknown";
-            const apiColor =
-              apiType.includes("openai") ? "border-l-blue-500" :
-              apiType.includes("anthropic") ? "border-l-amber-500" :
-              apiType.includes("google") ? "border-l-emerald-500" :
-              apiType.includes("azure") ? "border-l-sky-600" :
-              "border-l-slate-400";
             const apiBadgeColor =
               apiType.includes("openai") ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" :
               apiType.includes("anthropic") ? "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" :
               apiType.includes("google") ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" :
               apiType.includes("azure") ? "bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300" :
               "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
+            const initial = provider.name.trim().charAt(0).toUpperCase() || provider.id.charAt(0).toUpperCase();
+            const modelSummary = modelCount > 0 ? `${modelCount} 个模型` : "未配置模型";
             return (
               <div
                 key={provider.id}
@@ -173,80 +166,38 @@ export default function Dashboard() {
                 onDragOver={(e) => handleDragOver(e, provider.id)}
                 onDrop={() => handleDrop(provider.id)}
                 onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-                className={`border rounded-lg p-4 transition-all hover:shadow-md cursor-move border-l-4 ${apiColor} ${provider.enabled ? "border-border bg-background" : "border-dashed opacity-60 bg-muted/20"} ${dragOverId === provider.id && dragId !== provider.id ? "ring-2 ring-primary ring-offset-2 scale-[1.02]" : ""} ${dragId === provider.id ? "opacity-40" : ""}`}
+                className={`group min-h-[104px] border rounded-2xl px-5 py-4 transition-all cursor-move flex items-center gap-4 ${provider.enabled ? "border-primary/45 bg-gradient-to-r from-primary/10 via-background to-background hover:border-primary hover:shadow-sm" : "border-border bg-muted/20 opacity-80 hover:opacity-100 hover:border-primary/50"} ${dragOverId === provider.id && dragId !== provider.id ? "ring-2 ring-primary ring-offset-2 scale-[1.01]" : ""} ${dragId === provider.id ? "opacity-40" : ""}`}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-base">{provider.name}</h3>
-                    {provider.isBuiltIn && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
-                        内置
-                      </span>
-                    )}
-                    {!provider.enabled && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 font-medium">
-                        未应用
-                      </span>
-                    )}
+                <GripVertical className="w-5 h-5 text-muted-foreground/70 shrink-0" />
+                <div className="w-12 h-12 rounded-2xl border bg-muted/50 flex items-center justify-center text-lg font-semibold text-muted-foreground shrink-0">
+                  {initial}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <h3 className="font-semibold text-lg truncate">{provider.name}</h3>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-lg font-medium ${apiBadgeColor}`}>{provider.id}</span>
+                    {provider.isBuiltIn && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">内置</span>}
+                    {!provider.enabled && <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 font-medium">未应用</span>}
                   </div>
-                  {settings?.defaultProvider === provider.id && (
-                    <span className="text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-medium">
-                      默认
-                    </span>
+                  <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+                    <span className="truncate max-w-[360px]">{provider.baseUrl || "未配置官网地址"}</span>
+                    <span className="text-muted-foreground/40">·</span>
+                    <button onClick={() => setExpandedId(isExpanded ? null : provider.id)} className="hover:text-foreground transition-colors shrink-0">
+                      {isExpanded ? "收起" : modelSummary}
+                    </button>
+                  </div>
+                  {isExpanded && provider.models && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {provider.models.slice(0, 8).map((m) => (
+                        <span key={m.id} className="text-[11px] px-2 py-0.5 bg-muted rounded-md text-muted-foreground">
+                          {m.name}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-[10px] px-2 py-0.5 rounded font-medium ${apiBadgeColor}`}>
-                    {apiType}
-                  </span>
-                  <span className="text-xs text-muted-foreground truncate">{provider.baseUrl ?? "无 baseUrl"}</span>
-                </div>
-                <button
-                  onClick={() => setExpandedId(isExpanded ? null : provider.id)}
-                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2 transition-colors"
-                >
-                  <span>{isExpanded ? "▼" : "▶"}</span>
-                  <span className="font-medium">{modelCount}</span>
-                  <span>个模型</span>
-                </button>
-                {isExpanded && provider.models && (
-                  <div className="mb-3 p-2 bg-muted/50 rounded-md text-sm space-y-1">
-                    {provider.models.map((m) => (
-                      <div key={m.id} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />
-                        <span className="font-medium text-foreground">{m.name}</span>
-                        <span className="truncate">({m.id})</span>
-                        {m.reasoning && <span className="text-[10px] bg-secondary px-1 rounded">reasoning</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    onClick={async () => {
-                      if ((provider.models?.length ?? 0) === 0) {
-                        toast.show("该供应商没有模型，无法设为默认", "error");
-                        return;
-                      }
-                      try {
-                        const firstModelId = provider.models?.[0]?.id;
-                        await setActiveProvider(provider.id, firstModelId);
-                        toast.show("已设为默认 Provider", "success");
-                      } catch {
-                        toast.show("设置失败", "error");
-                      }
-                    }}
-                    disabled={settings?.defaultProvider === provider.id}
-                    className={`text-sm px-3 py-1.5 rounded-md transition-opacity flex items-center gap-1 ${
-                      settings?.defaultProvider === provider.id
-                        ? "bg-muted text-muted-foreground cursor-not-allowed"
-                        : "bg-primary text-primary-foreground hover:opacity-90"
-                    }`}
-                  >
-                    <Star className="w-3.5 h-3.5" />
-                    {settings?.defaultProvider === provider.id ? "当前默认" : "设为默认"}
-                  </button>
-                  <label className="text-sm px-3 py-1.5 border rounded-md hover:bg-muted transition-colors flex items-center gap-2 cursor-pointer">
+                <div className="flex items-center gap-2 shrink-0">
+                  <label className={`text-sm px-3 py-2 rounded-xl transition-colors flex items-center gap-2 cursor-pointer ${provider.enabled ? "bg-orange-500/15 text-orange-600 hover:bg-orange-500/20" : "border hover:bg-muted"}`}>
                     <input
                       type="checkbox"
                       checked={provider.enabled}
@@ -257,21 +208,45 @@ export default function Dashboard() {
                       data-testid={`provider-enabled-${provider.id}`}
                       className="h-4 w-4 accent-primary"
                     />
-                    应用
+                    {provider.enabled ? "移除" : "应用"}
                   </label>
                   <button
                     onClick={() => setLocation(`/provider/edit/${provider.id}`)}
-                    className="text-sm px-3 py-1.5 border rounded-md hover:bg-muted transition-colors flex items-center gap-1"
+                    aria-label={`编辑 ${provider.name}`}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
-                    <Pencil className="w-3.5 h-3.5" />
-                    编辑
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await navigator.clipboard?.writeText(JSON.stringify(provider, null, 2));
+                      toast.show("已复制供应商配置", "success");
+                    }}
+                    aria-label={`复制 ${provider.name}`}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => toast.show("测试模型功能待接入", "success")}
+                    aria-label={`测试模型 ${provider.name}`}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <FlaskConical className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setExpandedId(isExpanded ? null : provider.id)}
+                    aria-label={`查看模型 ${provider.name}`}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <BarChart3 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setConfirmId(provider.id)}
-                    className="text-sm px-3 py-1.5 border rounded-md hover:bg-destructive hover:text-destructive-foreground transition-colors flex items-center gap-1"
+                    aria-label={`删除 ${provider.name}`}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    删除
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>

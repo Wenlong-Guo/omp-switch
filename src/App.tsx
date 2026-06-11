@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Route, Router, useLocation } from "wouter";
-import { LayoutDashboard, Plus, Settings as SettingsIcon, RefreshCw } from "lucide-react";
+import { LayoutDashboard, Plus, Settings as SettingsIcon, RefreshCw, Bot } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import Dashboard from "@/pages/Dashboard";
 import ProviderEditor from "@/pages/ProviderEditor";
 import Settings from "@/pages/Settings";
 import Sync from "@/pages/Sync";
+import ModelRoles from "@/pages/ModelRoles";
 import Toast from "@/components/Toast";
 import { getVersion } from "@tauri-apps/api/app";
 
@@ -38,6 +39,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { path: "/", label: "供应商", icon: LayoutDashboard },
     { path: "/provider/new", label: "添加供应商", icon: Plus },
+    { path: "/roles", label: "模型角色", icon: Bot },
     { path: "/settings", label: "设置", icon: SettingsIcon },
     { path: "/sync", label: "同步", icon: RefreshCw },
   ];
@@ -48,8 +50,8 @@ function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
-      <aside className="w-56 border-r bg-muted/30 flex flex-col">
+    <div className="h-screen overflow-hidden flex bg-background">
+      <aside className="w-56 shrink-0 border-r bg-muted/30 flex flex-col">
         <div className="p-4">
           <h1 className="text-lg font-bold tracking-tight">omp-switch</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{version ? `v${version}` : ""}</p>
@@ -75,7 +77,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
       </aside>
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-y-auto">
         <PageWrapper key={location}>{children}</PageWrapper>
       </main>
     </div>
@@ -90,6 +92,7 @@ function App() {
         <Route path="/" component={Dashboard} />
         <Route path="/provider/new" component={ProviderEditor} />
         <Route path="/provider/edit/:id" component={ProviderEditor} />
+        <Route path="/roles" component={ModelRoles} />
         <Route path="/settings" component={Settings} />
         <Route path="/sync" component={Sync} />
       </Layout>

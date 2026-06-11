@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { ArrowLeft, Save, Brain, EyeOff, Server, Bot } from "lucide-react";
+import { ArrowLeft, Save, Brain, EyeOff } from "lucide-react";
 import { useLocation } from "wouter";
 import type { AppSettings, ThinkingLevel } from "@/types/settings";
 
@@ -49,32 +49,6 @@ export default function Settings() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="bg-muted/20 rounded-lg p-4 space-y-4 border">
-          <div>
-            <label className="block text-sm font-medium mb-1 flex items-center gap-1.5">
-              <Server className="w-3.5 h-3.5 text-muted-foreground" />
-              默认 Provider
-            </label>
-            <input
-              value={form.defaultProvider ?? ""}
-              onChange={(e) => setForm({ ...form, defaultProvider: e.target.value || undefined })}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
-              placeholder="anthropic"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 flex items-center gap-1.5">
-              <Bot className="w-3.5 h-3.5 text-muted-foreground" />
-              默认模型
-            </label>
-            <input
-              value={form.defaultModel ?? ""}
-              onChange={(e) => setForm({ ...form, defaultModel: e.target.value || undefined })}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
-              placeholder="claude-sonnet-4-20250514"
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-medium mb-1 flex items-center gap-1.5">
               <Brain className="w-3.5 h-3.5 text-muted-foreground" />

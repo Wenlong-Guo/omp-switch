@@ -105,17 +105,9 @@ mod tests {
         let db = create_test_db();
         let dao = SettingsDao::new(&db);
         let mut settings = sample_settings();
-        settings.model_roles = Some(crate::models::settings::ModelRoles {
-            default: crate::models::settings::RoleConfig {
-                provider: "anthropic".to_string(),
-                model: "claude-sonnet-4-20250514".to_string(),
-            },
-            smol: None,
-            slow: None,
-            plan: None,
-            commit: None,
-            paths: None,
-        });
+        let mut roles = std::collections::HashMap::new();
+        roles.insert("default".to_string(), "anthropic/claude-sonnet-4-20250514".to_string());
+        settings.model_roles = Some(crate::models::settings::ModelRoles(roles));
         assert!(dao.update(&settings).is_ok());
     }
 

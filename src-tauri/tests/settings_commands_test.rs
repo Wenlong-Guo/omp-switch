@@ -119,17 +119,9 @@ fn test_command_save_settings_with_budgets() {
 fn test_command_save_settings_with_roles() {
     let _lock = TEST_LOCK.lock().unwrap();
     clear_db();
-    let roles = omp_switch_lib::models::settings::ModelRoles {
-        default: omp_switch_lib::models::settings::RoleConfig {
-            provider: "anthropic".to_string(),
-            model: "claude-sonnet-4-20250514".to_string(),
-        },
-        smol: None,
-        slow: None,
-        plan: None,
-        commit: None,
-        paths: None,
-    };
+    let mut roles_map = std::collections::HashMap::new();
+    roles_map.insert("default".to_string(), "anthropic/claude-sonnet-4-20250514".to_string());
+    let roles = omp_switch_lib::models::settings::ModelRoles(roles_map);
     let settings = AppSettings {
         model_roles: Some(roles),
         ..Default::default()

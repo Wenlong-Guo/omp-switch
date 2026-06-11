@@ -219,6 +219,42 @@ mod tests {
     }
 
     #[test]
+    fn test_write_settings_json_can_clear_default_provider_and_model() {
+        let db = create_test_db();
+        let settings_service = super::super::settings_service::SettingsService::new(&db);
+        settings_service.save(crate::models::settings::AppSettings {
+            default_provider: Some("step-plan".to_string()),
+            default_model: Some("Step-3.7-flash".to_string()),
+            ..Default::default()
+        }).unwrap();
+        settings_service.save(crate::models::settings::AppSettings::default()).unwrap();
+
+        let content = std::fs::read_to_string(crate::utils::fs::get_settings_json_path()).unwrap();
+        assert!(content.contains("null") || !content.contains("defaultProvider"));
+        let settings = settings_service.get().unwrap().unwrap();
+        assert!(settings.default_provider.is_none());
+        assert!(settings.default_model.is_none());
+    }
+
+    #[test]
+    fn test_write_settings_json_with_model_roles_strings() {
+        let db = create_test_db();
+        let settings_service = super::super::settings_service::SettingsService::new(&db);
+        let mut roles = std::collections::HashMap::new();
+        roles.insert("default".to_string(), "step-plan/Step-3.7-flash".to_string());
+        roles.insert("plan".to_string(), "step-plan/Step-3.7-flash:high".to_string());
+        settings_service.save(crate::models::settings::AppSettings {
+            model_roles: Some(crate::models::settings::ModelRoles(roles)),
+            ..Default::default()
+        }).unwrap();
+
+        let content = std::fs::read_to_string(crate::utils::fs::get_settings_json_path()).unwrap();
+        assert!(content.contains("modelRoles"));
+        assert!(content.contains("step-plan/Step-3.7-flash"));
+        assert!(content.contains("step-plan/Step-3.7-flash:high"));
+    }
+
+    #[test]
     fn test_write_models_yaml_with_models() {
         let db = create_test_db();
         let service = ProviderService::new(&db);

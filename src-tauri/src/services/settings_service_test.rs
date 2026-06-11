@@ -100,17 +100,9 @@ mod tests {
     fn test_save_with_roles() {
         let db = create_test_db();
         let service = SettingsService::new(&db);
-        let roles = crate::models::settings::ModelRoles {
-            default: crate::models::settings::RoleConfig {
-                provider: "anthropic".to_string(),
-                model: "claude-sonnet-4-20250514".to_string(),
-            },
-            smol: None,
-            slow: None,
-            plan: None,
-            commit: None,
-            paths: None,
-        };
+        let mut roles_map = std::collections::HashMap::new();
+        roles_map.insert("default".to_string(), "anthropic/claude-sonnet-4-20250514".to_string());
+        let roles = crate::models::settings::ModelRoles(roles_map);
         let settings = AppSettings {
             model_roles: Some(roles),
             ..Default::default()

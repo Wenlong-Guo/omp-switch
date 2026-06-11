@@ -130,7 +130,7 @@ export default function ProviderBasicForm({ form, isEdit, onChange, presets, sel
           onChange={(e) => update("enabled", e.target.checked)}
           className="h-4 w-4 rounded border-primary accent-primary"
         />
-        <label htmlFor={`${id}-enabled`} className="text-sm font-medium">默认应用配置</label>
+        <label htmlFor={`${id}-enabled`} className="text-sm font-medium">应用配置</label>
       </div>
     </div>
   );

@@ -26,16 +26,14 @@ describe("Settings", () => {
     expect(screen.getByText("全局设置")).toBeInTheDocument();
   });
 
-  it("shows default provider input", () => {
+  it("does not show legacy default provider input", () => {
     render(<Settings />);
-    const input = screen.getByDisplayValue("anthropic");
-    expect(input).toBeInTheDocument();
+    expect(screen.queryByText("默认 Provider")).not.toBeInTheDocument();
   });
 
-  it("shows default model input", () => {
+  it("does not show legacy default model input", () => {
     render(<Settings />);
-    const input = screen.getByDisplayValue("claude-sonnet-4-20250514");
-    expect(input).toBeInTheDocument();
+    expect(screen.queryByText("默认模型")).not.toBeInTheDocument();
   });
 
   it("has thinking level select", () => {
@@ -74,20 +72,6 @@ describe("Settings", () => {
     const store = useSettingsStore();
     render(<Settings />);
     expect(store.fetchSettings).toHaveBeenCalled();
-  });
-
-  it("allows changing default provider", () => {
-    render(<Settings />);
-    const input = screen.getByDisplayValue("anthropic");
-    fireEvent.change(input, { target: { value: "openai" } });
-    expect(input).toHaveValue("openai");
-  });
-
-  it("allows changing default model", () => {
-    render(<Settings />);
-    const input = screen.getByDisplayValue("claude-sonnet-4-20250514");
-    fireEvent.change(input, { target: { value: "gpt-4" } });
-    expect(input).toHaveValue("gpt-4");
   });
 
   it("allows changing thinking level", () => {

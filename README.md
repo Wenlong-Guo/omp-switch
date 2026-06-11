@@ -2,16 +2,18 @@
 
 [English](README.md) | [中文](README.zh.md)
 
-> **Version**: 0.1.2 | **Platforms**: macOS / Windows / Linux
+> **Version**: 0.1.3 | **Platforms**: macOS / Windows / Linux
 
 A cross-platform AI Provider configuration manager built with **Tauri 2 + React + SQLite**.
 
 ## Features
 
-- **Provider Management**: Add, edit, delete AI model providers (OpenAI, Anthropic, Google, StepFun, etc.) with built-in preset templates.
-- **Preset Model Selection**: Choose from built-in presets, select models from dropdown, and set custom aliases.
+- **Provider Management**: Add, edit, delete, enable, copy, and test AI model providers (OpenAI, Anthropic, DeepSeek, Kimi, StepFun, Qwen, MiniMax, etc.) with compact provider cards.
+- **Preset Provider Cards**: Choose mainstream provider presets from card grid; presets include official base URLs and flagship/flash model defaults, with OpenCode-only presets excluded.
+- **Provider YAML Editor**: Preview and edit the provider config as YAML because omp writes provider/model config to `models.yml`.
 - **Full Model CRUD**: Configure all 19 model parameters including ID, name, API type, reasoning, input types (text/image), cost (input/output/cacheRead/cacheWrite), contextWindow, maxTokens, custom headers, and full ModelCompat (supportsStore, supportsDeveloperRole, supportsReasoningEffort, maxTokensField, openRouterRouting, vercelGatewayRouting, extraBody).
-- **Global Settings**: Default provider, model, Thinking Level, hide thinking blocks, budget configuration.
+- **Model Roles**: Configure omp role defaults (`default`, `smol`, `slow`, `plan`, `commit`) with enabled provider models.
+- **Global Settings**: Thinking Level, hide thinking blocks, budget configuration, and other runtime preferences.
 - **WebDAV Sync**: Sync configurations across devices via WebDAV (e.g., Jianguoyun, NextCloud).
 - **File Bidirectional Sync**: SQLite as single source of truth, auto-export `models.yml` and `settings.json`, support external editor changes.
 - **API Key Encryption**: AES-256-GCM encryption for sensitive data.
@@ -51,7 +53,7 @@ npm run tauri build
 ```
 omp-switch/
 ├── src/                       # React frontend (Vite)
-│   ├── pages/                 # Dashboard, ProviderEditor, Settings
+│   ├── pages/                 # Dashboard, ProviderEditor, ModelRoles, Settings
 │   ├── stores/                # Zustand state management
 │   └── components/            # Reusable UI components
 ├── src-tauri/                 # Rust backend (Tauri 2)
@@ -90,6 +92,7 @@ Visit the [Releases](../../releases) page to download pre-built binaries for you
 | V0.1.0  | Project skeleton, SQLite schema, Provider CRUD |
 | V0.1.1  | Comprehensive code review, 204 passing tests |
 | V0.1.2  | Edit mode, delete confirmation, Toast notifications, dynamic version, encryption key security fix |
+| V0.1.3  | omp-compatible YAML output, provider card UI, model role defaults, provider preset cards |
 | V0.2.0  | Model override, cost configuration, WebDAV sync |
 
 ## License

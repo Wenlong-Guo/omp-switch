@@ -11,19 +11,8 @@ export interface AppSettings {
 
 export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
 
-export interface ModelRoles {
-  default: RoleConfig;
-  smol?: RoleConfig;
-  slow?: RoleConfig;
-  plan?: RoleConfig;
-  commit?: RoleConfig;
-  paths?: Record<string, Record<string, RoleConfig>>;
-}
-
-export interface RoleConfig {
-  provider: string;
-  model: string;
-}
+export type ModelRole = "default" | "smol" | "slow" | "plan" | "commit";
+export type ModelRoles = Partial<Record<ModelRole, string>>;
 
 export interface RetryConfig {
   fallbackChains: Record<string, FallbackItem[]>;

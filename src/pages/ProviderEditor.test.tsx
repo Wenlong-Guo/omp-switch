@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ProviderEditor from "./ProviderEditor";
 import { useProviderStore } from "@/stores/providerStore";
@@ -16,6 +16,17 @@ vi.mock("@/stores/providerStore", () => ({
 }));
 
 describe("ProviderEditor", () => {
+  beforeEach(() => {
+    mockSave.mockReset();
+    vi.mocked(useProviderStore).mockReturnValue({
+      saveProvider: mockSave,
+      providers: [],
+      fetchProviders: vi.fn(),
+      builtinPresets: [],
+      fetchBuiltinPresets: vi.fn(),
+    } as any);
+  });
+
   it("renders form title", () => {
     render(<ProviderEditor />);
     expect(screen.getByText("添加供应商")).toBeInTheDocument();
@@ -49,7 +60,12 @@ describe("ProviderEditor", () => {
 
   it("has enabled checkbox", () => {
     render(<ProviderEditor />);
-    expect(screen.getByLabelText("默认应用配置")).toBeInTheDocument();
+    expect(screen.getByLabelText("应用配置")).toBeInTheDocument();
+  });
+
+  it("does not enable new provider by default", () => {
+    render(<ProviderEditor />);
+    expect(screen.getByLabelText("应用配置")).not.toBeChecked();
   });
 
   it("has submit button", () => {
@@ -135,18 +151,11 @@ describe("ProviderEditor", () => {
     expect(screen.queryByTestId("model-editor-dialog")).not.toBeInTheDocument();
   });
 
-  it("shows preset select when builtinPresets available", () => {
-    vi.doMock("@/stores/providerStore", () => ({
-      useProviderStore: () => ({
-        saveProvider: mockSave,
-        providers: [],
-        fetchProviders: vi.fn(),
-        builtinPresets: [{ id: "openai", name: "OpenAI" }],
-        fetchBuiltinPresets: vi.fn(),
-      }),
-    }));
+  it("shows preset grid with featured providers", () => {
     render(<ProviderEditor />);
-    expect(screen.getByTestId("preset-select")).toBeInTheDocument();
+    expect(screen.getByTestId("preset-grid")).toBeInTheDocument();
+    expect(screen.getByTestId("preset-card-deepseek")).toBeInTheDocument();
+    expect(screen.getByTestId("preset-card-kimi")).toBeInTheDocument();
   });
 
   it("saves provider with form data", () => {
@@ -163,6 +172,15 @@ describe("ProviderEditor", () => {
     const saved = mockSave.mock.calls[mockSave.mock.calls.length - 1][0];
     expect(saved.id).toBe("test");
     expect(saved.name).toBe("Test");
+    expect(saved.enabled).toBe(false);
+  });
+
+  it("saving new provider does not set it as default", () => {
+    render(<ProviderEditor />);
+    fireEvent.change(screen.getByTestId("provider-id-input"), { target: { value: "test" } });
+    fireEvent.change(screen.getByTestId("provider-name-input"), { target: { value: "Test" } });
+    fireEvent.submit(screen.getByText("保存供应商").closest("form")!);
+    expect(mockSave).toHaveBeenCalled();
   });
 
   it("renders model card with reasoning badge", () => {
@@ -181,20 +199,15 @@ describe("ProviderEditor", () => {
     expect(screen.getByTestId("model-name-input")).toBeInTheDocument();
   });
 
-  it("changes preset selection", () => {
-    vi.mocked(useProviderStore).mockReturnValue({
-      saveProvider: mockSave,
-      providers: [],
-      fetchProviders: vi.fn(),
-      builtinPresets: [
-        { id: "openai", name: "OpenAI", models: [{ id: "gpt-4", name: "GPT-4" }] },
-      ],
-      fetchBuiltinPresets: vi.fn(),
-    } as any);
+  it("changes preset selection and renders preset model cards", () => {
     render(<ProviderEditor />);
-    const select = screen.getByTestId("preset-select");
-    fireEvent.change(select, { target: { value: "openai" } });
-    expect(screen.getByTestId("model-select")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("preset-card-deepseek"));
+    expect(screen.getByTestId("preset-model-grid")).toBeInTheDocument();
+    expect(screen.getByTestId("preset-model-card-deepseek-v4-pro")).toBeInTheDocument();
+    expect(screen.getByTestId("preset-model-card-deepseek-v4-flash")).toBeInTheDocument();
+    expect(screen.getByTestId("provider-id-input")).toHaveValue("deepseek");
+    expect(screen.getByTestId("provider-name-input")).toHaveValue("DeepSeek");
+    expect(screen.getByPlaceholderText("https://api.openai.com/v1")).toHaveValue("https://api.deepseek.com");
   });
 
   it("syncs display name from provider id until name is edited", () => {
@@ -216,21 +229,65 @@ describe("ProviderEditor", () => {
     });
   });
 
-  it("changes model alias", () => {
+  it("filters opencode-only builtin presets from preset grid", () => {
     vi.mocked(useProviderStore).mockReturnValue({
       saveProvider: mockSave,
       providers: [],
       fetchProviders: vi.fn(),
       builtinPresets: [
-        { id: "openai", name: "OpenAI", models: [{ id: "gpt-4", name: "GPT-4" }] },
+        { id: "oh-my-opencode", name: "Oh My OpenCode" },
+        { id: "custom-omp", name: "Custom OMP" },
       ],
       fetchBuiltinPresets: vi.fn(),
     } as any);
     render(<ProviderEditor />);
-    fireEvent.change(screen.getByTestId("preset-select"), { target: { value: "openai" } });
-    fireEvent.change(screen.getByTestId("model-select"), { target: { value: "gpt-4" } });
-    const aliasInput = screen.getByPlaceholderText("自定义显示名称");
-    fireEvent.change(aliasInput, { target: { value: "My GPT" } });
-    expect(aliasInput).toHaveValue("My GPT");
+    expect(screen.queryByTestId("preset-card-oh-my-opencode")).not.toBeInTheDocument();
+    expect(screen.getByTestId("preset-card-custom-omp")).toBeInTheDocument();
+  });
+
+  it("shows YAML-only config editor and sticky save bar", () => {
+    render(<ProviderEditor />);
+    expect(screen.getByTestId("provider-config-editor")).toBeInTheDocument();
+    expect(screen.queryByTestId("config-format-json")).not.toBeInTheDocument();
+    expect(screen.getByText("Provider YAML 编辑")).toBeInTheDocument();
+    expect(screen.getByTestId("sticky-save-bar")).toHaveClass("sticky");
+  });
+
+  it("applies valid YAML config editor changes", () => {
+    render(<ProviderEditor />);
+    const editor = screen.getByTestId("provider-config-editor");
+    fireEvent.change(editor, {
+      target: {
+        value: [
+          'id: "yaml-provider"',
+          'name: "YAML Provider"',
+          'enabled: false',
+          'isBuiltIn: false',
+          'api: "openai-completions"',
+          'auth: "apiKey"',
+          'baseUrl: "https://yaml.example/v1"',
+          'models:',
+        ].join("\n"),
+      },
+    });
+    fireEvent.click(screen.getByTestId("apply-config-editor"));
+    expect(screen.getByTestId("provider-id-input")).toHaveValue("yaml-provider");
+    expect(screen.getByTestId("provider-name-input")).toHaveValue("YAML Provider");
+    expect(screen.getByPlaceholderText("https://api.openai.com/v1")).toHaveValue("https://yaml.example/v1");
+  });
+
+  it("shows error for invalid YAML config", () => {
+    render(<ProviderEditor />);
+    fireEvent.change(screen.getByTestId("provider-config-editor"), { target: { value: "bad line" } });
+    fireEvent.click(screen.getByTestId("apply-config-editor"));
+    expect(screen.getByTestId("provider-config-error")).toHaveTextContent("YAML 配置解析失败");
+  });
+
+  it("shows editable YAML for selected preset", () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("preset-card-deepseek"));
+    const editor = screen.getByTestId("provider-config-editor");
+    expect(editor).not.toHaveAttribute("readonly");
+    expect((editor as HTMLTextAreaElement).value).toContain("id: \"deepseek\"");
   });
 });

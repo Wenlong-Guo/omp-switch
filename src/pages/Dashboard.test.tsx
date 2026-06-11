@@ -18,13 +18,6 @@ vi.mock("@/stores/providerStore", () => ({
   })),
 }));
 
-vi.mock("@/stores/settingsStore", () => ({
-  useSettingsStore: () => ({
-    settings: { defaultProvider: "anthropic" },
-    fetchSettings: vi.fn(),
-  }),
-}));
-
 describe("Dashboard", () => {
   afterEach(() => {
     vi.mocked(useProviderStore).mockRestore?.();
@@ -35,26 +28,25 @@ describe("Dashboard", () => {
     expect(screen.getByText("Anthropic")).toBeInTheDocument();
   });
 
-  it("shows default provider badge", () => {
+  it("does not show default provider badge", () => {
     render(<Dashboard />);
-    const badges = screen.getAllByText("默认");
-    expect(badges.length).toBeGreaterThan(0);
+    expect(screen.queryByText("默认")).not.toBeInTheDocument();
   });
 
-  it("shows provider API type", () => {
+  it("shows provider id tag", () => {
     render(<Dashboard />);
-    expect(screen.getByText("openai-completions")).toBeInTheDocument();
+    expect(screen.getByText("openai")).toBeInTheDocument();
   });
 
-  it("has set active buttons", () => {
+  it("does not show set default buttons in provider list", () => {
     render(<Dashboard />);
-    const buttons = screen.getAllByText("设为默认");
-    expect(buttons.length).toBe(1); // anthropic is already default
+    expect(screen.queryByText("设为默认模型")).not.toBeInTheDocument();
+    expect(screen.queryByText("取消默认")).not.toBeInTheDocument();
   });
 
   it("has delete buttons", () => {
     render(<Dashboard />);
-    const buttons = screen.getAllByText("删除");
+    const buttons = screen.getAllByLabelText(/删除/);
     expect(buttons.length).toBe(2);
   });
 
@@ -100,20 +92,21 @@ describe("Dashboard", () => {
     expect(cards.length).toBeGreaterThan(0);
   });
 
-  it("clicking set active triggers action", () => {
-    const setActive = vi.fn();
-    vi.mocked(useProviderStore).mockReturnValue({
-      providers: mockProviders,
-      fetchProviders: vi.fn(),
-      deleteProvider: vi.fn(),
-      setActiveProvider: setActive,
-      saveProvider: vi.fn(),
-      isLoading: false,
-    } as any);
+  it("renders provider cards in one column", () => {
+    const { container } = render(<Dashboard />);
+    const list = container.querySelector(".grid.grid-cols-1.gap-3");
+    expect(list).toBeInTheDocument();
+    expect(list?.className).not.toContain("lg:grid-cols-3");
+  });
+
+  it("renders compact provider action bar", () => {
     render(<Dashboard />);
-    const button = screen.getByText("设为默认");
-    fireEvent.click(button);
-    expect(setActive).toHaveBeenCalled();
+    expect(screen.getAllByText("移除").length).toBe(2);
+    expect(screen.getByLabelText("编辑 OpenAI")).toBeInTheDocument();
+    expect(screen.getByLabelText("复制 OpenAI")).toBeInTheDocument();
+    expect(screen.getByLabelText("测试模型 OpenAI")).toBeInTheDocument();
+    expect(screen.getByLabelText("查看模型 OpenAI")).toBeInTheDocument();
+    expect(screen.getByLabelText("删除 OpenAI")).toBeInTheDocument();
   });
 
   it("expands model list on click", () => {
@@ -149,18 +142,19 @@ describe("Dashboard", () => {
     } as any);
     render(<Dashboard />);
     expect(screen.getByText("未应用")).toBeInTheDocument();
+    expect(screen.getByText("应用")).toBeInTheDocument();
   });
 
   it("shows confirm dialog on delete click", () => {
     render(<Dashboard />);
-    const deleteButtons = screen.getAllByText("删除");
+    const deleteButtons = screen.getAllByLabelText(/删除/);
     fireEvent.click(deleteButtons[0]);
     expect(screen.getByText("确认删除")).toBeInTheDocument();
   });
 
   it("cancels delete dialog", () => {
     render(<Dashboard />);
-    fireEvent.click(screen.getAllByText("删除")[0]);
+    fireEvent.click(screen.getAllByLabelText(/删除/)[0]);
     const cancelBtn = screen.getByText("取消");
     fireEvent.click(cancelBtn);
     expect(screen.queryByText("确认删除")).not.toBeInTheDocument();
@@ -177,7 +171,7 @@ describe("Dashboard", () => {
       isLoading: false,
     } as any);
     render(<Dashboard />);
-    fireEvent.click(screen.getAllByText("删除")[0]);
+    fireEvent.click(screen.getAllByLabelText(/删除/)[0]);
     fireEvent.click(screen.getByText("确认"));
     await vi.waitFor(() => expect(deleteFn).toHaveBeenCalled());
   });
@@ -201,5 +195,4 @@ describe("Dashboard", () => {
   });
 });
 
-// Re-import for the mock override tests
 import { useProviderStore } from "@/stores/providerStore";

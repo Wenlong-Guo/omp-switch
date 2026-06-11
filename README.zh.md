@@ -2,16 +2,18 @@
 
 [English](README.md) | [中文](README.zh.md)
 
-> **版本**: 0.1.2 | **支持平台**: macOS / Windows / Linux
+> **版本**: 0.1.3 | **支持平台**: macOS / Windows / Linux
 
 基于 **Tauri 2 + React + SQLite** 构建的跨平台 AI Provider 配置管理工具。
 
 ## 功能特性
 
-- **Provider 管理**：增删改查 AI 模型 Provider（OpenAI、Anthropic、Google、StepFun 等），支持内置预设模板
-- **预设模型选择**：从内置预设中选择 Provider，通过下拉框选择模型，支持自定义别名
+- **Provider 管理**：添加、编辑、删除、启用、复制、测试 AI 模型 Provider（OpenAI、Anthropic、DeepSeek、Kimi、StepFun、Qwen、MiniMax 等），使用紧凑 Provider 卡片
+- **预设 Provider 卡片**：通过卡片网格选择主流厂商预设，内置官方 base URL 与旗舰/flash 模型默认值，并排除 OpenCode 专属预设
+- **Provider YAML 编辑器**：按 omp 实际写入的 `models.yml` 提供 YAML 预览与编辑，不做 JSON/YAML 双格式转换
 - **完整模型 CRUD**：配置全部 19 个模型参数，包括 ID、名称、API 类型、reasoning、输入类型（文本/图片）、成本（input/output/cacheRead/cacheWrite）、contextWindow、maxTokens、自定义 Headers，以及完整 ModelCompat（supportsStore、supportsDeveloperRole、supportsReasoningEffort、maxTokensField、openRouterRouting、vercelGatewayRouting、extraBody）
-- **全局设置**：默认 Provider、模型、Thinking Level、隐藏 Thinking 块、预算配置
+- **模型角色**：配置 omp 职能默认模型（`default`、`smol`、`slow`、`plan`、`commit`），只允许选择已启用 Provider 的模型
+- **全局设置**：Thinking Level、隐藏 Thinking 块、预算配置和其他运行偏好
 - **WebDAV 同步**：支持坚果云、NextCloud 等 WebDAV 服务端，实现多端配置同步
 - **文件双向同步**：SQLite 为单一数据源，自动导出 `models.yml` 和 `settings.json`，支持外部编辑器修改后自动回填
 - **API Key 加密**：AES-256-GCM 加密存储敏感信息
@@ -51,7 +53,7 @@ npm run tauri build
 ```
 omp-switch/
 ├── src/                       # React 前端 (Vite)
-│   ├── pages/                 # Dashboard、ProviderEditor、Settings
+│   ├── pages/                 # Dashboard、ProviderEditor、ModelRoles、Settings
 │   ├── stores/                # Zustand 状态管理
 │   └── components/            # 可复用 UI 组件
 ├── src-tauri/                 # Rust 后端 (Tauri 2)
@@ -90,6 +92,7 @@ npx playwright test
 | V0.1.0 | 项目骨架、SQLite 数据模型、Provider CRUD               |
 | V0.1.1 | 全面代码审查、204 个通过测试                           |
 | V0.1.2 | 编辑模式、删除确认、Toast 通知、动态版本号、加密密钥安全修复 |
+| V0.1.3 | omp 兼容 YAML 输出、Provider 卡片 UI、模型角色默认值、Provider 预设卡片 |
 | V0.2.0 | 模型覆盖、成本配置、WebDAV 同步                          |
 
 ## 许可证

@@ -20,20 +20,7 @@ pub struct AppSettings {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ModelRoles {
-    pub default: RoleConfig,
-    pub smol: Option<RoleConfig>,
-    pub slow: Option<RoleConfig>,
-    pub plan: Option<RoleConfig>,
-    pub commit: Option<RoleConfig>,
-    pub paths: Option<HashMap<String, HashMap<String, RoleConfig>>>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RoleConfig {
-    pub provider: String,
-    pub model: String,
-}
+pub struct ModelRoles(pub HashMap<String, String>);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RetryConfig {
