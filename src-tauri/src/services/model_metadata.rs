@@ -8,61 +8,38 @@ use std::os::windows::process::CommandExt;
 #[cfg(windows)]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
-pub fn step_plan_provider() -> ProviderConfig {
-    ProviderConfig {
-        id: "step-plan".to_string(),
-        name: "StepFun (Step Plan)".to_string(),
-        enabled: true,
-        is_built_in: true,
-        base_url: Some("https://api.stepfun.com/step_plan/v1".to_string()),
-        api_key: std::env::var("STEPFUN_API_KEY").ok(),
-        api_type: Some("openai-completions".to_string()),
-        headers: None,
-        auth_header: None,
-        auth: Some("apiKey".to_string()),
-        discovery: None,
-        model_overrides: None,
-        models: Some(vec![ModelDefinition {
-            id: "step-3.7-flash".to_string(),
-            name: "step-3.7-flash".to_string(),
-            api_type: Some("openai-completions".to_string()),
-            reasoning: true,
-            input_types: vec!["text".to_string(), "image".to_string()],
-            cost: ModelCost { input: 0.0, output: 0.0, cache_read: 0.0, cache_write: 0.0 },
-            context_window: 128000,
-            max_tokens: 4096,
-            headers: None,
-            compat: None,
-            default_temperature: None,
-            default_top_p: None,
-            default_presence_penalty: None,
-            default_frequency_penalty: None,
-            default_seed: None,
-        }]),
-        created_at: None,
-        updated_at: None,
-    }
-}
-
 pub fn default_builtin_providers() -> Vec<ProviderConfig> {
     vec![
-        ProviderConfig { id: "github-copilot".to_string(), name: "GitHub Copilot".to_string(), enabled: true, is_built_in: true, base_url: None, api_key: None, api_type: Some("openai-completions".to_string()), headers: None, auth_header: None, auth: Some("apiKey".to_string()), discovery: None, model_overrides: None, models: None, created_at: None, updated_at: None },
         ProviderConfig { id: "ollama".to_string(), name: "Ollama".to_string(), enabled: true, is_built_in: true, base_url: Some("http://localhost:11434".to_string()), api_key: None, api_type: Some("openai-completions".to_string()), headers: None, auth_header: None, auth: Some("none".to_string()), discovery: Some(DiscoveryConfig { discovery_type: "ollama".to_string() }), model_overrides: None, models: None, created_at: None, updated_at: None },
         ProviderConfig { id: "lm-studio".to_string(), name: "LM Studio".to_string(), enabled: true, is_built_in: true, base_url: Some("http://localhost:1234/v1".to_string()), api_key: None, api_type: Some("openai-completions".to_string()), headers: None, auth_header: None, auth: Some("none".to_string()), discovery: Some(DiscoveryConfig { discovery_type: "lmstudio".to_string() }), model_overrides: None, models: None, created_at: None, updated_at: None },
         ProviderConfig { id: "llama-cpp".to_string(), name: "Llama CPP".to_string(), enabled: true, is_built_in: true, base_url: Some("http://localhost:8080/v1".to_string()), api_key: None, api_type: Some("openai-completions".to_string()), headers: None, auth_header: None, auth: Some("none".to_string()), discovery: None, model_overrides: None, models: None, created_at: None, updated_at: None },
-        step_plan_provider(),
     ]
 }
 
 pub fn load_omp_provider_models() -> Vec<ProviderConfig> {
-    let mut command = Command::new("omp");
-    command.arg("--list-models");
-    #[cfg(windows)]
-    command.creation_flags(CREATE_NO_WINDOW);
-    let output = command.output();
-    let Ok(output) = output else { return vec![]; };
-    if !output.status.success() { return vec![]; }
-    parse_omp_list_models(&String::from_utf8_lossy(&output.stdout))
+    for executable in omp_executable_candidates() {
+        let mut command = Command::new(executable);
+        command.arg("--list-models");
+        #[cfg(windows)]
+        command.creation_flags(CREATE_NO_WINDOW);
+
+        if let Ok(output) = command.output() {
+            if output.status.success() {
+                return parse_omp_list_models(&String::from_utf8_lossy(&output.stdout));
+            }
+        }
+    }
+    vec![]
+}
+
+#[cfg(windows)]
+fn omp_executable_candidates() -> [&'static str; 2] {
+    ["omp", "omp.cmd"]
+}
+
+#[cfg(not(windows))]
+fn omp_executable_candidates() -> [&'static str; 1] {
+    ["omp"]
 }
 
 pub fn parse_omp_list_models(output: &str) -> Vec<ProviderConfig> {

@@ -26,11 +26,11 @@ test.describe('Settings', () => {
 
   test('set default provider', async ({ page }) => {
     await page.getByRole('button', { name: '设置' }).click();
-    await page.locator('input[placeholder="anthropic"]').fill('step-plan');
+    await page.locator('input[placeholder="anthropic"]').fill('ollama');
     await page.getByRole('button', { name: '保存设置' }).click();
     await expect(page.getByText('保存成功')).toBeVisible();
 
-    await verifySettings(page, { defaultProvider: 'step-plan' });
+    await verifySettings(page, { defaultProvider: 'ollama' });
   });
 
   test('set default model', async ({ page }) => {

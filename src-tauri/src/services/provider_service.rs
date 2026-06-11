@@ -94,12 +94,18 @@ impl<'a> ProviderService<'a> {
     }
 
     pub fn prune_deprecated_builtin_presets(&self) {
-        let deprecated = ["openai", "anthropic", "google", "lmstudio"];
+        let deprecated = ["openai", "anthropic", "google", "lmstudio", "step-plan"];
         for id in deprecated {
             if let Ok(Some(provider)) = self.get_by_id(id) {
                 if provider.is_built_in {
                     let _ = self.delete(id);
                 }
+            }
+        }
+
+        if let Ok(Some(provider)) = self.get_by_id("github-copilot") {
+            if provider.is_built_in && provider.models.as_ref().map_or(true, |models| models.is_empty()) {
+                let _ = self.delete("github-copilot");
             }
         }
     }

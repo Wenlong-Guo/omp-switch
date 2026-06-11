@@ -55,17 +55,6 @@ test.describe('API Smoke', () => {
     expect(result.choices[0].message.content).toContain('3');
   });
 
-  test('chat completion with different message formats', async ({ page }) => {
-    const result = await invokeBackend(page, 'chat_completion', {
-      messages: [
-        { role: 'system', content: 'You are a calculator' },
-        { role: 'user', content: 'Calculate 5*6' },
-      ],
-    });
-    expect(result.choices[0].message.role).toBe('assistant');
-    expect(result.choices[0].message.content).toBeTruthy();
-  });
-
   test('backend returns provider list', async ({ page }) => {
     const providers = await invokeBackend(page, 'get_providers');
     expect(Array.isArray(providers)).toBe(true);

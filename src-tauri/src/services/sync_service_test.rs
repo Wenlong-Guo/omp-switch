@@ -76,7 +76,32 @@ mod tests {
         let config = sample_config();
         service.save_config(&config).unwrap();
         let fetched = service.get_config().unwrap().unwrap();
-        assert_eq!(fetched.password, "pass");
+        assert_eq!(fetched.password, "***");
+    }
+
+    #[test]
+    fn test_config_password_mask_preserves_existing_secret() {
+        let db = create_test_db();
+        let service = SyncService::new(&db);
+        let config = sample_config();
+        service.save_config(&config).unwrap();
+
+        let raw_before = service.get_config_raw().unwrap().unwrap();
+        assert!(!raw_before.password.is_empty());
+        assert_ne!(raw_before.password, "pass");
+        assert_ne!(raw_before.password, "***");
+
+        let mut update = service.get_config().unwrap().unwrap();
+        assert_eq!(update.password, "***");
+        update.server_url = "https://dav2.example.com".to_string();
+        service.save_config(&update).unwrap();
+
+        let fetched = service.get_config().unwrap().unwrap();
+        assert_eq!(fetched.server_url, "https://dav2.example.com");
+        assert_eq!(fetched.password, "***");
+
+        let raw_after = service.get_config_raw().unwrap().unwrap();
+        assert_eq!(raw_after.password, raw_before.password);
     }
 
     #[test]

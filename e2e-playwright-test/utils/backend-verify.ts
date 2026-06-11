@@ -56,8 +56,7 @@ export async function verifySettings(page: any, expected: any) {
 export async function verifyModelCall(page: any) {
   const result = await invokeBackend(page, 'chat_completion', {
     messages: [{ role: 'user', content: '1+2=?' }],
-    provider_id: 'step-plan',
-    model: 'step-3.7-flash',
+    model: 'llama3-2',
   });
   expect(result).toBeTruthy();
   expect(result.choices).toBeTruthy();

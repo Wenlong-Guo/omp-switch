@@ -15,18 +15,18 @@ test.describe('Preset Model Selection', () => {
     await page.getByRole('button', { name: '添加供应商' }).click();
     await expect(page.getByRole('heading', { name: '添加供应商' })).toBeVisible();
 
-    // Select StepFun preset
-    await page.getByTestId('preset-select').selectOption('step-plan');
+    // Select Ollama preset
+    await page.getByTestId('preset-select').selectOption('ollama');
 
     // Verify preset info auto-filled
-    await expect(page.locator('input[placeholder="openai"]')).toHaveValue('step-plan');
-    await expect(page.getByTestId('provider-name-input')).toHaveValue('StepFun (Step Plan)');
+    await expect(page.locator('input[placeholder="openai"]')).toHaveValue('ollama');
+    await expect(page.getByTestId('provider-name-input')).toHaveValue('Ollama');
 
     // Select model from dropdown
-    await page.getByTestId('model-select').selectOption('step-3.7-flash');
+    await page.getByTestId('model-select').selectOption('llama3-2');
 
     // Set alias
-    await page.getByTestId('model-alias-input').fill('我的Step模型');
+    await page.getByTestId('model-alias-input').fill('我的Ollama模型');
 
     // Save provider
     await page.getByTestId('save-provider-btn').click();
@@ -34,16 +34,16 @@ test.describe('Preset Model Selection', () => {
     await expect(page.getByRole('heading', { name: '供应商管理' })).toBeVisible();
 
     // Verify on dashboard
-    await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Ollama' })).toBeVisible();
 
     // Backend verify: preset provider saved with models
-    const saved = await verifyProviderExists(page, 'step-plan');
+    const saved = await verifyProviderExists(page, 'ollama');
     expect(saved.models.length).toBeGreaterThanOrEqual(1);
 
     // Re-edit and verify model alias persisted
-    const card = page.getByTestId('provider-card-step-plan');
+    const card = page.getByTestId('provider-card-ollama');
     await card.getByRole('button', { name: '编辑' }).click();
-    await expect(page.getByText('我的Step模型')).toBeVisible();
+    await expect(page.getByText('我的Ollama模型')).toBeVisible();
   });
 
   test('select preset without model then manual add', async ({ page }) => {
@@ -76,10 +76,10 @@ test.describe('Preset Model Selection', () => {
     await expect(page.locator('input[placeholder="openai"]')).toHaveValue('openai');
     await expect(page.getByTestId('provider-name-input')).toHaveValue('OpenAI');
 
-    // Switch to step-plan
-    await page.getByTestId('preset-select').selectOption('step-plan');
-    await expect(page.locator('input[placeholder="openai"]')).toHaveValue('step-plan');
-    await expect(page.getByTestId('provider-name-input')).toHaveValue('StepFun (Step Plan)');
+    // Switch to ollama
+    await page.getByTestId('preset-select').selectOption('ollama');
+    await expect(page.locator('input[placeholder="openai"]')).toHaveValue('ollama');
+    await expect(page.getByTestId('provider-name-input')).toHaveValue('Ollama');
   });
 
   test('manual config preserves filled form', async ({ page }) => {
@@ -107,14 +107,14 @@ test.describe('Preset Model Selection', () => {
 
   test('preset with multiple models', async ({ page }) => {
     await page.getByRole('button', { name: '添加供应商' }).click();
-    await page.getByTestId('preset-select').selectOption('step-plan');
+    await page.getByTestId('preset-select').selectOption('ollama');
 
     // Should have model select with options
-    await page.getByTestId('model-select').selectOption('step-4.0');
+    await page.getByTestId('model-select').selectOption('qwen2.5');
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('保存成功')).toBeVisible();
 
-    const saved = await verifyProviderExists(page, 'step-plan');
+    const saved = await verifyProviderExists(page, 'ollama');
     expect(saved.models.length).toBeGreaterThanOrEqual(2);
   });
 

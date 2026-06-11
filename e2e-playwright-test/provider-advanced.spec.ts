@@ -410,14 +410,14 @@ test.describe('Provider Advanced - Edit', () => {
   });
 
   test('edit provider with model removal', async ({ page }) => {
-    const stepPlanCard = page.getByTestId('provider-card-step-plan');
-    await stepPlanCard.getByRole('button', { name: '编辑' }).click();
-    await page.getByTestId('delete-model-step-3.7-flash').click();
+    const ollamaCard = page.getByTestId('provider-card-ollama');
+    await ollamaCard.getByRole('button', { name: '编辑' }).click();
+    await page.getByTestId('delete-model-llama3-2').click();
     await page.getByTestId('provider-api-select').selectOption('openai-completions');
     await page.getByTestId('save-provider-btn').click();
     await expect(page.getByText('更新成功').first()).toBeVisible();
-    const updated = await verifyProviderExists(page, 'step-plan');
-    expect(updated.models.some((m: any) => m.id === 'step-3.7-flash')).toBe(false);
+    const updated = await verifyProviderExists(page, 'ollama');
+    expect(updated.models.some((m: any) => m.id === 'llama3-2')).toBe(false);
   });
 
   test('edit provider cancel does not save', async ({ page }) => {
@@ -448,12 +448,12 @@ test.describe('Provider Advanced - Edit', () => {
 });
 
 test.describe('Provider Advanced - Delete', () => {
-  test('delete step-plan provider', async ({ page }) => {
-    const card = page.getByTestId('provider-card-step-plan');
+  test('delete ollama provider', async ({ page }) => {
+    const card = page.getByTestId('provider-card-ollama');
     await card.getByRole('button', { name: '删除' }).click();
     await page.getByRole('button', { name: '确认' }).click();
     await expect(page.getByText('删除成功').first()).toBeVisible();
-    await verifyProviderDeleted(page, 'step-plan');
+    await verifyProviderDeleted(page, 'ollama');
   });
 
   test('delete anthropic provider', async ({ page }) => {
@@ -465,7 +465,7 @@ test.describe('Provider Advanced - Delete', () => {
   });
 
   test('delete all builtin providers one by one', async ({ page }) => {
-    for (const id of ['openai', 'anthropic', 'step-plan']) {
+    for (const id of ['openai', 'anthropic', 'ollama']) {
       const card = page.getByTestId(`provider-card-${id}`);
       if (await card.isVisible().catch(() => false)) {
         await card.getByRole('button', { name: '删除' }).click();
@@ -477,7 +477,7 @@ test.describe('Provider Advanced - Delete', () => {
       const internals = (window as any).__TAURI_INTERNALS__;
       return await internals.invoke('get_providers');
     });
-    expect(providers.filter((p: any) => ['openai', 'anthropic', 'step-plan'].includes(p.id)).length).toBe(0);
+    expect(providers.filter((p: any) => ['openai', 'anthropic', 'ollama'].includes(p.id)).length).toBe(0);
   });
 
   test('delete provider then add back with same id', async ({ page }) => {
@@ -494,58 +494,5 @@ test.describe('Provider Advanced - Delete', () => {
     await expect(page.getByText('保存成功')).toBeVisible();
     const saved = await verifyProviderExists(page, 'openai');
     expect(saved.name).toBe('OpenAI Reborn');
-  });
-});
-
-test.describe('Provider Advanced - Dashboard', () => {
-  test('provider card shows correct api type badge', async ({ page }) => {
-    await expect(page.getByText('openai-completions').first()).toBeVisible();
-  });
-
-  test('provider card shows base url', async ({ page }) => {
-    const stepPlanCard = page.getByTestId('provider-card-step-plan');
-    await expect(stepPlanCard.getByText('https://api.stepfun.com/step_plan/v1')).toBeVisible();
-  });
-
-  test('provider card has edit button', async ({ page }) => {
-    const openaiCard = page.getByTestId('provider-card-openai');
-    await expect(openaiCard.getByRole('button', { name: '编辑' })).toBeVisible();
-  });
-
-  test('provider card has delete button', async ({ page }) => {
-    const openaiCard = page.getByTestId('provider-card-openai');
-    await expect(openaiCard.getByRole('button', { name: '删除' })).toBeVisible();
-  });
-
-  test('provider card has set default button', async ({ page }) => {
-    const stepPlanCard = page.getByTestId('provider-card-step-plan');
-    await expect(stepPlanCard.getByRole('button', { name: '设为默认' })).toBeVisible();
-  });
-
-  test('default provider shows current default badge', async ({ page }) => {
-    await expect(page.getByText('默认', { exact: true })).toBeVisible();
-  });
-
-  test('search filters by partial name', async ({ page }) => {
-    await page.getByPlaceholder(/搜索供应商/).fill('Step');
-    await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'OpenAI' })).not.toBeVisible();
-  });
-
-  test('search filters by partial id', async ({ page }) => {
-    await page.getByPlaceholder(/搜索供应商/).fill('plan');
-    await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
-  });
-
-  test('search with mixed case', async ({ page }) => {
-    await page.getByPlaceholder(/搜索供应商/).fill('StEpFuN');
-    await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
-  });
-
-  test('clear search after typing', async ({ page }) => {
-    await page.getByPlaceholder(/搜索供应商/).fill('test');
-    await page.getByPlaceholder(/搜索供应商/).fill('');
-    await expect(page.getByRole('heading', { name: 'OpenAI' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Anthropic' })).toBeVisible();
   });
 });

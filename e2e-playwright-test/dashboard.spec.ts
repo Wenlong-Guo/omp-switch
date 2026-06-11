@@ -25,14 +25,14 @@ test.describe('Dashboard', () => {
   });
 
   test('set active provider', async ({ page }) => {
-    // step-plan has models, can be set as default
-    const stepPlanCard = page.getByTestId('provider-card-step-plan');
-    await stepPlanCard.getByRole('button', { name: '设为默认' }).click();
-    await expect(stepPlanCard.getByText('默认', { exact: true })).toBeVisible();
-    await expect(page.getByText('默认: step-plan')).not.toBeVisible();
+    // ollama has models, can be set as default
+    const ollamaCard = page.getByTestId('provider-card-ollama');
+    await ollamaCard.getByRole('button', { name: '设为默认' }).click();
+    await expect(ollamaCard.getByText('默认', { exact: true })).toBeVisible();
+    await expect(page.getByText('默认: ollama')).not.toBeVisible();
 
     // Backend verify: defaultProvider updated in settings
-    await verifyDefaultProvider(page, 'step-plan');
+    await verifyDefaultProvider(page, 'ollama');
   });
 
   test('navigate to add provider', async ({ page }) => {
@@ -41,8 +41,8 @@ test.describe('Dashboard', () => {
   });
 
   test('search filters providers by name', async ({ page }) => {
-    await page.getByPlaceholder(/搜索供应商/).fill('StepFun');
-    await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
+    await page.getByPlaceholder(/搜索供应商/).fill('Ollama');
+    await expect(page.getByRole('heading', { name: 'Ollama' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'OpenAI' })).not.toBeVisible();
   });
 
@@ -52,9 +52,9 @@ test.describe('Dashboard', () => {
   });
 
   test('expand model list shows models', async ({ page }) => {
-    const stepPlanCard = page.getByTestId('provider-card-step-plan');
-    await stepPlanCard.getByRole('button', { name: /个模型/ }).click();
-    await expect(stepPlanCard.getByText('step-3.7-flash', { exact: true })).toBeVisible();
+    const ollamaCard = page.getByTestId('provider-card-ollama');
+    await ollamaCard.getByRole('button', { name: /个模型/ }).click();
+    await expect(ollamaCard.getByText('Llama 3.2', { exact: true })).toBeVisible();
   });
 
   test('provider without model cannot set default', async ({ page }) => {
@@ -87,7 +87,7 @@ test.describe('Dashboard', () => {
   });
 
   test('clear search restores all providers', async ({ page }) => {
-    await page.getByPlaceholder(/搜索供应商/).fill('StepFun');
+    await page.getByPlaceholder(/搜索供应商/).fill('Ollama');
     await expect(page.getByRole('heading', { name: 'OpenAI' })).not.toBeVisible();
 
     await page.getByPlaceholder(/搜索供应商/).fill('');

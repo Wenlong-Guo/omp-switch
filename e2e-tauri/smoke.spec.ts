@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { execSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
-import { homedir } from 'os';
 import { join } from 'path';
 
 test.describe('Real Tauri App Smoke Test', () => {
@@ -20,28 +19,28 @@ test.describe('Real Tauri App Smoke Test', () => {
     await expect(heading).toBeVisible();
   });
 
-  test('step-plan preset visible and models.yml written', async ({ page }) => {
+  test('local builtin provider visible and models.yml written', async ({ page }) => {
     await page.goto('http://localhost:4444');
     await page.waitForLoadState('networkidle');
 
     // Wait for provider cards to load
     await page.waitForTimeout(2000);
 
-    // Verify step-plan card is visible
-    const stepPlanCard = page.locator('[data-testid="provider-card-step-plan"]').first();
-    await expect(stepPlanCard).toBeVisible({ timeout: 10000 });
+    // Verify local builtin card is visible
+    const ollamaCard = page.locator('[data-testid="provider-card-ollama"]').first();
+    await expect(ollamaCard).toBeVisible({ timeout: 10000 });
 
-    // Verify YAML file contains models
-    const modelsYaml = join(homedir(), '.omp', 'agent', 'models.yml');
+    // Verify YAML file is written to omp's configured agent dir
+    const ompConfigDir = execSync('omp config path', { encoding: 'utf-8', stdio: 'pipe' }).trim();
+    const modelsYaml = join(ompConfigDir, 'models.yml');
     await expect.poll(() => existsSync(modelsYaml), {
       message: 'models.yml should exist',
       timeout: 10000,
     }).toBe(true);
 
     const content = readFileSync(modelsYaml, 'utf-8');
-    expect(content).toContain('step-plan');
-    expect(content).toContain('models');
-    expect(content).toContain('step-3.7-flash');
+    expect(content).toContain('ollama');
+    expect(content).not.toContain('step-plan');
   });
 
   test('omp CLI can read models.yml without parse errors', () => {

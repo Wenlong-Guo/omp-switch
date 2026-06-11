@@ -1,29 +1,18 @@
 const mockProviders = [
   { id: 'openai', name: 'OpenAI', api: 'openai-completions', baseUrl: 'https://api.openai.com/v1', enabled: true, isBuiltIn: true },
   { id: 'anthropic', name: 'Anthropic', api: 'anthropic-messages', baseUrl: 'https://api.anthropic.com', enabled: true, isBuiltIn: true },
-  { id: 'github-copilot', name: 'GitHub Copilot', api: 'openai-completions', enabled: true, isBuiltIn: true },
   { id: 'llama-cpp', name: 'Llama CPP', api: 'openai-completions', baseUrl: 'http://localhost:8080/v1', enabled: true, isBuiltIn: true, auth: 'none' },
   { id: 'lm-studio', name: 'LM Studio', api: 'openai-completions', baseUrl: 'http://localhost:1234/v1', enabled: true, isBuiltIn: true, auth: 'none' },
-  { id: 'ollama', name: 'Ollama', api: 'openai-completions', baseUrl: 'http://localhost:11434', enabled: true, isBuiltIn: true, auth: 'none' },
   {
-    id: 'step-plan',
-    name: 'StepFun (Step Plan)',
+    id: 'ollama',
+    name: 'Ollama',
     api: 'openai-completions',
-    baseUrl: 'https://api.stepfun.com/step_plan/v1',
+    baseUrl: 'http://localhost:11434',
     enabled: true,
     isBuiltIn: true,
-    auth: 'apiKey',
+    auth: 'none',
     models: [
-      {
-        id: 'step-3.7-flash',
-        name: 'step-3.7-flash',
-        api: 'openai-completions',
-        reasoning: true,
-        input: ['text', 'image'],
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 128000,
-        maxTokens: 4096,
-      },
+      { id: 'llama3-2', name: 'Llama 3.2', api: 'openai-completions', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 4096 },
     ],
   },
 ];
@@ -31,28 +20,26 @@ const mockProviders = [
 const builtinPresets = [
   { id: 'openai', name: 'OpenAI', api: 'openai-completions', baseUrl: 'https://api.openai.com/v1', enabled: true, isBuiltIn: true, auth: 'apiKey' },
   { id: 'anthropic', name: 'Anthropic', api: 'anthropic-messages', baseUrl: 'https://api.anthropic.com', enabled: true, isBuiltIn: true, auth: 'apiKey' },
-  { id: 'github-copilot', name: 'GitHub Copilot', api: 'openai-completions', enabled: true, isBuiltIn: true, auth: 'apiKey' },
   { id: 'llama-cpp', name: 'Llama CPP', api: 'openai-completions', baseUrl: 'http://localhost:8080/v1', enabled: true, isBuiltIn: true, auth: 'none' },
   { id: 'lm-studio', name: 'LM Studio', api: 'openai-completions', baseUrl: 'http://localhost:1234/v1', enabled: true, isBuiltIn: true, auth: 'none' },
-  { id: 'ollama', name: 'Ollama', api: 'openai-completions', baseUrl: 'http://localhost:11434', enabled: true, isBuiltIn: true, auth: 'none' },
   {
-    id: 'step-plan',
-    name: 'StepFun (Step Plan)',
+    id: 'ollama',
+    name: 'Ollama',
     api: 'openai-completions',
-    baseUrl: 'https://api.stepfun.com/step_plan/v1',
+    baseUrl: 'http://localhost:11434',
     enabled: true,
     isBuiltIn: true,
-    auth: 'apiKey',
+    auth: 'none',
     models: [
-      { id: 'step-3.7-flash', name: 'step-3.7-flash', api: 'openai-completions', reasoning: true, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 4096 },
-      { id: 'step-4.0', name: 'Step 4.0', api: 'openai-completions', reasoning: true, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 256000, maxTokens: 8192 },
+      { id: 'llama3-2', name: 'Llama 3.2', api: 'openai-completions', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 128000, maxTokens: 4096 },
+      { id: 'qwen2.5', name: 'Qwen 2.5', api: 'openai-completions', reasoning: false, input: ['text'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 32768, maxTokens: 4096 },
     ],
   },
 ];
 
 const initialSettings = { defaultProvider: 'openai', defaultModel: 'gpt-4', defaultThinkingLevel: 'medium' };
 
-function buildInitScript(apiKey: string) {
+function buildInitScript() {
   const mp = JSON.stringify(mockProviders);
   const bp = JSON.stringify(builtinPresets);
   const is = JSON.stringify(initialSettings);
@@ -139,50 +126,35 @@ function buildInitScript(apiKey: string) {
             return '0.1.3';
           case 'chat_completion':
             var messages = args.messages;
-            var apiKey = '${apiKey.replace(/'/g, "\\'")}';
-            var baseUrl = 'https://api.stepfun.com/step_plan/v1';
-            var model = 'step-3.7-flash';
+            var model = 'llama3-2';
             // Use explicit provider_id if provided, otherwise fallback to first configured provider
             var provider = null;
             if (args.provider_id) {
               provider = st.providers.find(function(p) { return p.id === args.provider_id; });
             }
             if (!provider) {
-              provider = st.providers.find(function(p) { return p.baseUrl && (p.apiKey || p.id === 'step-plan'); });
+              provider = st.providers.find(function(p) { return p.baseUrl && p.apiKey; });
             }
-            if (provider) {
-              if (provider.baseUrl) baseUrl = provider.baseUrl;
-              if (provider.apiKey) apiKey = provider.apiKey;
-              if (args.model) {
-                model = args.model;
-              } else if (provider.models && provider.models.length > 0) {
-                model = provider.models[0].id;
-              }
+            if (args.model) {
+              model = args.model;
+            } else if (provider && provider.models && provider.models.length > 0) {
+              model = provider.models[0].id;
             }
-            if (typeof window.__e2e_http_post === 'function') {
-              var result = await window.__e2e_http_post(
-                baseUrl + '/chat/completions',
+            var response = {
+              id: 'mock-chat-' + Date.now(),
+              object: 'chat.completion',
+              model: model,
+              choices: [
                 {
-                  'Authorization': 'Bearer ' + apiKey,
-                  'Content-Type': 'application/json'
-                },
-                {
-                  model: model,
-                  messages: messages.map(function(m) { return { role: m.role, content: m.content }; })
+                  index: 0,
+                  message: { role: 'assistant', content: 'Mock answer: 1+2=3' },
+                  finish_reason: 'stop'
                 }
-              );
-              if (result.status !== 200) {
-                throw new Error('Model API returned status ' + result.status);
-              }
-              if (!result.body || !result.body.choices || !result.body.choices[0]) {
-                throw new Error('Invalid model API response');
-              }
-              st.chatHistory.push({ request: messages, response: result.body });
-              saveState(st);
-              return result.body;
-            } else {
-              throw new Error('__e2e_http_post not available: E2E tests must run with Playwright exposeFunction bridge');
-            }
+              ]
+            };
+            st.chatHistory.push({ request: messages, response: response });
+            saveState(st);
+            return response;
           case 'get_sync_config':
             return st.syncConfig;
           case 'save_sync_config':
@@ -204,19 +176,5 @@ function buildInitScript(apiKey: string) {
 }
 
 export async function injectTauriMock(page: any) {
-  const apiKey = process.env.STEPFUN_API_KEY || '';
-
-  await page.exposeFunction('__e2e_http_post', async (url: string, headers: any, body: any) => {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-    });
-    return {
-      status: response.status,
-      body: await response.json().catch(() => null),
-    };
-  });
-
-  await page.addInitScript(buildInitScript(apiKey));
+  await page.addInitScript(buildInitScript());
 }

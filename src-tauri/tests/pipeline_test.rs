@@ -54,7 +54,7 @@ fn step_plan_provider() -> omp_switch_lib::models::provider::ProviderConfig {
 }
 
 #[test]
-fn test_step_plan_seeded_when_db_not_empty() {
+fn test_local_builtin_seeded_when_db_not_empty() {
     let db = omp_switch_lib::database::connection::DbConnection::in_memory().unwrap();
     clear_db(&db);
 
@@ -75,9 +75,11 @@ fn test_step_plan_seeded_when_db_not_empty() {
         }
     }
 
-    // Bug 1 regression: step-plan should now exist even though DB was not empty
+    // Bug 1 regression: builtin presets should now exist even though DB was not empty
+    let ollama = service.get_by_id("ollama").unwrap();
+    assert!(ollama.is_some(), "ollama should be seeded even when DB already has providers");
     let step_plan = service.get_by_id("step-plan").unwrap();
-    assert!(step_plan.is_some(), "step-plan should be seeded even when DB already has providers");
+    assert!(step_plan.is_none(), "step-plan should not be seeded as a builtin preset");
 
     // Existing provider should not be overwritten
     let openai = service.get_by_id("openai").unwrap().unwrap();

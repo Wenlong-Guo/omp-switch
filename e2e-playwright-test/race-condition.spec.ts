@@ -58,26 +58,26 @@ test.describe('Race Condition', () => {
   });
 
   test('rapid expand collapse model list', async ({ page }) => {
-    const stepPlanCard = page.getByTestId('provider-card-step-plan');
-    const btn = stepPlanCard.getByRole('button', { name: /个模型/ });
+    const ollamaCard = page.getByTestId('provider-card-ollama');
+    const btn = ollamaCard.getByRole('button', { name: /个模型/ });
 
     await btn.click();
     await btn.click();
     await btn.click();
 
-    await expect(stepPlanCard.getByText('step-3.7-flash', { exact: true })).toBeVisible();
+    await expect(ollamaCard.getByText('Llama 3.2', { exact: true })).toBeVisible();
   });
 
   test('rapid set default multiple providers', async ({ page }) => {
-    const stepPlanCard = page.getByTestId('provider-card-step-plan');
-    await stepPlanCard.getByRole('button', { name: '设为默认' }).click();
+    const ollamaCard = page.getByTestId('provider-card-ollama');
+    await ollamaCard.getByRole('button', { name: '设为默认' }).click();
 
-    // Backend verify: step-plan is default
+    // Backend verify: ollama is default
     const settings = await page.evaluate(async () => {
       const internals = (window as any).__TAURI_INTERNALS__;
       return await internals.invoke('get_settings');
     });
-    expect(settings.defaultProvider).toBe('step-plan');
+    expect(settings.defaultProvider).toBe('ollama');
   });
 
   test('concurrent add and navigate', async ({ page }) => {

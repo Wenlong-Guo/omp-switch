@@ -8,6 +8,22 @@ mod tests {
         DbConnection::in_memory().unwrap()
     }
 
+    fn with_empty_omp_agent_dir<T>(test: impl FnOnce() -> T) -> T {
+        let temp = tempfile::tempdir().unwrap();
+        let previous = std::env::var("PI_CODING_AGENT_DIR").ok();
+        std::env::set_var("PI_CODING_AGENT_DIR", temp.path());
+
+        let result = test();
+
+        if let Some(previous) = previous {
+            std::env::set_var("PI_CODING_AGENT_DIR", previous);
+        } else {
+            std::env::remove_var("PI_CODING_AGENT_DIR");
+        }
+
+        result
+    }
+
     fn sample_provider(id: &str) -> ProviderConfig {
         ProviderConfig {
             id: id.to_string(),
@@ -138,59 +154,73 @@ mod tests {
 
     #[test]
     fn test_builtin_presets_not_empty() {
-        let db = create_test_db();
-        let service = ProviderService::new(&db);
-        let presets = service.get_builtin_presets();
-        assert!(!presets.is_empty());
+        with_empty_omp_agent_dir(|| {
+            let db = create_test_db();
+            let service = ProviderService::new(&db);
+            let presets = service.get_builtin_presets();
+            assert!(!presets.is_empty());
+        });
     }
 
     #[test]
-    fn test_builtin_presets_contain_github_copilot() {
-        let db = create_test_db();
-        let service = ProviderService::new(&db);
-        let presets = service.get_builtin_presets();
-        assert!(presets.iter().any(|p| p.id == "github-copilot"));
+    fn test_builtin_presets_do_not_guess_github_copilot() {
+        with_empty_omp_agent_dir(|| {
+            let db = create_test_db();
+            let service = ProviderService::new(&db);
+            let presets = service.get_builtin_presets();
+            assert!(!presets.iter().any(|p| p.id == "github-copilot"));
+        });
     }
 
     #[test]
-    fn test_builtin_presets_contain_step_plan() {
-        let db = create_test_db();
-        let service = ProviderService::new(&db);
-        let presets = service.get_builtin_presets();
-        assert!(presets.iter().any(|p| p.id == "step-plan"));
+    fn test_builtin_presets_do_not_contain_step_plan() {
+        with_empty_omp_agent_dir(|| {
+            let db = create_test_db();
+            let service = ProviderService::new(&db);
+            let presets = service.get_builtin_presets();
+            assert!(!presets.iter().any(|p| p.id == "step-plan"));
+        });
     }
 
     #[test]
     fn test_builtin_presets_contain_lm_studio() {
-        let db = create_test_db();
-        let service = ProviderService::new(&db);
-        let presets = service.get_builtin_presets();
-        assert!(presets.iter().any(|p| p.id == "lm-studio"));
+        with_empty_omp_agent_dir(|| {
+            let db = create_test_db();
+            let service = ProviderService::new(&db);
+            let presets = service.get_builtin_presets();
+            assert!(presets.iter().any(|p| p.id == "lm-studio"));
+        });
     }
 
     #[test]
     fn test_builtin_presets_contain_ollama() {
-        let db = create_test_db();
-        let service = ProviderService::new(&db);
-        let presets = service.get_builtin_presets();
-        assert!(presets.iter().any(|p| p.id == "ollama"));
+        with_empty_omp_agent_dir(|| {
+            let db = create_test_db();
+            let service = ProviderService::new(&db);
+            let presets = service.get_builtin_presets();
+            assert!(presets.iter().any(|p| p.id == "ollama"));
+        });
     }
 
     #[test]
     fn test_builtin_ollama_discovery() {
-        let db = create_test_db();
-        let service = ProviderService::new(&db);
-        let presets = service.get_builtin_presets();
-        let ollama = presets.iter().find(|p| p.id == "ollama").unwrap();
-        assert!(ollama.discovery.is_some());
+        with_empty_omp_agent_dir(|| {
+            let db = create_test_db();
+            let service = ProviderService::new(&db);
+            let presets = service.get_builtin_presets();
+            let ollama = presets.iter().find(|p| p.id == "ollama").unwrap();
+            assert!(ollama.discovery.is_some());
+        });
     }
 
     #[test]
     fn test_builtin_presets_are_built_in() {
-        let db = create_test_db();
-        let service = ProviderService::new(&db);
-        let presets = service.get_builtin_presets();
-        assert!(presets.iter().all(|p| p.is_built_in));
+        with_empty_omp_agent_dir(|| {
+            let db = create_test_db();
+            let service = ProviderService::new(&db);
+            let presets = service.get_builtin_presets();
+            assert!(presets.iter().all(|p| p.is_built_in));
+        });
     }
 
     #[test]

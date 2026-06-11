@@ -132,7 +132,7 @@ fn test_command_builtin_presets() {
     clear_db();
     let presets = omp_switch_lib::commands::provider::get_builtin_presets();
     assert!(!presets.is_empty());
-    assert!(presets.iter().any(|p| p.id == "github-copilot"));
+    assert!(presets.iter().any(|p| p.id == "ollama"));
 }
 
 #[test]

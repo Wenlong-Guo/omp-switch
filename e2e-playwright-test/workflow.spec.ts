@@ -124,18 +124,18 @@ test.describe('Workflow - Import/Export Roundtrip', () => {
 test.describe('Workflow - Settings Integration', () => {
   test('change default provider then verify model call', async ({ page }) => {
     await page.getByRole('button', { name: '设置' }).click();
-    await page.locator('input[placeholder="anthropic"]').fill('step-plan');
+    await page.locator('input[placeholder="anthropic"]').fill('ollama');
     await page.getByRole('button', { name: '保存设置' }).click();
     await expect(page.getByText('保存成功')).toBeVisible();
-    await verifySettings(page, { defaultProvider: 'step-plan' });
+    await verifySettings(page, { defaultProvider: 'ollama' });
   });
 
   test('change default model then verify model call', async ({ page }) => {
     await page.getByRole('button', { name: '设置' }).click();
-    await page.locator('input[placeholder="claude-sonnet-4-20250514"]').fill('step-3.7-flash');
+    await page.locator('input[placeholder="claude-sonnet-4-20250514"]').fill('llama3-2');
     await page.getByRole('button', { name: '保存设置' }).click();
     await expect(page.getByText('保存成功')).toBeVisible();
-    await verifySettings(page, { defaultModel: 'step-3.7-flash' });
+    await verifySettings(page, { defaultModel: 'llama3-2' });
   });
 
   test('change thinking level then verify model call', async ({ page }) => {

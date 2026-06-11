@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { injectTauriMock } from './mocks/tauri-mock';
-import { verifyProviderExists, invokeBackend, verifyModelCall } from './utils/backend-verify';
+import { verifyProviderExists, invokeBackend } from './utils/backend-verify';
 
 test.beforeEach(async ({ page }) => {
   await injectTauriMock(page);
@@ -9,22 +9,14 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => { (window as any).__resetTauriMock?.(); });
 });
 
-test.afterEach(async ({ page }) => {
-  await verifyModelCall(page);
-});
-
 test.describe('StepFun Provider', () => {
-  test('step-plan preset displays with model info', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).toBeVisible();
+  test('step-plan is not preloaded as built-in provider', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'StepFun (Step Plan)' })).not.toBeVisible();
+    const providers = await invokeBackend(page, 'get_providers');
+    expect(providers.some((p: any) => p.id === 'step-plan')).toBe(false);
 
-    const stepPlanCard = page.getByTestId('provider-card-step-plan');
-    await expect(stepPlanCard.getByText('openai-completions')).toBeVisible();
-    await expect(stepPlanCard.getByText('https://api.stepfun.com/step_plan/v1')).toBeVisible();
-
-    // Backend verify: step-plan provider exists with correct model
-    const provider = await verifyProviderExists(page, 'step-plan');
-    expect(provider.models.length).toBeGreaterThanOrEqual(1);
-    expect(provider.models.some((m: any) => m.id === 'step-3.7-flash')).toBe(true);
+    const presets = await invokeBackend(page, 'get_builtin_presets');
+    expect(presets.some((p: any) => p.id === 'step-plan')).toBe(false);
   });
 
   test('add step-plan provider manually with apiKey', async ({ page }) => {
@@ -51,63 +43,4 @@ test.describe('StepFun Provider', () => {
     expect(saved.baseUrl).toBe('https://api.stepfun.com/step_plan/v1');
   });
 
-  test('step-plan chat completion returns correct answer', async ({ page }) => {
-    const result = await invokeBackend(page, 'chat_completion', {
-      messages: [{ role: 'user', content: '1+2 = 几' }],
-    });
-    expect(result.choices[0].message.content).toContain('3');
-  });
-
-  test('edit built-in step-plan provider does not crash', async ({ page }) => {
-    const stepPlanCard = page.getByTestId('provider-card-step-plan');
-    await expect(stepPlanCard).toBeVisible();
-
-    await stepPlanCard.getByRole('button', { name: '编辑' }).click();
-
-    // Should navigate to editor without crash
-    await expect(page.getByRole('heading', { name: /编辑供应商/ })).toBeVisible();
-    await expect(page.getByTestId('provider-id-input')).toHaveValue('step-plan');
-    await expect(page.getByTestId('provider-name-input')).toHaveValue('StepFun (Step Plan)');
-    await expect(page.getByTestId('provider-api-select')).toHaveValue('openai-completions');
-
-    // Model list should render with context/maxTokens info
-    await expect(page.getByText('step-3.7-flash', { exact: true }).first()).toBeVisible();
-    await expect(page.getByText('128,000 ctx')).toBeVisible();
-
-    // Backend verify: model data intact
-    const provider = await verifyProviderExists(page, 'step-plan');
-    const model = provider.models.find((m: any) => m.id === 'step-3.7-flash');
-    expect(model).toBeTruthy();
-    expect(model.contextWindow).toBe(128000);
-    expect(model.maxTokens).toBe(4096);
-  });
-
-  test('step-plan models count correct', async ({ page }) => {
-    const provider = await verifyProviderExists(page, 'step-plan');
-    expect(provider.models.length).toBe(1);
-  });
-
-  test('step-plan provider enabled status', async ({ page }) => {
-    const provider = await verifyProviderExists(page, 'step-plan');
-    expect(provider.enabled).toBe(true);
-  });
-
-  test('step-plan base url correct in backend', async ({ page }) => {
-    const provider = await verifyProviderExists(page, 'step-plan');
-    expect(provider.baseUrl).toBe('https://api.stepfun.com/step_plan/v1');
-  });
-
-  test('edit step-plan and save updates backend', async ({ page }) => {
-    const stepPlanCard = page.getByTestId('provider-card-step-plan');
-    await stepPlanCard.getByRole('button', { name: '编辑' }).click();
-    await page.waitForSelector('input[placeholder="openai"][disabled]');
-
-    await page.getByTestId('provider-name-input').fill('StepFun Updated');
-    await page.getByTestId('provider-api-select').selectOption('openai-completions');
-    await page.getByTestId('save-provider-btn').click();
-    await expect(page.getByText('更新成功').first()).toBeVisible();
-
-    const updated = await verifyProviderExists(page, 'step-plan');
-    expect(updated.name).toBe('StepFun Updated');
-  });
 });
