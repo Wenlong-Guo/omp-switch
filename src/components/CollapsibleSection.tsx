@@ -14,7 +14,7 @@ export default function CollapsibleSection({ title, children, defaultOpen = fals
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted"
+        className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
         data-testid="collapsible-toggle"
       >
         <span>{title}</span>

@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Route, Router, useLocation } from "wouter";
-import { LayoutDashboard, Plus, Settings as SettingsIcon, RefreshCw, Bot } from "lucide-react";
+import { Bot, LayoutDashboard, Plus, RefreshCw, Settings as SettingsIcon } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import Dashboard from "@/pages/Dashboard";
 import ProviderEditor from "@/pages/ProviderEditor";
-import Settings from "@/pages/Settings";
 import Sync from "@/pages/Sync";
 import ModelRoles from "@/pages/ModelRoles";
+import Settings from "@/pages/Settings";
 import Toast from "@/components/Toast";
 import { getVersion } from "@tauri-apps/api/app";
+import { useI18n } from "@/lib/i18n";
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -31,17 +32,17 @@ function PageWrapper({ children }: { children: React.ReactNode }) {
 function Layout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const [version, setVersion] = useState("");
+  const { t } = useI18n();
 
   useEffect(() => {
     getVersion().then(setVersion).catch(() => setVersion(""));
   }, []);
 
   const navItems = [
-    { path: "/", label: "供应商", icon: LayoutDashboard },
-    { path: "/provider/new", label: "添加供应商", icon: Plus },
-    { path: "/roles", label: "模型角色", icon: Bot },
-    { path: "/settings", label: "设置", icon: SettingsIcon },
-    { path: "/sync", label: "同步", icon: RefreshCw },
+    { path: "/", label: t("providers"), icon: LayoutDashboard },
+    { path: "/roles", label: t("modelRoles"), icon: Bot },
+    { path: "/sync", label: t("sync"), icon: RefreshCw },
+    { path: "/settings", label: t("settings"), icon: SettingsIcon },
   ];
 
   const isActive = (path: string) => {
@@ -50,13 +51,19 @@ function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="h-screen overflow-hidden flex bg-background">
-      <aside className="w-56 shrink-0 border-r bg-muted/30 flex flex-col">
-        <div className="p-4">
-          <h1 className="text-lg font-bold tracking-tight">omp-switch</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{version ? `v${version}` : ""}</p>
+    <div className="relative h-screen overflow-hidden bg-black text-white">
+      <div className="pointer-events-none absolute right-[-220px] top-[-240px] z-0 h-[760px] w-[760px] rounded-full bg-[radial-gradient(circle_at_center,rgba(29,183,247,0.16),rgba(182,0,248,0.08)_42%,transparent_70%)] blur-3xl" />
+      <header className="relative z-40 flex h-16 items-center justify-between border-b border-[#222] bg-black/80 px-6 backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <span className="pi-gradient-text text-3xl font-bold tracking-tighter">π</span>
+          <span className="h-5 w-px bg-[#222]" />
+          <h1 className="translate-y-[2px] text-sm font-semibold tracking-[0.08em] text-white">OMP Switch</h1>
         </div>
-        <nav className="px-2 flex-1">
+      </header>
+
+      <div className="relative z-10 flex h-[calc(100vh-64px-48px)] min-h-0">
+        <aside className="flex w-[240px] shrink-0 flex-col border-r border-[#222] bg-black/55 backdrop-blur-sm">
+          <nav className="flex-1 space-y-1 p-6">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -64,22 +71,41 @@ function Layout({ children }: { children: React.ReactNode }) {
               <button
                 key={item.path}
                 onClick={() => setLocation(item.path)}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm mb-1 flex items-center gap-2 transition-colors ${
+                aria-label={item.label}
+                className={`relative flex w-full items-center gap-3 overflow-hidden rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                   active
-                    ? "bg-primary text-primary-foreground font-medium"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-[#111] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]"
+                    : "text-[#888] hover:bg-[#111]/70 hover:text-white"
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                {item.label}
+                {active && <span className="pi-gradient-bg absolute bottom-0 left-0 top-0 w-1" />}
+                <Icon className={`h-5 w-5 ${active ? "text-[#1db7f7]" : ""}`} />
+                <span className="font-medium">{item.label}</span>
               </button>
             );
           })}
         </nav>
+          <div className="p-6 pt-0">
+            <button
+              onClick={() => setLocation("/provider/new")}
+              aria-label={t("addProvider")}
+              className="pi-gradient-bg flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_24px_rgba(29,183,247,0.22)] transition-opacity hover:opacity-90"
+            >
+              <Plus className="h-5 w-5" />
+              {t("addProvider")}
+            </button>
+            <div className="mt-6 border-t border-[#222] pt-4 font-mono text-[10px] uppercase tracking-wider text-[#888]/60">
+              {version ? `v.${version}-BETA` : "v.BETA"}
+            </div>
+          </div>
       </aside>
-      <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-transparent">
         <PageWrapper key={location}>{children}</PageWrapper>
       </main>
+      </div>
+      <footer className="relative z-50 flex h-12 items-center border-t border-[#222] bg-[#050505] px-6 font-mono text-[10px] uppercase tracking-wider text-[#888]/50">
+        <span className="ml-auto">{version ? `v.${version}-BETA` : "v.BETA"}</span>
+      </footer>
     </div>
   );
 }
@@ -93,8 +119,8 @@ function App() {
         <Route path="/provider/new" component={ProviderEditor} />
         <Route path="/provider/edit/:id" component={ProviderEditor} />
         <Route path="/roles" component={ModelRoles} />
-        <Route path="/settings" component={Settings} />
         <Route path="/sync" component={Sync} />
+        <Route path="/settings" component={Settings} />
       </Layout>
       <Toast />
     </Router>

@@ -1,5 +1,6 @@
 import type { ModelDefinition } from "@/types/provider";
 import { useMemo } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface Props {
   models: ModelDefinition[];
@@ -13,6 +14,7 @@ function ModelCard({ model, index, onEdit, onDelete }: {
   onEdit: (idx: number) => void;
   onDelete: (idx: number) => void;
 }) {
+  const { t } = useI18n();
   const badges = useMemo(() => {
     const list: { label: string; variant: "primary" | "secondary" | "muted" }[] = [];
     if (model.reasoning) list.push({ label: "Reasoning", variant: "primary" });
@@ -58,18 +60,18 @@ function ModelCard({ model, index, onEdit, onDelete }: {
           data-testid={`edit-model-${model.id}`}
           onClick={() => onEdit(index)}
           className="text-xs px-2.5 py-1.5 border rounded-md hover:bg-muted transition-colors"
-          title="编辑模型"
+          title={t("editModel")}
         >
-          编辑
+          {t("edit")}
         </button>
         <button
           type="button"
           data-testid={`delete-model-${model.id}`}
           onClick={() => onDelete(index)}
           className="text-xs px-2.5 py-1.5 border rounded-md hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 transition-colors"
-          title="删除模型"
+          title={t("deleteModel")}
         >
-          删除
+          {t("delete")}
         </button>
       </div>
     </div>
@@ -77,12 +79,13 @@ function ModelCard({ model, index, onEdit, onDelete }: {
 }
 
 export default function ModelList({ models, onEdit, onDelete }: Props) {
+  const { t } = useI18n();
   if (models.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground border rounded-lg border-dashed">
         <div className="text-2xl mb-2">🤖</div>
-        <p className="text-sm">暂无模型配置</p>
-        <p className="text-xs mt-1 opacity-60">点击上方按钮添加第一个模型</p>
+        <p className="text-sm">{t("emptyModels")}</p>
+        <p className="text-xs mt-1 opacity-60">{t("emptyModelsHint")}</p>
       </div>
     );
   }

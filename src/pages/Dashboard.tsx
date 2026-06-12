@@ -6,8 +6,44 @@ import { Plus, ArrowRight, Pencil, Trash2, Download, Upload, GripVertical, Copy,
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { validateProviderImport } from "@/lib/importValidation";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { useI18n } from "@/lib/i18n";
+
+const CC_SWITCH_PROVIDER_LOGOS: Record<string, { icon: string; color: string }> = {
+  anthropic: { icon: "anthropic", color: "#D4915D" },
+  claude: { icon: "anthropic", color: "#D4915D" },
+  github: { icon: "github", color: "#000000" },
+  copilot: { icon: "github", color: "#000000" },
+  gemini: { icon: "gemini", color: "#4285F4" },
+  google: { icon: "gemini", color: "#4285F4" },
+  openai: { icon: "openai", color: "#00A67E" },
+};
+
+const getProviderLogo = (provider: { id: string; name: string; api?: string; baseUrl?: string }) => {
+  const source = `${provider.id} ${provider.name} ${provider.api ?? ""} ${provider.baseUrl ?? ""}`.toLowerCase();
+  const key = Object.keys(CC_SWITCH_PROVIDER_LOGOS).find((candidate) => source.includes(candidate));
+  return key ? CC_SWITCH_PROVIDER_LOGOS[key] : null;
+};
+
+const ProviderLogo = ({ name, logo }: { name: string; logo: { icon: string; color: string } | null }) => {
+  if (!logo) {
+    return <span>{name.trim().charAt(0).toUpperCase() || "?"}</span>;
+  }
+
+  const label = logo.icon === "anthropic" ? "△" : logo.icon === "github" ? "GH" : logo.icon === "gemini" ? "✦" : "◎";
+
+  return (
+    <span
+      className="flex h-full w-full items-center justify-center rounded-2xl text-sm font-bold text-white"
+      style={{ backgroundColor: logo.color }}
+      title={logo.icon}
+    >
+      {label}
+    </span>
+  );
+};
 
 export default function Dashboard() {
+  const { t } = useI18n();
   const { providers, fetchProviders, deleteProvider, saveProvider, isLoading } = useProviderStore();
   const toast = useToastStore();
   const [, setLocation] = useLocation();
@@ -62,9 +98,15 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">供应商管理</h1>
+    <div className="mx-auto w-full max-w-6xl px-6 py-10 md:px-10">
+      <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.28em] text-[#1db7f7]">{t("providers")}</p>
+          <h1 aria-label={t("providersTitle")} className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+            {t("providersTitle")}
+          </h1>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">{t("providersSubtitle")}</p>
+        </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
@@ -76,16 +118,17 @@ export default function Dashboard() {
               a.download = `providers-${new Date().toISOString().slice(0, 10)}.json`;
               a.click();
               URL.revokeObjectURL(url);
-              toast.show("导出成功", "success");
+              toast.show(t("exportSuccess"), "success");
             }}
-            className="text-xs px-3 py-1.5 border rounded-md hover:bg-muted transition-colors flex items-center gap-1.5"
+            className="flex items-center gap-2 rounded-xl border border-border bg-[#111] px-4 py-2.5 text-xs font-medium text-white transition duration-200 hover:border-[#1db7f7]/70 hover:bg-[#161616] hover:shadow-[0_0_26px_rgba(29,183,247,0.14)]"
           >
-            <Download className="w-3.5 h-3.5" />
-            导出 JSON
+            <Download className="h-3.5 w-3.5" />
+            {t("exportJson")}
           </button>
-          <label className="text-xs px-3 py-1.5 border rounded-md hover:bg-muted transition-colors cursor-pointer flex items-center gap-1.5">
-            <Upload className="w-3.5 h-3.5" />
-            导入 JSON
+          <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-[#111] px-4 py-2.5 text-xs font-medium text-white transition duration-200 hover:border-[#b600f8]/70 hover:bg-[#161616] hover:shadow-[0_0_26px_rgba(182,0,248,0.14)]">
+            <Upload className="h-3.5 w-3.5" />
+            {t("import")}
+            <span className="sr-only">{t("import")}</span>
             <input
               type="file"
               accept=".json"
@@ -98,16 +141,16 @@ export default function Dashboard() {
                   const imported = JSON.parse(text);
                   const result = validateProviderImport(imported);
                   if (!result.valid) {
-                    toast.show(`导入失败：${result.error}`, "error");
+                    toast.show(`${t("importFailed")}：${result.error}`, "error");
                     return;
                   }
                   for (const p of result.providers) {
                     await saveProvider?.(p);
                   }
-                  toast.show(`导入成功 ${result.providers.length} 个 Provider`, "success");
+                  toast.show(t("importSuccess", { count: result.providers.length }), "success");
                   fetchProviders();
                 } catch {
-                  toast.show("导入失败", "error");
+                  toast.show(t("importFailed"), "error");
                 }
                 e.target.value = "";
               }}
@@ -116,27 +159,27 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-5">
         <input
           ref={searchRef}
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="搜索供应商 (名称/ID/接口格式)..."
-          className="w-full max-w-md px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
+          placeholder={t("searchProvider")}
+          className="w-full max-w-md rounded-2xl border border-border bg-[#050505] px-4 py-3 text-sm text-white outline-none transition duration-200 placeholder:text-muted-foreground focus:border-[#1db7f7] focus:ring-2 focus:ring-[#1db7f7]/20"
         />
       </div>
 
       {isLoading && (
         <div className="grid grid-cols-1 gap-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="border rounded-lg p-4 space-y-3 animate-pulse">
-              <div className="h-5 bg-muted rounded w-1/3" />
-              <div className="h-4 bg-muted rounded w-2/3" />
-              <div className="h-4 bg-muted rounded w-1/2" />
+            <div key={i} className="animate-pulse space-y-3 rounded-3xl border border-border bg-[#050505] p-5">
+              <div className="h-5 w-1/3 rounded bg-[#111]" />
+              <div className="h-4 w-2/3 rounded bg-[#111]" />
+              <div className="h-4 w-1/2 rounded bg-[#111]" />
               <div className="flex gap-2 pt-2">
-                <div className="h-8 bg-muted rounded w-20" />
-                <div className="h-8 bg-muted rounded w-16" />
+                <div className="h-8 w-20 rounded bg-[#111]" />
+                <div className="h-8 w-16 rounded bg-[#111]" />
               </div>
             </div>
           ))}
@@ -150,46 +193,52 @@ export default function Dashboard() {
             const modelCount = provider.models?.length ?? 0;
             const apiType = provider.api ?? "unknown";
             const apiBadgeColor =
-              apiType.includes("openai") ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" :
-              apiType.includes("anthropic") ? "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" :
-              apiType.includes("google") ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" :
-              apiType.includes("azure") ? "bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300" :
-              "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300";
-            const initial = provider.name.trim().charAt(0).toUpperCase() || provider.id.charAt(0).toUpperCase();
-            const modelSummary = modelCount > 0 ? `${modelCount} 个模型` : "未配置模型";
+              apiType.includes("openai") ? "border-[#1db7f7]/35 bg-[#1db7f7]/10 text-[#8adfff]" :
+              apiType.includes("anthropic") ? "border-[#b600f8]/35 bg-[#b600f8]/10 text-[#dfa0ff]" :
+              apiType.includes("google") ? "border-emerald-400/35 bg-emerald-400/10 text-emerald-200" :
+              apiType.includes("azure") ? "border-sky-400/35 bg-sky-400/10 text-sky-200" :
+              "border-border bg-[#111] text-muted-foreground";
+            const logo = getProviderLogo(provider);
+            const modelSummary = modelCount > 0 ? t("modelsCount", { count: modelCount }) : t("noModels");
             return (
               <div
                 key={provider.id}
                 data-testid={`provider-card-${provider.id}`}
-                draggable
-                onDragStart={() => handleDragStart(provider.id)}
                 onDragOver={(e) => handleDragOver(e, provider.id)}
                 onDrop={() => handleDrop(provider.id)}
-                onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-                className={`group min-h-[104px] border rounded-2xl px-5 py-4 transition-all cursor-move flex items-center gap-4 ${provider.enabled ? "border-primary/45 bg-gradient-to-r from-primary/10 via-background to-background hover:border-primary hover:shadow-sm" : "border-border bg-muted/20 opacity-80 hover:opacity-100 hover:border-primary/50"} ${dragOverId === provider.id && dragId !== provider.id ? "ring-2 ring-primary ring-offset-2 scale-[1.01]" : ""} ${dragId === provider.id ? "opacity-40" : ""}`}
+                className={`group relative flex min-h-[112px] items-center gap-4 overflow-hidden rounded-3xl border border-[#222] bg-[#1f1f1f] px-5 py-4 transition duration-300 hover:border-transparent hover:bg-[linear-gradient(90deg,#1db7f7_0%,#b600f8_100%)] hover:shadow-[0_20px_80px_rgba(29,183,247,0.24)] ${provider.enabled ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]" : "opacity-70 hover:opacity-100"} ${dragOverId === provider.id && dragId !== provider.id ? "scale-[1.01] ring-2 ring-[#1db7f7]/70" : ""} ${dragId === provider.id ? "opacity-40" : ""}`}
               >
-                <GripVertical className="w-5 h-5 text-muted-foreground/70 shrink-0" />
-                <div className="w-12 h-12 rounded-2xl border bg-muted/50 flex items-center justify-center text-lg font-semibold text-muted-foreground shrink-0">
-                  {initial}
+                <button
+                  type="button"
+                  draggable
+                  onDragStart={() => handleDragStart(provider.id)}
+                  onDragEnd={() => { setDragId(null); setDragOverId(null); }}
+                  aria-label={`Drag ${provider.name}`}
+                  className="-ml-2 cursor-grab rounded-xl p-2 text-muted-foreground/60 transition duration-200 hover:bg-black/20 hover:text-white group-hover:text-white active:cursor-grabbing"
+                >
+                  <GripVertical className="h-5 w-5" />
+                </button>
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-[#111] text-lg font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] group-hover:border-white/25 group-hover:bg-black/20">
+                  <ProviderLogo name={provider.name || provider.id} logo={logo} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 min-w-0">
-                    <h3 className="font-semibold text-lg truncate">{provider.name}</h3>
-                    <span className={`text-[11px] px-2 py-0.5 rounded-lg font-medium ${apiBadgeColor}`}>{provider.id}</span>
-                    {provider.isBuiltIn && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">内置</span>}
-                    {!provider.enabled && <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300 font-medium">未应用</span>}
+                    <h3 className="truncate text-lg font-semibold text-white">{provider.name}</h3>
+                    <span className={`rounded-lg border px-2 py-0.5 font-mono text-[11px] font-medium group-hover:border-white/25 group-hover:bg-white/10 group-hover:text-white ${apiBadgeColor}`}>{provider.id}</span>
+                    {provider.isBuiltIn && <span className="rounded border border-border bg-[#111] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground group-hover:border-white/25 group-hover:bg-white/10 group-hover:text-white">{t("builtIn")}</span>}
+                    {!provider.enabled && <span className="rounded border border-yellow-300/25 bg-yellow-300/10 px-1.5 py-0.5 text-[10px] font-medium text-yellow-200 group-hover:border-white/25 group-hover:bg-white/10 group-hover:text-white">{t("disabled")}</span>}
                   </div>
-                  <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground min-w-0">
-                    <span className="truncate max-w-[360px]">{provider.baseUrl || "未配置官网地址"}</span>
+                  <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground min-w-0 group-hover:text-white/80">
+                    <span className="truncate max-w-[360px]">{provider.baseUrl || t("notConfiguredUrl")}</span>
                     <span className="text-muted-foreground/40">·</span>
-                    <button onClick={() => setExpandedId(isExpanded ? null : provider.id)} className="hover:text-foreground transition-colors shrink-0">
-                      {isExpanded ? "收起" : modelSummary}
+                    <button onClick={() => setExpandedId(isExpanded ? null : provider.id)} className="shrink-0 transition-colors hover:text-white">
+                      {isExpanded ? t("collapse") : modelSummary}
                     </button>
                   </div>
                   {isExpanded && provider.models && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
+                    <div className="mt-3 flex flex-wrap gap-1.5">
                       {provider.models.slice(0, 8).map((m) => (
-                        <span key={m.id} className="text-[11px] px-2 py-0.5 bg-muted rounded-md text-muted-foreground">
+                        <span key={m.id} className="rounded-lg border border-border bg-[#111] px-2 py-0.5 font-mono text-[11px] text-muted-foreground group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white/80">
                           {m.name}
                         </span>
                       ))}
@@ -197,54 +246,54 @@ export default function Dashboard() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <label className={`text-sm px-3 py-2 rounded-xl transition-colors flex items-center gap-2 cursor-pointer ${provider.enabled ? "bg-orange-500/15 text-orange-600 hover:bg-orange-500/20" : "border hover:bg-muted"}`}>
+                  <label className={`flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm transition duration-200 group-hover:border-white/25 group-hover:bg-black/20 group-hover:text-white ${provider.enabled ? "border border-[#1db7f7]/25 bg-[#1db7f7]/10 text-[#8adfff] hover:bg-[#1db7f7]/15" : "border border-border text-muted-foreground hover:bg-[#111]"}`}>
                     <input
                       type="checkbox"
                       checked={provider.enabled}
                       onChange={async (e) => {
                         await saveProvider({ ...provider, enabled: e.target.checked });
-                        toast.show(e.target.checked ? "已应用配置" : "已移除配置", "success");
+                        toast.show(e.target.checked ? t("applied") : t("removed"), "success");
                       }}
                       data-testid={`provider-enabled-${provider.id}`}
-                      className="h-4 w-4 accent-primary"
+                      className="h-4 w-4 accent-[#1db7f7]"
                     />
-                    {provider.enabled ? "移除" : "应用"}
+                    {provider.enabled ? t("remove") : t("apply")}
                   </label>
                   <button
                     onClick={() => setLocation(`/provider/edit/${provider.id}`)}
-                    aria-label={`编辑 ${provider.name}`}
-                    className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    aria-label={`${t("edit")} ${provider.name}`}
+                    className="rounded-xl p-2 text-muted-foreground transition duration-200 hover:bg-black/20 hover:text-white group-hover:text-white/80"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={async () => {
                       await navigator.clipboard?.writeText(JSON.stringify(provider, null, 2));
-                      toast.show("已复制供应商配置", "success");
+                      toast.show(t("copiedProvider"), "success");
                     }}
-                    aria-label={`复制 ${provider.name}`}
-                    className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    aria-label={`${t("copy")} ${provider.name}`}
+                    className="rounded-xl p-2 text-muted-foreground transition duration-200 hover:bg-black/20 hover:text-white group-hover:text-white/80"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => toast.show("测试模型功能待接入", "success")}
-                    aria-label={`测试模型 ${provider.name}`}
-                    className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    onClick={() => toast.show(t("testModelTodo"), "success")}
+                    aria-label={`${t("testModel")} ${provider.name}`}
+                    className="rounded-xl p-2 text-muted-foreground transition duration-200 hover:bg-black/20 hover:text-white group-hover:text-white/80"
                   >
                     <FlaskConical className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : provider.id)}
-                    aria-label={`查看模型 ${provider.name}`}
-                    className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    aria-label={`${t("viewModels")} ${provider.name}`}
+                    className="rounded-xl p-2 text-muted-foreground transition duration-200 hover:bg-black/20 hover:text-white group-hover:text-white/80"
                   >
                     <BarChart3 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setConfirmId(provider.id)}
-                    aria-label={`删除 ${provider.name}`}
-                    className="p-2 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    aria-label={`${t("delete")} ${provider.name}`}
+                    className="rounded-xl p-2 text-muted-foreground transition duration-200 hover:bg-black/20 hover:text-red-100 group-hover:text-white/80"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -256,16 +305,16 @@ export default function Dashboard() {
       )}
 
       {!isLoading && filteredProviders.length === 0 && (
-        <div className="text-center py-16 text-muted-foreground border rounded-xl border-dashed">
-          <div className="text-4xl mb-3">🤖</div>
-          <p className="text-base font-medium">暂无供应商</p>
-          <p className="text-sm mt-1 opacity-60 mb-4">添加第一个 AI 供应商开始配置</p>
+        <div className="rounded-3xl border border-dashed border-border bg-[#050505] py-16 text-center text-muted-foreground">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1db7f7]/20 to-[#b600f8]/20 text-3xl">π</div>
+          <p className="text-base font-medium text-white">{t("emptyProviders")}</p>
+          <p className="text-sm mt-1 opacity-60 mb-4">{t("emptyProvidersHint")}</p>
           <button
             onClick={() => setLocation("/provider/new")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 text-sm transition-opacity"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#1db7f7] to-[#b600f8] px-4 py-2 text-sm font-semibold text-white transition duration-200 hover:scale-[1.02]"
           >
             <Plus className="w-4 h-4" />
-            添加供应商
+            {t("addProvider")}
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -273,14 +322,14 @@ export default function Dashboard() {
 
       {confirmId && (
         <ConfirmDialog
-          title="确认删除"
-          message={`确定删除 "${providers.find((p) => p.id === confirmId)?.name ?? confirmId}"？此操作不可撤销。`}
+          title={t("confirmDelete")}
+          message={t("deleteProviderConfirm", { name: providers.find((p) => p.id === confirmId)?.name ?? confirmId })}
           onConfirm={async () => {
             try {
               await deleteProvider(confirmId);
-              toast.show("删除成功", "success");
+              toast.show(t("deleteSuccess"), "success");
             } catch {
-              toast.show("删除失败", "error");
+              toast.show(t("importFailed"), "error");
             }
             setConfirmId(null);
           }}

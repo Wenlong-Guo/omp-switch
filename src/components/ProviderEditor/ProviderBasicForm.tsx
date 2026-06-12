@@ -1,5 +1,6 @@
 import type { ProviderConfig, ApiType } from "@/types/provider";
 import { useId } from "react";
+import { useI18n } from "@/lib/i18n";
 
 const API_TYPES = [
   "openai-completions",
@@ -28,13 +29,14 @@ interface Props {
 function Field({ label, children, htmlFor }: { label: string; children: React.ReactNode; htmlFor?: string }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-foreground">{label}</label>
+      <label htmlFor={htmlFor} className="block text-sm font-medium text-white">{label}</label>
       {children}
     </div>
   );
 }
 
 export default function ProviderBasicForm({ form, isEdit, onChange, presets, selectedPresetId, onPresetChange }: Props) {
+  const { t } = useI18n();
   const id = useId();
   const update = <K extends keyof ProviderConfig>(key: K, value: ProviderConfig[K]) => {
     onChange({ ...form, [key]: value });
@@ -43,15 +45,15 @@ export default function ProviderBasicForm({ form, isEdit, onChange, presets, sel
   return (
     <div className="space-y-4" data-testid="provider-basic-form">
       {presets && !isEdit && onPresetChange && (
-        <Field label="选择预设" htmlFor={`${id}-preset`}>
+        <Field label={t("selectPreset")} htmlFor={`${id}-preset`}>
           <select
             id={`${id}-preset`}
             value={selectedPresetId ?? ""}
             onChange={(e) => onPresetChange(e.target.value, null)}
             data-testid="preset-select"
-            className="w-full px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
+            className="w-full rounded-2xl border border-[#222] bg-black/40 px-4 py-3 text-sm text-white outline-none transition duration-200 focus:border-[#1db7f7] focus:ring-2 focus:ring-[#1db7f7]/20"
           >
-            <option value="">手动配置</option>
+            <option value="">{t("manualConfig")}</option>
             {presets.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
@@ -59,42 +61,42 @@ export default function ProviderBasicForm({ form, isEdit, onChange, presets, sel
         </Field>
       )}
 
-      <Field label="供应商 ID" htmlFor={`${id}-id`}>
+      <Field label={t("providerId")} htmlFor={`${id}-id`}>
         <input
           id={`${id}-id`}
           value={form.id}
           onChange={(e) => update("id", e.target.value)}
-          className="w-full px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:bg-muted disabled:cursor-not-allowed transition-colors"
+          className="w-full rounded-2xl border border-[#222] bg-black/40 px-4 py-3 text-sm text-white outline-none transition duration-200 placeholder:text-muted-foreground focus:border-[#1db7f7] focus:ring-2 focus:ring-[#1db7f7]/20 disabled:cursor-not-allowed disabled:opacity-50"
           placeholder="openai"
           pattern="[A-Za-z0-9-]+"
-          title="只能包含字母、数字和横线"
+          title="A-Z, a-z, 0-9, -"
           required
           disabled={isEdit}
           data-testid="provider-id-input"
         />
       </Field>
 
-      <Field label="显示名称" htmlFor={`${id}-name`}>
+      <Field label={t("providerName")} htmlFor={`${id}-name`}>
         <input
           id={`${id}-name`}
           value={form.name}
           onChange={(e) => update("name", e.target.value)}
-          className="w-full px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
-          placeholder="默认同步供应商 ID"
+          className="w-full rounded-2xl border border-[#222] bg-black/40 px-4 py-3 text-sm text-white outline-none transition duration-200 placeholder:text-muted-foreground focus:border-[#1db7f7] focus:ring-2 focus:ring-[#1db7f7]/20"
+          placeholder={t("providerNamePlaceholder")}
           required
           data-testid="provider-name-input"
         />
       </Field>
 
-      <Field label="接口格式" htmlFor={`${id}-api`}>
+      <Field label={t("apiFormat")} htmlFor={`${id}-api`}>
         <select
           id={`${id}-api`}
           value={form.api ?? "openai-completions"}
           onChange={(e) => update("api", e.target.value ? (e.target.value as ApiType) : undefined)}
           data-testid="provider-api-select"
-          className="w-full px-3 py-2 border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
+          className="w-full rounded-2xl border border-[#222] bg-black/40 px-4 py-3 text-sm text-white outline-none transition duration-200 focus:border-[#1db7f7] focus:ring-2 focus:ring-[#1db7f7]/20"
         >
-          <option value="openai-completions">OpenAI 兼容格式</option>
+          <option value="openai-completions">{t("apiCompatible")}</option>
           {API_TYPES.filter((t) => t !== "openai-completions").map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
@@ -106,7 +108,7 @@ export default function ProviderBasicForm({ form, isEdit, onChange, presets, sel
           id={`${id}-baseurl`}
           value={form.baseUrl ?? ""}
           onChange={(e) => update("baseUrl", e.target.value || undefined)}
-          className="w-full px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
+          className="w-full rounded-2xl border border-[#222] bg-black/40 px-4 py-3 text-sm text-white outline-none transition duration-200 placeholder:text-muted-foreground focus:border-[#1db7f7] focus:ring-2 focus:ring-[#1db7f7]/20"
           placeholder="https://api.openai.com/v1"
         />
       </Field>
@@ -117,7 +119,7 @@ export default function ProviderBasicForm({ form, isEdit, onChange, presets, sel
           type="password"
           value={form.apiKey ?? ""}
           onChange={(e) => update("apiKey", e.target.value || undefined)}
-          className="w-full px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
+          className="w-full rounded-2xl border border-[#222] bg-black/40 px-4 py-3 text-sm text-white outline-none transition duration-200 placeholder:text-muted-foreground focus:border-[#b600f8] focus:ring-2 focus:ring-[#b600f8]/20"
           placeholder="sk-..."
         />
       </Field>
@@ -128,9 +130,9 @@ export default function ProviderBasicForm({ form, isEdit, onChange, presets, sel
           id={`${id}-enabled`}
           checked={form.enabled}
           onChange={(e) => update("enabled", e.target.checked)}
-          className="h-4 w-4 rounded border-primary accent-primary"
+          className="h-4 w-4 rounded accent-[#1db7f7]"
         />
-        <label htmlFor={`${id}-enabled`} className="text-sm font-medium">应用配置</label>
+        <label htmlFor={`${id}-enabled`} className="text-sm font-medium text-white">{t("applyConfig")}</label>
       </div>
     </div>
   );

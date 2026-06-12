@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { useProviderStore } from "@/stores/providerStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useLocation, useParams } from "wouter";
-import { ArrowLeft, Save, Plus, Star, FileText } from "lucide-react";
+import { ArrowLeft, Save, Plus, Star, FileText, Server } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import type { ProviderConfig, ModelDefinition } from "@/types/provider";
 import ProviderBasicForm from "@/components/ProviderEditor/ProviderBasicForm";
 import ModelList from "@/components/ProviderEditor/ModelList";
 import ModelEditorDialog from "@/components/ProviderEditor/ModelEditorDialog";
+import { useI18n } from "@/lib/i18n";
 
 const PROVIDER_ID_PATTERN = /^[A-Za-z0-9-]+$/;
 
@@ -111,6 +112,7 @@ function parseProviderYaml(text: string): ProviderConfig {
 }
 
 export default function ProviderEditor() {
+  const { t } = useI18n();
   const { saveProvider, providers, fetchProviders, builtinPresets, fetchBuiltinPresets } = useProviderStore();
   const toast = useToastStore();
   const [, setLocation] = useLocation();
@@ -156,10 +158,10 @@ export default function ProviderEditor() {
   }, [isEdit, editId, providers, fetchProviders, fetchBuiltinPresets]);
 
   const validateForm = (target = form): string | null => {
-    if (!target.id.trim()) return "供应商 ID 不能为空";
-    if (!PROVIDER_ID_PATTERN.test(target.id.trim())) return "供应商 ID 只能包含字母、数字和横线";
-    if (!target.name.trim()) return "显示名称不能为空";
-    if (!target.api) return "请选择接口格式";
+    if (!target.id.trim()) return t("providerIdRequired");
+    if (!PROVIDER_ID_PATTERN.test(target.id.trim())) return t("providerIdInvalid");
+    if (!target.name.trim()) return t("providerNameRequired");
+    if (!target.api) return t("apiFormatRequired");
     return null;
   };
 
@@ -190,7 +192,7 @@ export default function ProviderEditor() {
         models: Array.isArray(parsed.models) ? parsed.models : [],
       };
     } catch (err) {
-      setConfigError(`YAML 配置解析失败: ${err instanceof Error ? err.message : String(err)}`);
+      setConfigError(t("yamlParseFailed", { error: err instanceof Error ? err.message : String(err) }));
       return null;
     }
   };
@@ -254,11 +256,11 @@ export default function ProviderEditor() {
     setError(null);
     try {
       await saveProvider(submitForm);
-      toast.show(isEdit ? "更新成功" : "保存成功", "success");
+      toast.show(isEdit ? t("updateSuccess") : t("saveSuccess"), "success");
       setLocation("/");
     } catch (err) {
       setError(String(err));
-      toast.show("保存失败", "error");
+      toast.show(t("saveFailedShort"), "error");
     }
   };
 
@@ -302,39 +304,44 @@ export default function ProviderEditor() {
   }, [editingModelIdx]);
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <div className="flex items-center gap-2 mb-6">
+    <div className="mx-auto w-full max-w-6xl px-6 py-10 md:px-10">
+      <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+        <div>
         <button
           onClick={() => setLocation("/")}
-          className="p-1.5 rounded-md hover:bg-muted transition-colors"
-          aria-label="返回"
+          className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#222] px-3 py-2 text-xs text-muted-foreground transition duration-200 hover:border-[#1db7f7]/60 hover:bg-[#111] hover:text-white"
+          aria-label={t("back")}
         >
-          <ArrowLeft className="w-5 h-5 text-muted-foreground" />
+          <ArrowLeft className="h-4 w-4" /> {t("back")}
         </button>
-        <h1 className="text-2xl font-bold">
-          {isEdit ? `编辑供应商 ${form.name}` : "添加供应商"}
-        </h1>
+          <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.28em] text-[#1db7f7]">Provider</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">{isEdit ? `${t("editProvider")} ${form.name}` : t("addProvider")}</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{t("providerSubtitle")}</p>
+        </div>
+        <div className="rounded-3xl border border-[#222] bg-[#050505] p-4 text-right">
+          <div className="font-mono text-2xl font-semibold text-white">{models.length}</div>
+          <div className="mt-1 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">{t("modelConfig")}</div>
+        </div>
       </div>
 
-      {error && <div className="mb-4 p-3 bg-red-900/30 text-red-400 rounded-md border border-red-800 flex items-center gap-2 text-sm"><span className="font-medium">错误:</span> {error}</div>}
+      {error && <div className="mb-5 flex items-center gap-2 rounded-2xl border border-red-400/25 bg-red-400/10 px-4 py-3 text-sm text-red-200"><span className="font-medium">{t("error")}:</span> {error}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-        {/* Preset selector for add mode */}
         {!isEdit && (
-          <div className="space-y-3">
+          <section className="rounded-3xl border border-transparent bg-[linear-gradient(#050505,#050505)_padding-box,linear-gradient(90deg,#222,#222)_border-box] p-5">
             <div>
-              <label className="block text-sm font-medium">选择预设</label>
-              <p className="text-xs text-muted-foreground mt-1">选择主流厂商卡片快速填充 baseUrl 与旗舰模型；也可手动配置。</p>
+              <h2 className="text-lg font-semibold text-white">{t("selectPreset")}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t("selectPresetHint")}</p>
             </div>
-            <div data-testid="preset-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div data-testid="preset-grid" className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               <button
                 type="button"
                 data-testid="preset-card-custom"
                 onClick={() => applyPreset("")}
-                className={`text-left p-4 border rounded-2xl transition-colors ${!selectedPresetId ? "border-primary bg-primary/10" : "hover:border-primary/60 bg-muted/20"}`}
+                className={`group text-left rounded-3xl border p-4 transition duration-300 ${!selectedPresetId ? "border-transparent bg-[linear-gradient(90deg,#1db7f7,#b600f8)] text-white" : "border-[#222] bg-[#1f1f1f] text-muted-foreground hover:border-transparent hover:bg-[linear-gradient(90deg,#1db7f7,#b600f8)] hover:text-white"}`}
               >
-                <div className="font-medium">自定义配置</div>
-                <div className="text-xs text-muted-foreground mt-1">从空配置开始</div>
+                <div className="font-medium">{t("manualConfig")}</div>
+                <div className="mt-1 text-xs opacity-70">{t("manualConfigHint")}</div>
               </button>
               {presetOptions.map((preset) => (
                 <button
@@ -342,36 +349,41 @@ export default function ProviderEditor() {
                   type="button"
                   data-testid={`preset-card-${preset.id}`}
                   onClick={() => applyPreset(preset.id)}
-                  className={`text-left p-4 border rounded-2xl transition-colors ${selectedPresetId === preset.id ? "border-primary bg-primary/10" : "hover:border-primary/60 bg-muted/20"}`}
+                  className={`group text-left rounded-3xl border p-4 transition duration-300 ${selectedPresetId === preset.id ? "border-transparent bg-[linear-gradient(90deg,#1db7f7,#b600f8)] text-white" : "border-[#222] bg-[#1f1f1f] text-muted-foreground hover:border-transparent hover:bg-[linear-gradient(90deg,#1db7f7,#b600f8)] hover:text-white"}`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium truncate">{preset.name}</span>
-                    {FEATURED_PRESETS.some((p) => p.id === preset.id) && <Star className="w-4 h-4 text-primary shrink-0" />}
+                    <span className="truncate font-medium">{preset.name}</span>
+                    {FEATURED_PRESETS.some((p) => p.id === preset.id) && <Star className="h-4 w-4 shrink-0 text-white" />}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1 truncate">{preset.baseUrl || "本地/自动发现"}</div>
-                  <div className="text-xs text-muted-foreground mt-2">{preset.models?.length ?? 0} 个预置模型</div>
+                  <div className="mt-1 truncate text-xs opacity-70">{preset.baseUrl || t("localOrAuto")}</div>
+                  <div className="mt-2 text-xs opacity-70">{t("presetModelCount", { count: preset.models?.length ?? 0 })}</div>
                 </button>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        <ProviderBasicForm
-          form={form}
-          isEdit={isEdit}
-          onChange={handleFormChange}
-        />
+        <section className="rounded-3xl border border-transparent bg-[linear-gradient(#050505,#050505)_padding-box,linear-gradient(90deg,#222,#222)_border-box] p-5">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="pi-gradient-bg flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-[0_0_32px_rgba(29,183,247,0.18)]"><Server className="h-5 w-5" /></div>
+            <div>
+              <h2 className="text-lg font-semibold text-white">{t("connection")}</h2>
+              <p className="text-sm text-muted-foreground">{t("providerSubtitle")}</p>
+            </div>
+          </div>
+          <ProviderBasicForm form={form} isEdit={isEdit} onChange={handleFormChange} />
+        </section>
 
         {/* Model cards for add mode when preset has models */}
         {!isEdit && selectedPresetId && form.models && form.models.length > 0 && (
-          <div className="p-4 border rounded-2xl bg-muted/20 space-y-3">
+          <section className="space-y-3 rounded-3xl border border-[#222] bg-[#050505] p-5 transition duration-200 hover:border-[#1db7f7]/40">
             <div>
-              <h2 className="text-sm font-medium">预置模型</h2>
-              <p className="text-xs text-muted-foreground mt-1">已自动加入配置；需要改名、token 或多模态字段时可在下方模型配置/YAML 编辑。</p>
+              <h2 className="text-sm font-medium text-white">{t("presetModels")}</h2>
+              <p className="mt-1 text-xs text-muted-foreground">{t("presetModelsHint")}</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3" data-testid="preset-model-grid">
               {form.models.map((m) => (
-                <div key={m.id} data-testid={`preset-model-card-${m.id}`} className="p-3 border rounded-xl bg-background/70">
+                <div key={m.id} data-testid={`preset-model-card-${m.id}`} className="rounded-2xl border border-[#222] bg-black/40 p-3 transition duration-200 hover:border-transparent hover:bg-[linear-gradient(90deg,#1db7f7,#b600f8)]">
                   <div className="font-medium text-sm">{m.name}</div>
                   <div className="text-xs text-muted-foreground font-mono mt-1 break-all">{m.id}</div>
                   <div className="flex flex-wrap gap-1.5 mt-3 text-[10px]">
@@ -383,20 +395,19 @@ export default function ProviderEditor() {
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Models Section */}
-        <div className="space-y-4 pt-4 border-t">
+        <section className="space-y-4 rounded-3xl border border-[#222] bg-[#050505] p-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">模型配置</h2>
+            <h2 className="text-lg font-semibold text-white">{t("modelConfig")}</h2>
             <button
               type="button"
               onClick={startAddModel}
               data-testid="add-model-btn"
-              className="text-sm px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:opacity-90"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#222] px-3 py-2 text-sm text-white transition duration-200 hover:border-[#1db7f7]/70 hover:bg-[#111]"
             >
-              <Plus className="w-3.5 h-3.5" /> 添加模型
+              <Plus className="h-3.5 w-3.5" /> {t("addModel")}
             </button>
           </div>
 
@@ -405,7 +416,7 @@ export default function ProviderEditor() {
             onEdit={startEditModel}
             onDelete={deleteModel}
           />
-        </div>
+        </section>
 
         {/* Model Editor Dialog */}
         {editingModelIdx !== null && (
@@ -416,11 +427,11 @@ export default function ProviderEditor() {
           />
         )}
 
-        <div className="space-y-3 pt-4 border-t">
+        <section className="space-y-3 rounded-3xl border border-[#222] bg-[#050505] p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold">Provider YAML 编辑</h2>
-              <p className="text-xs text-muted-foreground mt-1">omp provider 配置写入 models.yml，这里只提供 YAML。</p>
+              <h2 className="text-lg font-semibold text-white">{t("yamlEditor")}</h2>
+              <p className="mt-1 text-xs text-muted-foreground">{t("yamlHint")}</p>
             </div>
             <div className="text-xs px-3 py-1.5 rounded border inline-flex items-center gap-1 bg-primary text-primary-foreground border-primary">
               <FileText className="w-3.5 h-3.5" /> YAML
@@ -430,27 +441,27 @@ export default function ProviderEditor() {
             data-testid="provider-config-editor"
             value={configText}
             onChange={(e) => setConfigText(e.target.value)}
-            className="w-full min-h-72 px-3 py-2 border rounded-xl bg-background text-foreground font-mono text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+            className="min-h-72 w-full rounded-2xl border border-[#222] bg-black/40 px-4 py-3 font-mono text-xs text-white outline-none transition focus:border-[#1db7f7] focus:ring-2 focus:ring-[#1db7f7]/20"
           />
           {configError && <div className="text-sm text-red-400" data-testid="provider-config-error">{configError}</div>}
           <button
             type="button"
             data-testid="apply-config-editor"
             onClick={applyConfigText}
-            className="text-sm px-3 py-1.5 border rounded hover:bg-muted"
+            className="rounded-xl border border-[#222] px-3 py-2 text-sm text-white transition duration-200 hover:border-[#1db7f7]/70 hover:bg-[#111]"
           >
-            应用 YAML 配置
+            {t("applyYaml")}
           </button>
-        </div>
+        </section>
 
-        <div className="sticky bottom-0 z-20 -mx-6 mt-6 border-t bg-background/95 backdrop-blur px-6 py-4" data-testid="sticky-save-bar">
+        <div className="sticky bottom-0 z-20 -mx-6 mt-6 border-t border-[#222] bg-black/85 px-6 py-4 backdrop-blur" data-testid="sticky-save-bar">
           <button
             type="submit"
             data-testid="save-provider-btn"
-            className="w-full py-2.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center justify-center gap-2 font-medium transition-opacity"
+            className="pi-gradient-bg flex w-full items-center justify-center gap-2 rounded-2xl py-3 font-semibold text-white shadow-[0_0_28px_rgba(29,183,247,0.22)] transition duration-200 hover:scale-[1.01]"
           >
             <Save className="w-4 h-4" />
-            保存供应商
+            {t("saveProvider")}
           </button>
         </div>
       </form>
