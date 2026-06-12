@@ -109,10 +109,8 @@ describe("Dashboard", () => {
     expect(screen.getByLabelText("删除 OpenAI")).toBeInTheDocument();
   });
 
-  it("expands model list on click", () => {
+  it("shows concrete model names", () => {
     render(<Dashboard />);
-    const expandBtn = screen.getAllByText(/个模型/)[0].closest("button")!;
-    fireEvent.click(expandBtn);
     expect(screen.getByText("GPT-4")).toBeInTheDocument();
   });
 

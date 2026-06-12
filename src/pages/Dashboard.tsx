@@ -7,6 +7,8 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { validateProviderImport } from "@/lib/importValidation";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useI18n } from "@/lib/i18n";
+import { invokeCommand } from "@/lib/tauri-api";
+import type { ProviderConfig } from "@/types/provider";
 
 const CC_SWITCH_PROVIDER_LOGOS: Record<string, { icon: string; color: string }> = {
   anthropic: { icon: "anthropic", color: "#D4915D" },
@@ -41,6 +43,10 @@ const ProviderLogo = ({ name, logo }: { name: string; logo: { icon: string; colo
     </span>
   );
 };
+
+const getModelName = (model: { id: string; name?: string }) => model.name || model.id;
+
+const canUseOpenAiTest = (api?: string) => !api || api.includes("openai");
 
 export default function Dashboard() {
   const { t } = useI18n();
@@ -95,6 +101,41 @@ export default function Dashboard() {
     setOrderedProviders(newOrder);
     setDragId(null);
     setDragOverId(null);
+  };
+
+  const handleTestModel = async (provider: ProviderConfig) => {
+    const model = provider.models?.[0];
+    if (!model) {
+      toast.show(t("testModelNoModel"), "error");
+      return;
+    }
+    if (!provider.apiKey) {
+      toast.show(t("testModelNoApiKey"), "error");
+      return;
+    }
+    if (!provider.baseUrl) {
+      toast.show(t("testModelNoBaseUrl"), "error");
+      return;
+    }
+    if (!canUseOpenAiTest(provider.api)) {
+      toast.show(t("testModelUnsupported"), "error");
+      return;
+    }
+
+    const modelName = getModelName(model);
+    toast.show(t("testModelRunning", { model: modelName }), "success");
+    try {
+      await invokeCommand("chat_completion", {
+        req: {
+          provider_id: provider.id,
+          model: model.id,
+          messages: [{ role: "user", content: "ping" }],
+        },
+      });
+      toast.show(t("testModelSuccess", { model: modelName }), "success");
+    } catch (error) {
+      toast.show(t("testModelFailed", { reason: String(error) }), "error");
+    }
   };
 
   return (
@@ -199,7 +240,8 @@ export default function Dashboard() {
               apiType.includes("azure") ? "border-sky-400/35 bg-sky-400/10 text-sky-200" :
               "border-border bg-[#111] text-muted-foreground";
             const logo = getProviderLogo(provider);
-            const modelSummary = modelCount > 0 ? t("modelsCount", { count: modelCount }) : t("noModels");
+            const visibleModels = provider.models?.slice(0, 3) ?? [];
+            const hiddenModelCount = Math.max(0, modelCount - visibleModels.length);
             return (
               <div
                 key={provider.id}
@@ -230,16 +272,26 @@ export default function Dashboard() {
                   </div>
                   <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground min-w-0 group-hover:text-white/80">
                     <span className="truncate max-w-[360px]">{provider.baseUrl || t("notConfiguredUrl")}</span>
-                    <span className="text-muted-foreground/40">·</span>
-                    <button onClick={() => setExpandedId(isExpanded ? null : provider.id)} className="shrink-0 transition-colors hover:text-white">
-                      {isExpanded ? t("collapse") : modelSummary}
-                    </button>
                   </div>
-                  {isExpanded && provider.models && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {provider.models.slice(0, 8).map((m) => (
-                        <span key={m.id} className="rounded-lg border border-border bg-[#111] px-2 py-0.5 font-mono text-[11px] text-muted-foreground group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white/80">
-                          {m.name}
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                    {visibleModels.length > 0 ? visibleModels.map((m) => (
+                      <span key={m.id} title={m.id} className="max-w-[180px] truncate rounded-lg border border-border bg-[#111] px-2.5 py-1 font-mono text-[11px] text-muted-foreground group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white/90">
+                        {getModelName(m)}
+                      </span>
+                    )) : (
+                      <span className="rounded-lg border border-border bg-[#111] px-2.5 py-1 text-[11px] text-muted-foreground group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white/80">{t("noModels")}</span>
+                    )}
+                    {hiddenModelCount > 0 && (
+                      <button onClick={() => setExpandedId(isExpanded ? null : provider.id)} className="rounded-lg border border-[#1db7f7]/30 bg-[#1db7f7]/10 px-2.5 py-1 font-mono text-[11px] text-[#8adfff] transition hover:bg-white/10 group-hover:border-white/25 group-hover:text-white">
+                        {isExpanded ? t("collapse") : t("moreModels", { count: hiddenModelCount })}
+                      </button>
+                    )}
+                  </div>
+                  {isExpanded && provider.models && provider.models.length > 3 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {provider.models.slice(3).map((m) => (
+                        <span key={m.id} title={m.id} className="max-w-[180px] truncate rounded-lg border border-border bg-[#111] px-2 py-0.5 font-mono text-[11px] text-muted-foreground group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white/80">
+                          {getModelName(m)}
                         </span>
                       ))}
                     </div>
@@ -277,7 +329,7 @@ export default function Dashboard() {
                     <Copy className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => toast.show(t("testModelTodo"), "success")}
+                    onClick={() => handleTestModel(provider)}
                     aria-label={`${t("testModel")} ${provider.name}`}
                     className="rounded-xl p-2 text-muted-foreground transition duration-200 hover:bg-black/20 hover:text-white group-hover:text-white/80"
                   >
