@@ -71,7 +71,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <div className="pointer-events-none absolute right-[-220px] top-[-240px] z-0 h-[760px] w-[760px] rounded-full bg-[radial-gradient(circle_at_center,rgba(29,183,247,0.16),rgba(182,0,248,0.08)_42%,transparent_70%)] blur-3xl" />
       <header className="relative z-40 flex h-16 items-center justify-between border-b border-[#222] bg-black/80 px-6 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <span className="pi-gradient-text text-3xl font-bold tracking-tighter">π</span>
+          <img src="/logo.png" alt="OMP Switch" className="h-8 w-8 rounded-lg" />
           <span className="h-5 w-px bg-[#222]" />
           <h1 className="translate-y-[2px] text-sm font-semibold tracking-[0.08em] text-white">OMP Switch</h1>
         </div>

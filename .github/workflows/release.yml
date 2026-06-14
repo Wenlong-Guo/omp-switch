@@ -46,6 +46,7 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: release-assets
@@ -54,7 +55,8 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: omp-switch ${{ github.ref_name }}
           draft: false
-          prerelease: true
+          prerelease: false
+          body_path: RELEASE_NOTES.md
           files: release-assets/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

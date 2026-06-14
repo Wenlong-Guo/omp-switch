@@ -1,6 +1,6 @@
 ---
 name: release
-description: 自动化发布 omp-switch。用户说"发布VX.X.X"时触发。执行版本同步、验证、提交、移动 tag、push，并持续检查 GitHub Actions；CI 失败必须定位 annotations/logs、修复、重推 tag，直到 GitHub Release 创建成功。
+description: 自动化发布 omp-switch。用户说"发布VX.X.X"时触发。执行版本同步、更新 RELEASE_NOTES.md、验证、提交、移动 tag、push，并持续检查 GitHub Actions；CI 失败必须定位 annotations/logs、修复、重推 tag，直到 GitHub Release 创建成功且默认不是 prerelease。
 ---
 
 # Release omp-switch
@@ -25,7 +25,17 @@ description: 自动化发布 omp-switch。用户说"发布VX.X.X"时触发。执
 
 **推荐**：用 `bash scripts/quick-release.sh 1.2.3` 自动完成以上同步 + commit + tag + push。
 
-### 2. 验证构建
+同步后、验证前，必须检查这些版本号完全一致：
+
+```bash
+node scripts/check-version.cjs 1.2.3 1.2.2
+```
+
+该脚本会检查权威版本文件，并全局精确搜索旧版本（含 `v`/`V` 前缀）。发现任一项目自有文件版本不一致或旧版本残留，先修复，不准继续打 tag。
+
+### 2. 更新 Release 介绍并验证构建
+
+发布前必须更新根目录 `RELEASE_NOTES.md`，写清本次版本所有用户可见改动、修复、验证命令。GitHub Release 介绍必须来自该文件，不能留空，不能只写 tag。
 
 ```bash
 npm run build          # tsc && vite build
@@ -87,7 +97,7 @@ powershell -NoProfile -File scripts/check-release-status.ps1 -Tag v1.2.3 -Token 
 
 **`release_public = false` 且 `actions_status = "success"`**：
 - 检查 workflow 中 `softprops/action-gh-release@v2` 是否执行成功
-- 确认 `draft: false, prerelease: true`
+- 确认 `draft: false, prerelease: false, body_path: RELEASE_NOTES.md`
 
 ### 6. 最终确认
 
@@ -106,7 +116,8 @@ powershell -NoProfile -File scripts/check-release-status.ps1 -Tag v1.2.3
 - 若用户说 rc 版本（如 `V1.0.0-rc`），`tauri.conf.json` 用 `1.0.0`，其余文件用 `1.0.0-rc`。
 - 构建产物在 `src-tauri/target/release/bundle/`。
 - 不要改无关文件，不要清理既有 warnings。
-- **Release workflow 必须创建公开 Release（非 draft）**，否则 API 返回 404；workflow 用 `draft: false, prerelease: true`。
+- **Release workflow 必须创建公开稳定 Release（`draft: false, prerelease: false`）**，除非用户明确要求 prerelease；否则 API 返回 404 或用户看到预发布标记都不算完成。
+- **每次发布必须更新 `RELEASE_NOTES.md`，并确保 workflow 用 `body_path: RELEASE_NOTES.md` 写入 GitHub Release 介绍。**
 - **Rust toolchain 用 `stable`**（CI 与本地版本一致），避免 `cargo check` 因版本不匹配失败。
 - **Release job 独立于 build matrix**，避免三平台并发抢创建同一 tag Release。
 - **禁止手写 `curl | jq` 检查 API**。始终用 `scripts/check-release-status.ps1`，它内置限流检测、空值保护、HEAD 降级。

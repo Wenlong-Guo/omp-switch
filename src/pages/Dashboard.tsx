@@ -475,7 +475,9 @@ export default function Dashboard() {
 
       {!isLoading && filteredProviders.length === 0 && (
         <div className="rounded-3xl border border-dashed border-border bg-[#050505] py-16 text-center text-muted-foreground">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1db7f7]/20 to-[#b600f8]/20 text-3xl">π</div>
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1db7f7]/20 to-[#b600f8]/20 p-2">
+            <img src="/logo.png" alt="OMP Switch" className="h-full w-full rounded-xl object-cover" />
+          </div>
           <p className="text-base font-medium text-white">{t("emptyProviders")}</p>
           <p className="text-sm mt-1 opacity-60 mb-4">{t("emptyProvidersHint")}</p>
           <button
