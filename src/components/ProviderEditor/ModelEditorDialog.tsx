@@ -182,6 +182,30 @@ export default function ModelEditorDialog({ model, models = [], onSave, onCancel
                   ))}
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">{t("defaultTemperature")}</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    aria-label={t("defaultTemperature")}
+                    value={form.defaultTemperature ?? ""}
+                    onChange={(e) => updateField("defaultTemperature", (e.target.value ? Number(e.target.value) : undefined) as ModelDefinition["defaultTemperature"])}
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">{t("defaultTopP")}</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    aria-label={t("defaultTopP")}
+                    value={form.defaultTopP ?? ""}
+                    onChange={(e) => updateField("defaultTopP", (e.target.value ? Number(e.target.value) : undefined) as ModelDefinition["defaultTopP"])}
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+              </div>
             </div>
           </CollapsibleSection>
 
@@ -281,28 +305,6 @@ export default function ModelEditorDialog({ model, models = [], onSave, onCancel
                 {t("modelYamlWriteHint")}
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-muted-foreground mb-1">{t("defaultTemperature")}</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    aria-label={t("defaultTemperature")}
-                    value={form.defaultTemperature ?? ""}
-                    onChange={(e) => updateField("defaultTemperature", (e.target.value ? Number(e.target.value) : undefined) as ModelDefinition["defaultTemperature"])}
-                    className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-muted-foreground mb-1">{t("defaultTopP")}</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    aria-label={t("defaultTopP")}
-                    value={form.defaultTopP ?? ""}
-                    onChange={(e) => updateField("defaultTopP", (e.target.value ? Number(e.target.value) : undefined) as ModelDefinition["defaultTopP"])}
-                    className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
-                </div>
                 <div>
                   <label className="block text-xs text-muted-foreground mb-1">{t("defaultSeed")}</label>
                   <input

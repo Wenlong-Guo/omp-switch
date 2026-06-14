@@ -65,6 +65,13 @@ export default function Dashboard() {
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [isFileDragOver, setIsFileDragOver] = useState(false);
   const [testResults, setTestResults] = useState<Map<string, boolean>>(new Map());
+  const [testTemperature, setTestTemperature] = useState<number | undefined>(undefined);
+
+  const handleTemperatureChange = (value: string) => {
+    if (value === "") { setTestTemperature(undefined); return; }
+    const n = Number(value);
+    if (Number.isFinite(n) && n >= 0 && n <= 2) setTestTemperature(n);
+  };
   const searchRef = useRef<HTMLInputElement>(null);
   const deletedProviderRef = useRef<Map<string, { provider: ProviderConfig; timer: number }>>(new Map());
 
@@ -174,6 +181,7 @@ export default function Dashboard() {
         req: {
           provider_id: provider.id,
           model: model.id,
+          temperature: testTemperature,
           messages: [{ role: "user", content: "ping" }],
         },
       });
@@ -378,12 +386,27 @@ export default function Dashboard() {
                     )}
                   </div>
                   {isExpanded && provider.models && provider.models.length > 3 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {provider.models.slice(3).map((m) => (
-                        <span key={m.id} title={m.id} className="max-w-[180px] truncate rounded-lg border border-border bg-[#111] px-2 py-0.5 font-mono text-[11px] text-muted-foreground group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white/80">
-                          {getModelName(m)}
-                        </span>
-                      ))}
+                    <div className="mt-2 space-y-2">
+                      <label className="flex w-fit items-center gap-2 text-[11px] font-medium text-muted-foreground group-hover:text-white/80">
+                        {t("testTemperature")}
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="2"
+                          value={testTemperature ?? ""}
+                          onChange={(e) => handleTemperatureChange(e.target.value)}
+                          placeholder={t("testTemperature")}
+                          className="w-32 rounded-lg border border-border bg-[#111] px-2 py-1 font-mono text-[11px] text-white outline-none transition placeholder:text-muted-foreground focus:border-[#1db7f7] group-hover:border-white/20 group-hover:bg-white/10"
+                        />
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {provider.models.slice(3).map((m) => (
+                          <span key={m.id} title={m.id} className="max-w-[180px] truncate rounded-lg border border-border bg-[#111] px-2 py-0.5 font-mono text-[11px] text-muted-foreground group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white/80">
+                            {getModelName(m)}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -425,6 +448,17 @@ export default function Dashboard() {
                   >
                     <FlaskConical className="w-4 h-4" />
                   </button>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="2"
+                    value={testTemperature ?? ""}
+                    onChange={(e) => handleTemperatureChange(e.target.value)}
+                    placeholder="T°"
+                    aria-label={t("testTemperature")}
+                    className="w-14 rounded-lg border border-border bg-[#111] px-2 py-1 text-xs text-white outline-none transition placeholder:text-muted-foreground focus:border-[#1db7f7] group-hover:border-white/25 group-hover:bg-black/20 group-hover:text-white"
+                  />
                   <button
                     onClick={() => setConfirmId(provider.id)}
                     aria-label={`${t("delete")} ${provider.name}`}

@@ -14,6 +14,7 @@ pub struct ChatCompletionRequest {
     pub messages: Vec<ChatMessage>,
     pub model: Option<String>,
     pub provider_id: Option<String>,
+    pub temperature: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,13 +58,16 @@ pub async fn chat_completion(req: ChatCompletionRequest) -> Result<ChatCompletio
     let client = reqwest::Client::new();
     let url = format!("{}/chat/completions", base_url.trim_end_matches('/'));
 
-    let body = serde_json::json!({
+    let mut body = serde_json::json!({
         "model": model_id,
         "messages": req.messages.iter().map(|m| serde_json::json!({
             "role": m.role,
             "content": m.content,
         })).collect::<Vec<_>>(),
     });
+    if let Some(temperature) = req.temperature {
+        body["temperature"] = serde_json::json!(temperature);
+    }
 
     let response = client
         .post(&url)
