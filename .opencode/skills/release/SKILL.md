@@ -1,6 +1,6 @@
 ---
 name: release
-description: 自动化发布 omp-switch。用户说"发布VX.X.X"时触发。执行：同步版本号到 package.json/package-lock.json/Cargo.toml/Cargo.lock/tauri.conf.json（tauri.conf 用纯数字版因 MSI 限制），git add -A + commit，tag vX.X.X，push main + push tag，GitHub Actions 自动三平台构建 draft prerelease。
+description: 自动化发布 omp-switch。用户说"发布VX.X.X"时触发。执行版本同步、验证、提交、移动 tag、push，并持续检查 GitHub Actions；CI 失败必须定位 annotations/logs、修复、重推 tag，直到 GitHub Release 创建成功。
 ---
 
 # Release omp-switch
@@ -33,7 +33,18 @@ description: 自动化发布 omp-switch。用户说"发布VX.X.X"时触发。执
    git push origin v1.2.3
    ```
 
-4. **确认 CI**：push tag 后 `.github/workflows/release.yml` 自动触发三平台构建（macOS/Windows/Linux），创建 draft prerelease。去 `https://github.com/Wenlong-Guo/omp-switch/actions` 确认。
+4. **确认 CI，失败必须修到成功**：
+   - push tag 后查：`https://api.github.com/repos/Wenlong-Guo/omp-switch/actions/runs?event=push&branch=v1.2.3&per_page=1`
+   - 若 `status != completed`，等待后继续查。
+   - 若 `conclusion != success`，查 `jobs_url` 和每个失败 job 的 `check_run_url/annotations`。
+   - 修复 `.github/workflows/release.yml` 或构建问题，commit + push main。
+   - 移动 tag 到最新 commit：`git push origin :refs/tags/v1.2.3 && git tag -f v1.2.3 && git push origin v1.2.3`。
+   - 重复直到 `conclusion: success` 且 release API 返回对应 tag。
+
+5. **确认 Release 存在**：
+   ```bash
+   curl https://api.github.com/repos/Wenlong-Guo/omp-switch/releases/tags/v1.2.3
+   ```
 
 ## 注意事项
 
@@ -42,3 +53,5 @@ description: 自动化发布 omp-switch。用户说"发布VX.X.X"时触发。执
 - 若用户说 rc 版本（如 `V1.0.0-rc`），`tauri.conf.json` 用 `1.0.0`，其余文件用 `1.0.0-rc`。
 - 构建产物在 `src-tauri/target/release/bundle/`。
 - 不要改无关文件，不要清理既有 warnings。
+- 不要只看 tag；必须确认 Release 页/API 已出现。
+- 若没有 `gh` CLI，用 GitHub REST API 查 runs/jobs/check-runs/releases。
