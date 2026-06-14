@@ -46,7 +46,7 @@ describe("ConfirmDialog", () => {
 
   it("calls onCancel when clicking overlay", () => {
     const onCancel = vi.fn();
-    const { container } = render(
+    render(
       <ConfirmDialog
         title="确认"
         message="msg"
@@ -54,7 +54,7 @@ describe("ConfirmDialog", () => {
         onCancel={onCancel}
       />
     );
-    const overlay = container.querySelector(".bg-black\\/50");
+    const overlay = document.body.querySelector(".fixed.inset-0");
     expect(overlay).not.toBeNull();
     fireEvent.click(overlay!);
     expect(onCancel).toHaveBeenCalled();

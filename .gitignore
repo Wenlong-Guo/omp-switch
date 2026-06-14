@@ -43,3 +43,7 @@ playwright-report/
 
 # Devin
 .devin/
+
+# Local tool artifacts / sensitive scratch files
+.playwright-mcp/
+accounts*.txt

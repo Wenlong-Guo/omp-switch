@@ -14,7 +14,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
-    exclude: ["e2e-playwright-test/**", "e2e-tauri/**", "node_modules/**"],
+    exclude: [".opencode/**", "e2e-playwright-test/**", "e2e-tauri/**", "node_modules/**"],
     coverage: {
       include: ["src/**"],
       exclude: [
