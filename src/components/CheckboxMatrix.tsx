@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface CheckboxMatrixProps {
   label?: string;
@@ -9,6 +10,7 @@ interface CheckboxMatrixProps {
 }
 
 export default function CheckboxMatrix({ label, value, options, onChange, disabled }: CheckboxMatrixProps) {
+  const { t } = useI18n();
   const inputValues = value.input || [];
   const outputValues = value.output || [];
 
@@ -59,7 +61,7 @@ export default function CheckboxMatrix({ label, value, options, onChange, disabl
                 disabled={disabled}
                 data-testid={`select-all-${direction}`}
               >
-                全选
+                {t("selectAll")}
               </button>
               <button
                 type="button"
@@ -68,7 +70,7 @@ export default function CheckboxMatrix({ label, value, options, onChange, disabl
                 disabled={disabled}
                 data-testid={`clear-all-${direction}`}
               >
-                清空
+                {t("clearAllLabel")}
               </button>
             </div>
             {options.map((opt) => {

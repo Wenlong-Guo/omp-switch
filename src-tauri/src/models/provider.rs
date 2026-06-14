@@ -53,6 +53,8 @@ pub struct ModelDefinition {
     pub default_frequency_penalty: Option<f64>,
     #[serde(rename = "defaultSeed")]
     pub default_seed: Option<i64>,
+    #[serde(rename = "thinkingLevelMap")]
+    pub thinking_level_map: Option<HashMap<String, Option<String>>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -107,4 +109,6 @@ pub struct ModelOverride {
     pub default_frequency_penalty: Option<f64>,
     #[serde(rename = "defaultSeed")]
     pub default_seed: Option<i64>,
+    #[serde(rename = "thinkingLevelMap")]
+    pub thinking_level_map: Option<HashMap<String, Option<String>>>,
 }

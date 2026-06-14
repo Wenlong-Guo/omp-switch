@@ -24,6 +24,13 @@ describe("useKeyboardShortcuts", () => {
     expect(onSearch).toHaveBeenCalled();
   });
 
+  it("triggers onNew on Ctrl+N", () => {
+    const onNew = vi.fn();
+    renderHook(() => useKeyboardShortcuts({ onNew }));
+    fireKeyDown("n", false, true);
+    expect(onNew).toHaveBeenCalled();
+  });
+
   it("triggers onEscape on Escape key", () => {
     const onEscape = vi.fn();
     renderHook(() => useKeyboardShortcuts({ onEscape }));

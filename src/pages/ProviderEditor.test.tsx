@@ -155,7 +155,7 @@ describe("ProviderEditor", () => {
     render(<ProviderEditor />);
     expect(screen.getByTestId("preset-grid")).toBeInTheDocument();
     expect(screen.getByTestId("preset-card-deepseek")).toBeInTheDocument();
-    expect(screen.getByTestId("preset-card-kimi")).toBeInTheDocument();
+    expect(screen.getByTestId("preset-card-kimi-k26")).toBeInTheDocument();
   });
 
   it("saves provider with form data", () => {
@@ -199,15 +199,32 @@ describe("ProviderEditor", () => {
     expect(screen.getByTestId("model-name-input")).toBeInTheDocument();
   });
 
-  it("changes preset selection and renders preset model cards", () => {
+  it("changes preset selection and renders preset model cards without default selecting models", () => {
     render(<ProviderEditor />);
     fireEvent.click(screen.getByTestId("preset-card-deepseek"));
     expect(screen.getByTestId("preset-model-grid")).toBeInTheDocument();
     expect(screen.getByTestId("preset-model-card-deepseek-v4-pro")).toBeInTheDocument();
     expect(screen.getByTestId("preset-model-card-deepseek-v4-flash")).toBeInTheDocument();
+    expect(screen.getByTestId("preset-model-selected-count")).toHaveTextContent("已选择 0/3");
+    expect(screen.queryByTestId("model-item-deepseek-v4-pro")).not.toBeInTheDocument();
     expect(screen.getByTestId("provider-id-input")).toHaveValue("deepseek");
     expect(screen.getByTestId("provider-name-input")).toHaveValue("DeepSeek");
-    expect(screen.getByPlaceholderText("https://api.openai.com/v1")).toHaveValue("https://api.deepseek.com");
+    expect(screen.getByPlaceholderText("https://api.openai.com/v1")).toHaveValue("https://api.deepseek.com/v1");
+  });
+
+  it("batch selects preset models and saves only selected models", async () => {
+    render(<ProviderEditor />);
+    fireEvent.click(screen.getByTestId("preset-card-deepseek"));
+    fireEvent.click(screen.getByTestId("select-all-preset-models"));
+    expect(screen.getByTestId("preset-model-selected-count")).toHaveTextContent("已选择 3/3");
+    expect(screen.getByTestId("model-item-deepseek-v4-pro")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("preset-model-checkbox-deepseek-v4-flash"));
+    expect(screen.getByTestId("preset-model-selected-count")).toHaveTextContent("已选择 2/3");
+    fireEvent.submit(screen.getByText("保存供应商").closest("form")!);
+    await waitFor(() => expect(mockSave).toHaveBeenCalled());
+    const saved = mockSave.mock.calls[mockSave.mock.calls.length - 1][0];
+    expect(saved.models.map((m: { id: string }) => m.id)).toEqual(["deepseek-v4-pro", "deepseek-v3.2"]);
   });
 
   it("syncs display name from provider id until name is edited", () => {
@@ -235,14 +252,16 @@ describe("ProviderEditor", () => {
       providers: [],
       fetchProviders: vi.fn(),
       builtinPresets: [
-        { id: "oh-my-opencode", name: "Oh My OpenCode" },
-        { id: "custom-omp", name: "Custom OMP" },
+        { id: "oh-my-opencode", name: "Oh My OpenCode", baseUrl: "https://hidden.example/v1" },
+        { id: "custom-omp", name: "Custom OMP", baseUrl: "https://custom.example/v1" },
+        { id: "lm-studio", name: "LM Studio", baseUrl: "http://localhost:1234/v1" },
       ],
       fetchBuiltinPresets: vi.fn(),
     } as any);
     render(<ProviderEditor />);
     expect(screen.queryByTestId("preset-card-oh-my-opencode")).not.toBeInTheDocument();
     expect(screen.getByTestId("preset-card-custom-omp")).toBeInTheDocument();
+    expect(screen.queryByTestId("preset-card-lm-studio")).not.toBeInTheDocument();
   });
 
   it("shows YAML-only config editor and sticky save bar", () => {
@@ -274,6 +293,37 @@ describe("ProviderEditor", () => {
     expect(screen.getByTestId("provider-id-input")).toHaveValue("yaml-provider");
     expect(screen.getByTestId("provider-name-input")).toHaveValue("YAML Provider");
     expect(screen.getByPlaceholderText("https://api.openai.com/v1")).toHaveValue("https://yaml.example/v1");
+  });
+
+  it("syncs YAML editor changes to form in real time", () => {
+    render(<ProviderEditor />);
+    fireEvent.change(screen.getByTestId("provider-config-editor"), {
+      target: {
+        value: [
+          'id: "live-yaml"',
+          'name: "Live YAML"',
+          'enabled: false',
+          'isBuiltIn: false',
+          'api: "openai-completions"',
+          'auth: "apiKey"',
+          'baseUrl: "https://live.example/v1"',
+          'models:',
+        ].join("\n"),
+      },
+    });
+
+    expect(screen.getByTestId("provider-id-input")).toHaveValue("live-yaml");
+    expect(screen.getByTestId("provider-name-input")).toHaveValue("Live YAML");
+    expect(screen.getByPlaceholderText("https://api.openai.com/v1")).toHaveValue("https://live.example/v1");
+  });
+
+  it("does not overwrite form from invalid YAML", () => {
+    render(<ProviderEditor />);
+    fireEvent.change(screen.getByPlaceholderText("openai"), { target: { value: "keep-id" } });
+    fireEvent.change(screen.getByTestId("provider-config-editor"), { target: { value: "bad line" } });
+
+    expect(screen.getByTestId("provider-id-input")).toHaveValue("keep-id");
+    expect(screen.getByTestId("provider-config-error")).toHaveTextContent("YAML 配置解析失败");
   });
 
   it("shows error for invalid YAML config", () => {

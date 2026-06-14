@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface KeyValueEditorProps {
   label?: string;
@@ -7,26 +8,43 @@ interface KeyValueEditorProps {
 }
 
 export default function KeyValueEditor({ label, value: rawValue, onChange }: KeyValueEditorProps) {
+  const { t } = useI18n();
   const value = rawValue || {};
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
+  const [bulkJson, setBulkJson] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const entries = Object.entries(value);
 
   const addPair = () => {
     if (!newKey.trim()) {
-      setError("Key 不能为空");
+      setError(t("keyRequired"));
       return;
     }
     if (value[newKey.trim()]) {
-      setError("Key 已存在");
+      setError(t("keyExists"));
       return;
     }
     setError(null);
     onChange({ ...value, [newKey.trim()]: newValue });
     setNewKey("");
     setNewValue("");
+  };
+
+  const importBulkJson = () => {
+    try {
+      const parsed = JSON.parse(bulkJson);
+      if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") return;
+      const additions = Object.fromEntries(
+        Object.entries(parsed).map(([key, val]) => [key, typeof val === "string" ? val : JSON.stringify(val)])
+      );
+      setError(null);
+      onChange({ ...value, ...additions });
+      setBulkJson("");
+    } catch {
+      setError(t("importFailed"));
+    }
   };
 
   const removePair = (key: string) => {
@@ -62,7 +80,7 @@ export default function KeyValueEditor({ label, value: rawValue, onChange }: Key
             className="text-sm px-2 py-1 border rounded hover:bg-destructive hover:text-destructive-foreground"
             data-testid={`kv-remove-${k}`}
           >
-            删除
+            {t("removeLabel")}
           </button>
         </div>
       ))}
@@ -87,7 +105,26 @@ export default function KeyValueEditor({ label, value: rawValue, onChange }: Key
           className="text-sm px-3 py-1 border rounded bg-secondary hover:opacity-90"
           data-testid="kv-add"
         >
-          添加
+          {t("addLabel")}
+        </button>
+      </div>
+      <div className="space-y-1">
+        <div className="text-xs font-medium text-muted-foreground">{t("pasteJsonBulk")}</div>
+        <textarea
+          value={bulkJson}
+          onChange={(e) => setBulkJson(e.target.value)}
+          placeholder={t("pasteJsonHere")}
+          rows={3}
+          className="w-full px-2 py-1 border rounded text-xs font-mono"
+          data-testid="kv-bulk-json"
+        />
+        <button
+          type="button"
+          onClick={importBulkJson}
+          className="text-sm px-3 py-1 border rounded bg-secondary hover:opacity-90"
+          data-testid="kv-import-bulk"
+        >
+          {t("importJsonBulk")}
         </button>
       </div>
       {error && <div className="text-xs text-red-600" data-testid="kv-error">{error}</div>}

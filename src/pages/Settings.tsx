@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Check, Languages } from "lucide-react";
 import { useI18n, type Language } from "@/lib/i18n";
 
@@ -8,6 +9,24 @@ const LANGUAGES: Array<{ id: Language; labelKey: "chinese" | "english"; note: st
 
 export default function Settings() {
   const { language, setLanguage, t } = useI18n();
+  const [reduceMotion, setReduceMotion] = useState(() => localStorage.getItem("omp-switch-reduce-motion") === "true");
+  const [fontSize, setFontSize] = useState(() => localStorage.getItem("omp-switch-font-size") || "1");
+  const [highContrast, setHighContrast] = useState(() => localStorage.getItem("omp-switch-high-contrast") === "true");
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("reduce-motion", reduceMotion);
+    localStorage.setItem("omp-switch-reduce-motion", String(reduceMotion));
+  }, [reduceMotion]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--font-size-multiplier", fontSize);
+    localStorage.setItem("omp-switch-font-size", fontSize);
+  }, [fontSize]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("high-contrast", highContrast);
+    localStorage.setItem("omp-switch-high-contrast", String(highContrast));
+  }, [highContrast]);
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-10 md:px-10">
@@ -51,6 +70,48 @@ export default function Settings() {
               </button>
             );
           })}
+        </div>
+
+        <div className="mt-6 space-y-5 border-t border-[#222] pt-5">
+          <label className="flex items-center justify-between gap-4 rounded-2xl border border-[#222] bg-[#1f1f1f] px-5 py-4 text-sm text-muted-foreground">
+            <span className="font-semibold text-white">{t("reduceMotion")}</span>
+            <input
+              type="checkbox"
+              checked={reduceMotion}
+              onChange={(e) => setReduceMotion(e.target.checked)}
+              className="h-4 w-4 accent-[#1db7f7]"
+            />
+          </label>
+
+          <div className="rounded-2xl border border-[#222] bg-[#1f1f1f] px-5 py-4">
+            <div className="mb-3 text-sm font-semibold text-white">{t("fontSize")}</div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: "0.875", label: t("small") },
+                { value: "1", label: t("medium") },
+                { value: "1.125", label: t("large") },
+              ].map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => setFontSize(item.value)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${fontSize === item.value ? "pi-gradient-bg text-white" : "bg-[#050505] text-muted-foreground hover:text-white"}`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="flex items-center justify-between gap-4 rounded-2xl border border-[#222] bg-[#1f1f1f] px-5 py-4 text-sm text-muted-foreground">
+            <span className="font-semibold text-white">{t("highContrast")}</span>
+            <input
+              type="checkbox"
+              checked={highContrast}
+              onChange={(e) => setHighContrast(e.target.checked)}
+              className="h-4 w-4 accent-[#1db7f7]"
+            />
+          </label>
         </div>
       </div>
     </div>

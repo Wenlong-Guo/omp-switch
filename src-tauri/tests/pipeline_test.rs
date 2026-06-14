@@ -24,30 +24,29 @@ fn step_plan_provider() -> omp_switch_lib::models::provider::ProviderConfig {
         auth: Some("apiKey".to_string()),
         discovery: None,
         model_overrides: None,
-        models: Some(vec![
-            omp_switch_lib::models::provider::ModelDefinition {
-                id: "step-3.7-flash".to_string(),
-                name: "step-3.7-flash".to_string(),
-                api_type: Some("openai-completions".to_string()),
-                reasoning: true,
-                input_types: vec!["text".to_string(), "image".to_string()],
-                cost: omp_switch_lib::models::provider::ModelCost {
-                    input: 0.0,
-                    output: 0.0,
-                    cache_read: 0.0,
-                    cache_write: 0.0,
-                },
-                context_window: 128000,
-                max_tokens: 4096,
-                headers: None,
-                compat: None,
-                default_temperature: None,
-                default_top_p: None,
-                default_presence_penalty: None,
-                default_frequency_penalty: None,
-                default_seed: None,
+        models: Some(vec![omp_switch_lib::models::provider::ModelDefinition {
+            id: "step-3.7-flash".to_string(),
+            name: "step-3.7-flash".to_string(),
+            api_type: Some("openai-completions".to_string()),
+            reasoning: true,
+            input_types: vec!["text".to_string(), "image".to_string()],
+            cost: omp_switch_lib::models::provider::ModelCost {
+                input: 0.0,
+                output: 0.0,
+                cache_read: 0.0,
+                cache_write: 0.0,
             },
-        ]),
+            context_window: 128000,
+            max_tokens: 4096,
+            headers: None,
+            compat: None,
+            default_temperature: None,
+            default_top_p: None,
+            default_presence_penalty: None,
+            default_frequency_penalty: None,
+            default_seed: None,
+            thinking_level_map: None,
+        }]),
         created_at: None,
         updated_at: None,
     }
@@ -77,9 +76,15 @@ fn test_local_builtin_seeded_when_db_not_empty() {
 
     // Bug 1 regression: builtin presets should now exist even though DB was not empty
     let ollama = service.get_by_id("ollama").unwrap();
-    assert!(ollama.is_some(), "ollama should be seeded even when DB already has providers");
+    assert!(
+        ollama.is_some(),
+        "ollama should be seeded even when DB already has providers"
+    );
     let step_plan = service.get_by_id("step-plan").unwrap();
-    assert!(step_plan.is_none(), "step-plan should not be seeded as a builtin preset");
+    assert!(
+        step_plan.is_none(),
+        "step-plan should not be seeded as a builtin preset"
+    );
 
     // Existing provider should not be overwritten
     let openai = service.get_by_id("openai").unwrap().unwrap();
@@ -99,17 +104,34 @@ fn test_full_pipeline_yaml_has_models() {
     let content = std::fs::read_to_string(&yaml_path).unwrap();
 
     // Bug 2 regression: YAML must contain model entries
-    assert!(content.contains("step-plan"), "YAML should contain step-plan provider");
+    assert!(
+        content.contains("step-plan"),
+        "YAML should contain step-plan provider"
+    );
     assert!(content.contains("models"), "YAML should have models array");
-    assert!(content.contains("step-3.7-flash"), "YAML should contain model id");
-    assert!(content.contains("step-3.7-flash"), "YAML should contain model name");
-    assert!(content.contains("contextWindow"), "YAML should contain contextWindow");
-    assert!(content.contains("maxTokens"), "YAML should contain maxTokens");
+    assert!(
+        content.contains("step-3.7-flash"),
+        "YAML should contain model id"
+    );
+    assert!(
+        content.contains("step-3.7-flash"),
+        "YAML should contain model name"
+    );
+    assert!(
+        content.contains("contextWindow"),
+        "YAML should contain contextWindow"
+    );
+    assert!(
+        content.contains("maxTokens"),
+        "YAML should contain maxTokens"
+    );
 
     // Parse YAML and verify structure matches what omp expects
     let parsed: serde_yaml::Value = serde_yaml::from_str(&content).unwrap();
     let providers = parsed.get("providers").unwrap().as_mapping().unwrap();
-    let step_plan = providers.get(&serde_yaml::Value::String("step-plan".to_string())).unwrap();
+    let step_plan = providers
+        .get(&serde_yaml::Value::String("step-plan".to_string()))
+        .unwrap();
     let models = step_plan.get("models").unwrap().as_sequence().unwrap();
     assert_eq!(models.len(), 1);
 
@@ -138,7 +160,8 @@ fn test_disabled_provider_is_not_written_to_models_yaml() {
     service.save(enabled).unwrap();
     service.save(disabled).unwrap();
 
-    let content = std::fs::read_to_string(omp_switch_lib::utils::fs::get_models_yaml_path()).unwrap();
+    let content =
+        std::fs::read_to_string(omp_switch_lib::utils::fs::get_models_yaml_path()).unwrap();
     assert!(content.contains("step-plan"));
     assert!(!content.contains("disabled-step"));
 }
@@ -180,11 +203,18 @@ fn test_provider_serde_alias_preserves_api_type() {
         }]
     }"#;
 
-    let config: omp_switch_lib::models::provider::ProviderConfig = serde_json::from_str(json).unwrap();
+    let config: omp_switch_lib::models::provider::ProviderConfig =
+        serde_json::from_str(json).unwrap();
     assert_eq!(config.api_type, Some("openai-completions".to_string()));
     assert!(!config.models.as_ref().unwrap().is_empty());
-    assert_eq!(config.models.as_ref().unwrap()[0].api_type, Some("openai-completions".to_string()));
-    assert_eq!(config.models.as_ref().unwrap()[0].input_types, vec!["text".to_string()]);
+    assert_eq!(
+        config.models.as_ref().unwrap()[0].api_type,
+        Some("openai-completions".to_string())
+    );
+    assert_eq!(
+        config.models.as_ref().unwrap()[0].input_types,
+        vec!["text".to_string()]
+    );
 
     let service = omp_switch_lib::services::provider_service::ProviderService::new(&db);
     service.save(config).unwrap();
@@ -231,12 +261,13 @@ fn test_omp_cli_reads_yaml_without_crash() {
     // We expect "No models available" because test API key isn't real,
     // but it must NOT crash with YAML parse errors
     assert!(
-        !stderr.to_lowercase().contains("yaml") &&
-        !stderr.to_lowercase().contains("parse") &&
-        !stdout.to_lowercase().contains("yaml") &&
-        !stdout.to_lowercase().contains("parse"),
+        !stderr.to_lowercase().contains("yaml")
+            && !stderr.to_lowercase().contains("parse")
+            && !stdout.to_lowercase().contains("yaml")
+            && !stdout.to_lowercase().contains("parse"),
         "omp should not report YAML parse errors. stdout: {}, stderr: {}",
-        stdout, stderr
+        stdout,
+        stderr
     );
 
     // Exit code should be 0 (omp exits 0 even when no models available)

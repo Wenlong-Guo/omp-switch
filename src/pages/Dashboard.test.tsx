@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import Dashboard from "./Dashboard";
 
 const mockProviders = [
@@ -105,7 +105,6 @@ describe("Dashboard", () => {
     expect(screen.getByLabelText("编辑 OpenAI")).toBeInTheDocument();
     expect(screen.getByLabelText("复制 OpenAI")).toBeInTheDocument();
     expect(screen.getByLabelText("测试模型 OpenAI")).toBeInTheDocument();
-    expect(screen.getByLabelText("查看模型 OpenAI")).toBeInTheDocument();
     expect(screen.getByLabelText("删除 OpenAI")).toBeInTheDocument();
   });
 
@@ -158,7 +157,8 @@ describe("Dashboard", () => {
     expect(screen.queryByText("确认删除")).not.toBeInTheDocument();
   });
 
-  it("confirms delete", async () => {
+  it("confirms delete with 5s delay", async () => {
+    vi.useFakeTimers();
     const deleteFn = vi.fn();
     vi.mocked(useProviderStore).mockReturnValue({
       providers: mockProviders,
@@ -171,7 +171,11 @@ describe("Dashboard", () => {
     render(<Dashboard />);
     fireEvent.click(screen.getAllByLabelText(/删除/)[0]);
     fireEvent.click(screen.getByText("确认"));
+    // delete is scheduled with 5s delay
+    expect(deleteFn).not.toHaveBeenCalled();
+    act(() => { vi.advanceTimersByTime(5000); });
     await vi.waitFor(() => expect(deleteFn).toHaveBeenCalled());
+    vi.useRealTimers();
   });
 
   it("exports JSON", () => {

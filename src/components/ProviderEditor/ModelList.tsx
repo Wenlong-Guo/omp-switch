@@ -1,5 +1,6 @@
 import type { ModelDefinition } from "@/types/provider";
 import { useMemo } from "react";
+import { Bot } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
 interface Props {
@@ -83,7 +84,7 @@ export default function ModelList({ models, onEdit, onDelete }: Props) {
   if (models.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground border rounded-lg border-dashed">
-        <div className="text-2xl mb-2">🤖</div>
+        <Bot className="h-8 w-8 mx-auto mb-2" />
         <p className="text-sm">{t("emptyModels")}</p>
         <p className="text-xs mt-1 opacity-60">{t("emptyModelsHint")}</p>
       </div>

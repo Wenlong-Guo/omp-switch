@@ -1,5 +1,5 @@
-use crate::models::provider::{ModelCost, ModelDefinition, ModelOverride, ProviderConfig};
 use crate::database::connection::DbConnection;
+use crate::models::provider::{ModelCost, ModelDefinition, ModelOverride, ProviderConfig};
 use rusqlite::{params, OptionalExtension, Result};
 use serde_json;
 
@@ -72,8 +72,14 @@ impl<'a> ProviderDao<'a> {
         )?;
 
         // Delete old models and overrides, re-insert
-        tx.execute("DELETE FROM provider_models WHERE provider_id = ?1", [&provider.id])?;
-        tx.execute("DELETE FROM model_overrides WHERE provider_id = ?1", [&provider.id])?;
+        tx.execute(
+            "DELETE FROM provider_models WHERE provider_id = ?1",
+            [&provider.id],
+        )?;
+        tx.execute(
+            "DELETE FROM model_overrides WHERE provider_id = ?1",
+            [&provider.id],
+        )?;
 
         if let Some(models) = &provider.models {
             for model in models {
@@ -104,25 +110,31 @@ impl<'a> ProviderDao<'a> {
              FROM providers WHERE id = ?1"
         )?;
 
-        let provider = stmt.query_row([id], |row| {
-            Ok(ProviderConfig {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                enabled: row.get::<_, i32>(2)? != 0,
-                is_built_in: row.get::<_, i32>(3)? != 0,
-                base_url: row.get(4)?,
-                api_key: row.get(5)?,
-                api_type: row.get(6)?,
-                headers: row.get::<_, Option<String>>(7)?.and_then(|s| serde_json::from_str(&s).ok()),
-                auth_header: row.get::<_, Option<i32>>(8)?.map(|v| v != 0),
-                auth: row.get(9)?,
-                discovery: row.get::<_, Option<String>>(10)?.and_then(|s| serde_json::from_str(&s).ok()),
-                model_overrides: None,
-                models: None,
-                created_at: row.get(11)?,
-                updated_at: row.get(12)?,
+        let provider = stmt
+            .query_row([id], |row| {
+                Ok(ProviderConfig {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    enabled: row.get::<_, i32>(2)? != 0,
+                    is_built_in: row.get::<_, i32>(3)? != 0,
+                    base_url: row.get(4)?,
+                    api_key: row.get(5)?,
+                    api_type: row.get(6)?,
+                    headers: row
+                        .get::<_, Option<String>>(7)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
+                    auth_header: row.get::<_, Option<i32>>(8)?.map(|v| v != 0),
+                    auth: row.get(9)?,
+                    discovery: row
+                        .get::<_, Option<String>>(10)?
+                        .and_then(|s| serde_json::from_str(&s).ok()),
+                    model_overrides: None,
+                    models: None,
+                    created_at: row.get(11)?,
+                    updated_at: row.get(12)?,
+                })
             })
-        }).optional()?;
+            .optional()?;
 
         if let Some(mut p) = provider {
             p.models = self.get_models(&conn, id)?;
@@ -132,9 +144,13 @@ impl<'a> ProviderDao<'a> {
         }
     }
 
-    fn get_models(&self, conn: &rusqlite::Connection, provider_id: &str) -> Result<Option<Vec<ModelDefinition>>> {
+    fn get_models(
+        &self,
+        conn: &rusqlite::Connection,
+        provider_id: &str,
+    ) -> Result<Option<Vec<ModelDefinition>>> {
         let mut stmt = conn.prepare(
-            "SELECT model_id, name, api_type, reasoning, input_types, cost, context_window, max_tokens, headers, compat, default_temperature, default_top_p, default_presence_penalty, default_frequency_penalty, default_seed
+            "SELECT model_id, name, api_type, reasoning, input_types, cost, context_window, max_tokens, headers, compat, default_temperature, default_top_p, default_presence_penalty, default_frequency_penalty, default_seed, thinking_level_map
              FROM provider_models WHERE provider_id = ?1 ORDER BY name"
         )?;
 
@@ -144,17 +160,37 @@ impl<'a> ProviderDao<'a> {
                 name: row.get(1)?,
                 api_type: row.get(2)?,
                 reasoning: row.get::<_, i32>(3)? != 0,
-                input_types: row.get::<_, String>(4).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default(),
-                cost: row.get::<_, String>(5).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(ModelCost { input: 0.0, output: 0.0, cache_read: 0.0, cache_write: 0.0 }),
+                input_types: row
+                    .get::<_, String>(4)
+                    .ok()
+                    .and_then(|s| serde_json::from_str(&s).ok())
+                    .unwrap_or_default(),
+                cost: row
+                    .get::<_, String>(5)
+                    .ok()
+                    .and_then(|s| serde_json::from_str(&s).ok())
+                    .unwrap_or(ModelCost {
+                        input: 0.0,
+                        output: 0.0,
+                        cache_read: 0.0,
+                        cache_write: 0.0,
+                    }),
                 context_window: row.get(6)?,
                 max_tokens: row.get(7)?,
-                headers: row.get::<_, Option<String>>(8)?.and_then(|s| serde_json::from_str(&s).ok()),
-                compat: row.get::<_, Option<String>>(9)?.and_then(|s| serde_json::from_str(&s).ok()),
+                headers: row
+                    .get::<_, Option<String>>(8)?
+                    .and_then(|s| serde_json::from_str(&s).ok()),
+                compat: row
+                    .get::<_, Option<String>>(9)?
+                    .and_then(|s| serde_json::from_str(&s).ok()),
                 default_temperature: row.get(10).ok(),
                 default_top_p: row.get(11).ok(),
                 default_presence_penalty: row.get(12).ok(),
                 default_frequency_penalty: row.get(13).ok(),
                 default_seed: row.get(14).ok(),
+                thinking_level_map: row
+                    .get::<_, Option<String>>(15)?
+                    .and_then(|s| serde_json::from_str(&s).ok()),
             })
         })?;
 
@@ -182,10 +218,14 @@ impl<'a> ProviderDao<'a> {
                 base_url: row.get(4)?,
                 api_key: row.get(5)?,
                 api_type: row.get(6)?,
-                headers: row.get::<_, Option<String>>(7)?.and_then(|s| serde_json::from_str(&s).ok()),
+                headers: row
+                    .get::<_, Option<String>>(7)?
+                    .and_then(|s| serde_json::from_str(&s).ok()),
                 auth_header: row.get::<_, Option<i32>>(8)?.map(|v| v != 0),
                 auth: row.get(9)?,
-                discovery: row.get::<_, Option<String>>(10)?.and_then(|s| serde_json::from_str(&s).ok()),
+                discovery: row
+                    .get::<_, Option<String>>(10)?
+                    .and_then(|s| serde_json::from_str(&s).ok()),
                 model_overrides: None,
                 models: None,
                 created_at: row.get(11)?,
@@ -218,10 +258,14 @@ impl<'a> ProviderDao<'a> {
                 base_url: row.get(4)?,
                 api_key: row.get(5)?,
                 api_type: row.get(6)?,
-                headers: row.get::<_, Option<String>>(7)?.and_then(|s| serde_json::from_str(&s).ok()),
+                headers: row
+                    .get::<_, Option<String>>(7)?
+                    .and_then(|s| serde_json::from_str(&s).ok()),
                 auth_header: row.get::<_, Option<i32>>(8)?.map(|v| v != 0),
                 auth: row.get(9)?,
-                discovery: row.get::<_, Option<String>>(10)?.and_then(|s| serde_json::from_str(&s).ok()),
+                discovery: row
+                    .get::<_, Option<String>>(10)?
+                    .and_then(|s| serde_json::from_str(&s).ok()),
                 model_overrides: None,
                 models: None,
                 created_at: row.get(11)?,
@@ -238,10 +282,15 @@ impl<'a> ProviderDao<'a> {
         Ok(result)
     }
 
-    fn insert_model(&self, tx: &rusqlite::Transaction, provider_id: &str, model: &ModelDefinition) -> Result<()> {
+    fn insert_model(
+        &self,
+        tx: &rusqlite::Transaction,
+        provider_id: &str,
+        model: &ModelDefinition,
+    ) -> Result<()> {
         tx.execute(
-            "INSERT INTO provider_models (id, provider_id, model_id, name, api_type, reasoning, input_types, cost, context_window, max_tokens, headers, compat, default_temperature, default_top_p, default_presence_penalty, default_frequency_penalty, default_seed)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+            "INSERT INTO provider_models (id, provider_id, model_id, name, api_type, reasoning, input_types, cost, context_window, max_tokens, headers, compat, default_temperature, default_top_p, default_presence_penalty, default_frequency_penalty, default_seed, thinking_level_map)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
             params![
                 format!("{}-{}", provider_id, model.id),
                 provider_id,
@@ -260,12 +309,19 @@ impl<'a> ProviderDao<'a> {
                 model.default_presence_penalty,
                 model.default_frequency_penalty,
                 model.default_seed,
+                model.thinking_level_map.as_ref().map(|m| serde_json::to_string(m).unwrap()),
             ],
         )?;
         Ok(())
     }
 
-    fn insert_override(&self, tx: &rusqlite::Transaction, provider_id: &str, model_id: &str, model_override: &ModelOverride) -> Result<()> {
+    fn insert_override(
+        &self,
+        tx: &rusqlite::Transaction,
+        provider_id: &str,
+        model_id: &str,
+        model_override: &ModelOverride,
+    ) -> Result<()> {
         tx.execute(
             "INSERT INTO model_overrides (provider_id, model_id, override_data)
              VALUES (?1, ?2, ?3)",

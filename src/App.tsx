@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Route, Router, useLocation } from "wouter";
 import { Bot, LayoutDashboard, Plus, RefreshCw, Settings as SettingsIcon } from "lucide-react";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useTheme } from "@/hooks/useTheme";
 import Dashboard from "@/pages/Dashboard";
 import ProviderEditor from "@/pages/ProviderEditor";
@@ -10,6 +11,8 @@ import Settings from "@/pages/Settings";
 import Toast from "@/components/Toast";
 import { getVersion } from "@tauri-apps/api/app";
 import { useI18n } from "@/lib/i18n";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { shortcutLabel } from "@/lib/shortcutLabels";
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -33,10 +36,18 @@ function Layout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const [version, setVersion] = useState("");
   const { t } = useI18n();
+  const isOnline = useNetworkStatus();
 
   useEffect(() => {
     getVersion().then(setVersion).catch(() => setVersion(""));
   }, []);
+
+  useKeyboardShortcuts(
+    {
+      onNew: () => setLocation("/provider/new"),
+    },
+    [setLocation]
+  );
 
   const navItems = [
     { path: "/", label: t("providers"), icon: LayoutDashboard },
@@ -50,6 +61,11 @@ function Layout({ children }: { children: React.ReactNode }) {
     return location === path || location.startsWith(path + "/");
   };
 
+  const requestNavigate = (path: string) => {
+    const event = new CustomEvent("omp:navigate", { cancelable: true, detail: { path } });
+    if (window.dispatchEvent(event)) setLocation(path);
+  };
+
   return (
     <div className="relative h-screen overflow-hidden bg-black text-white">
       <div className="pointer-events-none absolute right-[-220px] top-[-240px] z-0 h-[760px] w-[760px] rounded-full bg-[radial-gradient(circle_at_center,rgba(29,183,247,0.16),rgba(182,0,248,0.08)_42%,transparent_70%)] blur-3xl" />
@@ -61,7 +77,13 @@ function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="relative z-10 flex h-[calc(100vh-64px-48px)] min-h-0">
+      {!isOnline && (
+        <div className="relative z-50 w-full bg-amber-300 px-6 py-2 text-center text-sm font-medium text-amber-950">
+          {t("networkOffline")}
+        </div>
+      )}
+
+      <div className={`relative z-10 flex min-h-0 ${isOnline ? "h-[calc(100vh-64px-48px)]" : "h-[calc(100vh-64px-48px-36px)]"}`}>
         <aside className="flex w-[240px] shrink-0 flex-col border-r border-[#222] bg-black/55 backdrop-blur-sm">
           <nav className="flex-1 space-y-1 p-6">
           {navItems.map((item) => {
@@ -70,7 +92,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             return (
               <button
                 key={item.path}
-                onClick={() => setLocation(item.path)}
+                onClick={() => requestNavigate(item.path)}
                 aria-label={item.label}
                 className={`relative flex w-full items-center gap-3 overflow-hidden rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                   active
@@ -87,7 +109,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         </nav>
           <div className="p-6 pt-0">
             <button
-              onClick={() => setLocation("/provider/new")}
+              onClick={() => requestNavigate("/provider/new")}
               aria-label={t("addProvider")}
               className="pi-gradient-bg flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_24px_rgba(29,183,247,0.22)] transition-opacity hover:opacity-90"
             >
@@ -96,6 +118,11 @@ function Layout({ children }: { children: React.ReactNode }) {
             </button>
             <div className="mt-6 border-t border-[#222] pt-4 font-mono text-[10px] uppercase tracking-wider text-[#888]/60">
               {version ? `v.${version}-BETA` : "v.BETA"}
+            </div>
+            <div className="mt-4 space-y-1 border-t border-[#222] pt-4 font-mono text-[10px] uppercase tracking-wider text-[#888]/60">
+              <div>{shortcutLabel("n")} {t("ctrlN")}</div>
+              <div>{shortcutLabel("k")} {t("ctrlK")}</div>
+              <div>{shortcutLabel("s")} {t("ctrlS")}</div>
             </div>
           </div>
       </aside>

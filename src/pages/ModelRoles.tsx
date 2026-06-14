@@ -11,6 +11,9 @@ const ROLES: Array<{ id: ModelRole; label: string; descriptionKey: Parameters<Re
   { id: "smol", label: "Smol", descriptionKey: "roleSmolDesc", color: "from-emerald-400 to-[#1db7f7]" },
   { id: "slow", label: "Slow", descriptionKey: "roleSlowDesc", color: "from-[#b600f8] to-[#dfa0ff]" },
   { id: "plan", label: "Plan", descriptionKey: "rolePlanDesc", color: "from-amber-300 to-[#b600f8]" },
+  { id: "designer", label: "Designer", descriptionKey: "roleDesignerDesc", color: "from-fuchsia-300 to-[#1db7f7]" },
+  { id: "task", label: "Task", descriptionKey: "roleTaskDesc", color: "from-cyan-300 to-[#1db7f7]" },
+  { id: "vision", label: "Vision", descriptionKey: "roleVisionDesc", color: "from-violet-300 to-[#b600f8]" },
   { id: "commit", label: "Commit", descriptionKey: "roleCommitDesc", color: "from-rose-300 to-[#1db7f7]" },
 ];
 
@@ -40,12 +43,19 @@ export default function ModelRoles() {
   const assignedCount = Object.keys(form.modelRoles ?? {}).length;
   const initialRoles = settings?.modelRoles ?? {};
   const isDirty = JSON.stringify(form.modelRoles ?? {}) !== JSON.stringify(initialRoles);
+  const conflictingModels = useMemo(() => {
+    const counts = new Map<string, number>();
+    Object.values(form.modelRoles ?? {}).forEach((model) => {
+      if (model) counts.set(model, (counts.get(model) ?? 0) + 1);
+    });
+    return Array.from(counts.entries()).filter(([, count]) => count > 1).map(([model]) => model);
+  }, [form.modelRoles]);
 
   const setRole = (role: ModelRole, value: string) => {
     const nextRoles = { ...(form.modelRoles ?? {}) };
     if (value) nextRoles[role] = value;
     else delete nextRoles[role];
-    setForm({ ...form, modelRoles: Object.keys(nextRoles).length ? nextRoles : undefined });
+    setForm({ ...form, modelRoles: nextRoles });
   };
 
   const save = async (e: React.FormEvent) => {
@@ -55,7 +65,7 @@ export default function ModelRoles() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const clearAll = () => setForm({ ...form, modelRoles: undefined });
+  const clearAll = () => setForm({ ...form, modelRoles: {} });
   const reset = () => setForm(settings ?? {});
 
   return (
@@ -133,6 +143,16 @@ export default function ModelRoles() {
             );
           })}
         </div>
+
+        {conflictingModels.length > 0 && (
+          <div className="flex items-start gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+            <div>
+              <div className="font-semibold">{t("roleConflict")}</div>
+              <div className="mt-1">{t("roleConflictMsg", { models: conflictingModels.join(", ") })}</div>
+            </div>
+          </div>
+        )}
 
         <button type="submit" disabled={!isDirty || isLoading} className="pi-gradient-bg flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold text-white shadow-[0_0_28px_rgba(29,183,247,0.22)] transition duration-200 hover:scale-[1.01] hover:shadow-[0_0_36px_rgba(182,0,248,0.28)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100">
           <Save className="h-4 w-4" /> {isLoading ? t("saving") : isDirty ? t("saveRoles") : t("saved")}

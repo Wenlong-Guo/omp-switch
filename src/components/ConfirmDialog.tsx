@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { AlertTriangle, HelpCircle } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface ConfirmDialogProps {
   title: string;
@@ -14,9 +17,10 @@ export default function ConfirmDialog({
   message,
   onConfirm,
   onCancel,
-  confirmLabel = "确认",
+  confirmLabel,
   variant = "destructive",
 }: ConfirmDialogProps) {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -36,7 +40,7 @@ export default function ConfirmDialog({
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onCancel}
@@ -49,7 +53,7 @@ export default function ConfirmDialog({
           <div className={`mt-0.5 w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
             variant === "destructive" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
           }`}>
-            {variant === "destructive" ? "⚠️" : "❓"}
+            {variant === "destructive" ? <AlertTriangle className="h-5 w-5" /> : <HelpCircle className="h-5 w-5" />}
           </div>
           <div>
             <h3 className="text-lg font-semibold">{title}</h3>
@@ -62,7 +66,7 @@ export default function ConfirmDialog({
             className="px-4 py-2 border rounded-md hover:bg-muted text-sm transition-colors"
             disabled={loading}
           >
-            取消
+            {t("cancel")}
           </button>
           <button
             onClick={handleConfirm}
@@ -73,10 +77,11 @@ export default function ConfirmDialog({
             }`}
             disabled={loading}
           >
-            {loading ? "处理中..." : confirmLabel}
+            {loading ? t("processing") : confirmLabel ?? t("confirm")}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

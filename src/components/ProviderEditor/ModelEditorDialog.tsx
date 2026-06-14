@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import type { ModelDefinition, ApiType } from "@/types/provider";
 import {
   getDefaultModel,
@@ -9,9 +10,12 @@ import CheckboxMatrix from "@/components/CheckboxMatrix";
 import ThinkingLevelMapTable from "@/components/ThinkingLevelMapTable";
 import CompatPresetSelector from "@/components/CompatPresetSelector";
 import { applyModelMetadata } from "@/lib/modelMetadata";
+import { useI18n } from "@/lib/i18n";
+import { shortcutLabel } from "@/lib/shortcutLabels";
 
 interface Props {
   model?: ModelDefinition;
+  models?: ModelDefinition[];
   onSave: (model: ModelDefinition) => void;
   onCancel: () => void;
 }
@@ -26,7 +30,8 @@ const API_TYPES = [
   "google-vertex",
 ];
 
-export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
+export default function ModelEditorDialog({ model, models = [], onSave, onCancel }: Props) {
+  const { t } = useI18n();
   const defaults = useMemo(() => getDefaultModel(), []);
   const [form, setForm] = useState<Partial<ModelDefinition>>({
     ...defaults,
@@ -46,9 +51,25 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!form.id?.trim()) newErrors.id = "模型 ID 不能为空";
+    if (!form.id?.trim()) newErrors.id = t("modelIdRequired");
+    else if (isDuplicateId(form.id)) newErrors.id = t("modelIdDuplicate");
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const isDuplicateId = (id: string): boolean => {
+    const normalized = id.trim();
+    return models.some((m) => m.id === normalized && m.id !== model?.id);
+  };
+
+  const validateModelId = () => {
+    if (!form.id?.trim()) {
+      setErrors((prev) => ({ ...prev, id: t("modelIdRequired") }));
+      return;
+    }
+    if (isDuplicateId(form.id)) {
+      setErrors((prev) => ({ ...prev, id: t("modelIdDuplicate") }));
+    }
   };
 
   const handleSave = () => {
@@ -56,11 +77,20 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
     onSave({ ...form, name: form.name?.trim() || form.id } as ModelDefinition);
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSave();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  });
+
   const cost = (form.cost || { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
   const limit = (form.limit || {});
   const compat = (form.compat || {}) as Record<string, boolean | string | Record<string, unknown>>;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onCancel}
       data-testid="model-editor-dialog"
@@ -71,11 +101,11 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h3 className="font-semibold text-lg">{model ? "编辑模型" : "添加模型"}</h3>
+          <h3 className="font-semibold text-lg">{model ? t("editModelLabel") : t("addModelLabel")}</h3>
           <button
             onClick={onCancel}
             className="text-muted-foreground hover:text-foreground transition-colors text-xl leading-none"
-            aria-label="关闭"
+            aria-label={t("closeLabel")}
           >
             &times;
           </button>
@@ -84,13 +114,14 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {/* Basic */}
-          <CollapsibleSection title="基本信息" defaultOpen>
+          <CollapsibleSection title={t("basicInfo")} defaultOpen>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-1">模型 ID <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium mb-1">{t("modelId")} <span className="text-red-500">*</span></label>
                 <input
                   value={form.id || ""}
                   onChange={(e) => updateField("id", e.target.value)}
+                  onBlur={validateModelId}
                   className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
                   data-testid="model-id-input"
                   placeholder="gpt-4o"
@@ -98,7 +129,7 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
                 {errors.id && <p className="text-xs text-red-600 mt-1">{errors.id}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">模型名称</label>
+                <label className="block text-sm font-medium mb-1">{t("modelName")}</label>
                 <input
                   value={form.name || ""}
                   onChange={(e) => updateField("name", e.target.value)}
@@ -109,13 +140,13 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
                 {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">接口格式</label>
+                <label className="block text-sm font-medium mb-1">{t("apiFormat")}</label>
                 <select
                   value={(form.api) ?? "openai-completions"}
                   onChange={(e) => updateField("api", e.target.value as ApiType | undefined)}
                   className="w-full px-3 py-2 border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
                 >
-                  <option value="openai-completions">OpenAI 兼容格式</option>
+                  <option value="openai-completions">{t("apiCompatible")}</option>
                   {API_TYPES.filter((t) => t !== "openai-completions").map((t) => (
                     <option key={t} value={t}>{t}</option>
                   ))}
@@ -130,10 +161,10 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
                   data-testid="model-reasoning"
                   className="h-4 w-4 accent-primary"
                 />
-                <label htmlFor="reasoning" className="text-sm font-medium">支持 Reasoning</label>
+                <label htmlFor="reasoning" className="text-sm font-medium">{t("reasoningLabel")}</label>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">输入类型</label>
+                <label className="block text-sm font-medium mb-1">{t("inputType")}</label>
                 <div className="flex gap-4">
                   {(["text", "image"] as const).map((type) => (
                     <label key={type} className="flex items-center gap-1.5 text-sm cursor-pointer">
@@ -146,7 +177,7 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
                         }}
                         className="h-4 w-4 accent-primary"
                       />
-                      {type === "text" ? "文本" : "图片"}
+                      {type === "text" ? t("textLabel") : t("imageLabel")}
                     </label>
                   ))}
                 </div>
@@ -155,11 +186,11 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
           </CollapsibleSection>
 
           {/* Cost */}
-          <CollapsibleSection title="成本与限制">
+          <CollapsibleSection title={t("costAndLimit")}>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Context Window</label>
+                  <label className="block text-xs text-muted-foreground mb-1">{t("contextWindowLabel")}</label>
                   <input
                     type="number"
                     value={form.contextWindow ?? ""}
@@ -169,7 +200,7 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-muted-foreground mb-1">Max Tokens</label>
+                  <label className="block text-xs text-muted-foreground mb-1">{t("maxTokensLabel")}</label>
                   <input
                     type="number"
                     value={form.maxTokens ?? ""}
@@ -179,7 +210,7 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
                   />
                 </div>
               </div>
-              <div className="text-sm font-medium">成本（每百万 token）</div>
+              <div className="text-sm font-medium">{t("costPerMillion")}</div>
               <div className="grid grid-cols-2 gap-3">
                 {(["input", "output", "cacheRead", "cacheWrite"] as const).map((k) => (
                   <div key={k}>
@@ -195,7 +226,7 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
                 ))}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Token 限制</label>
+                <label className="block text-sm font-medium mb-1">{t("tokenLimit")}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(["context", "input", "output"] as const).map((k) => (
                     <div key={k}>
@@ -217,7 +248,7 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
           </CollapsibleSection>
 
           {/* Compatibility */}
-          <CollapsibleSection title="兼容性">
+          <CollapsibleSection title={t("compatibility")}>
             <div className="space-y-3">
               <CompatPresetSelector
                 onApply={(preset) => updateField("compat", { ...compat, ...(preset.compat || {}) })}
@@ -244,10 +275,47 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
           </CollapsibleSection>
 
           {/* Advanced */}
-          <CollapsibleSection title="高级选项">
+          <CollapsibleSection title={t("advancedOptions")}>
             <div className="space-y-3">
+              <div className="rounded-md border border-blue-500/20 bg-blue-500/5 px-3 py-2 text-xs text-muted-foreground">
+                {t("modelYamlWriteHint")}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">{t("defaultTemperature")}</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    aria-label={t("defaultTemperature")}
+                    value={form.defaultTemperature ?? ""}
+                    onChange={(e) => updateField("defaultTemperature", (e.target.value ? Number(e.target.value) : undefined) as ModelDefinition["defaultTemperature"])}
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">{t("defaultTopP")}</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    aria-label={t("defaultTopP")}
+                    value={form.defaultTopP ?? ""}
+                    onChange={(e) => updateField("defaultTopP", (e.target.value ? Number(e.target.value) : undefined) as ModelDefinition["defaultTopP"])}
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1">{t("defaultSeed")}</label>
+                  <input
+                    type="number"
+                    aria-label={t("defaultSeed")}
+                    value={form.defaultSeed ?? ""}
+                    onChange={(e) => updateField("defaultSeed", (e.target.value ? Number(e.target.value) : undefined) as ModelDefinition["defaultSeed"])}
+                    className="w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+              </div>
               <div>
-                <label className="block text-sm font-medium mb-1">自定义 Headers (JSON)</label>
+                <label className="block text-sm font-medium mb-1">{t("customHeadersJson")}</label>
                 <textarea
                   value={form.headers ? JSON.stringify(form.headers, null, 2) : ""}
                   onChange={(e) => {
@@ -261,14 +329,14 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Thinking Level 映射</label>
+                <label className="block text-sm font-medium mb-1">{t("thinkingLevelMap")}</label>
                 <ThinkingLevelMapTable
                   value={form.thinkingLevelMap || {}}
                   onChange={(v) => updateField("thinkingLevelMap", v)}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">模态</label>
+                <label className="block text-sm font-medium mb-1">{t("modalities")}</label>
                 <CheckboxMatrix
                   value={(form.modalities as { input?: string[]; output?: string[] }) || {}}
                   options={["text", "audio", "image", "video", "pdf"]}
@@ -286,7 +354,7 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
             onClick={onCancel}
             className="px-4 py-2 border rounded-md hover:bg-muted text-sm transition-colors"
           >
-            取消
+            {t("cancel")}
           </button>
           <button
             type="button"
@@ -294,10 +362,11 @@ export default function ModelEditorDialog({ model, onSave, onCancel }: Props) {
             data-testid="save-model-btn"
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 text-sm transition-opacity"
           >
-            保存模型
+            {t("saveModelLabel")} <span className="ml-1 text-xs opacity-70">{shortcutLabel("enter")}</span>
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

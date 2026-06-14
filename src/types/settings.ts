@@ -11,7 +11,7 @@ export interface AppSettings {
 
 export type ThinkingLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
 
-export type ModelRole = "default" | "smol" | "slow" | "plan" | "commit";
+export type ModelRole = "default" | "smol" | "slow" | "plan" | "designer" | "commit" | "task" | "vision";
 export type ModelRoles = Partial<Record<ModelRole, string>>;
 
 export interface RetryConfig {

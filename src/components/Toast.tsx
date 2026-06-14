@@ -1,5 +1,7 @@
 import { useEffect } from "react";
+import { X } from "lucide-react";
 import { useToastStore } from "@/stores/toastStore";
+import { useI18n } from "@/lib/i18n";
 
 export default function Toast() {
   const { toasts, remove } = useToastStore();
@@ -19,13 +21,21 @@ function ToastItem({
   toast,
   onRemove,
 }: {
-  toast: { id: string; message: string; type: "success" | "error" };
+  toast: { id: string; message: string; type: "success" | "error"; undoAction?: () => void };
   onRemove: (id: string) => void;
 }) {
+  const { t } = useI18n();
+
   useEffect(() => {
-    const timer = setTimeout(() => onRemove(toast.id), 3000);
+    if (toast.type !== "success") return;
+    const timer = setTimeout(() => onRemove(toast.id), toast.undoAction ? 5000 : 1500);
     return () => clearTimeout(timer);
-  }, [toast.id, onRemove]);
+  }, [toast.id, toast.type, onRemove]);
+
+  const handleUndo = () => {
+    toast.undoAction?.();
+    onRemove(toast.id);
+  };
 
   const icon = toast.type === "success" ? "✓" : "✕";
 
@@ -36,8 +46,8 @@ function ToastItem({
           ? "bg-background text-green-700 border-green-200 dark:border-green-900 dark:text-green-400"
           : "bg-background text-red-700 border-red-200 dark:border-red-900 dark:text-red-400"
       }`}
-      onClick={() => onRemove(toast.id)}
       role="alert"
+      onClick={() => onRemove(toast.id)}
     >
       <span
         className={`flex items-center justify-center w-5 h-5 rounded-full text-xs text-white ${
@@ -46,7 +56,26 @@ function ToastItem({
       >
         {icon}
       </span>
-      <span>{toast.message}</span>
+      <span className="flex-1">{toast.message}</span>
+      {toast.undoAction && (
+        <button
+          type="button"
+          onClick={handleUndo}
+          className="ml-2 text-xs font-semibold underline underline-offset-2 hover:opacity-80"
+        >
+          {t("undo")}
+        </button>
+      )}
+      {toast.type === "error" && (
+        <button
+          type="button"
+          onClick={() => onRemove(toast.id)}
+          className="ml-1 rounded p-0.5 hover:bg-muted"
+          aria-label={t("closeLabel")}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 }

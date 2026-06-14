@@ -2,6 +2,7 @@ import { useEffect, useCallback } from "react";
 
 interface Shortcuts {
   onEscape?: () => void;
+  onNew?: () => void;
   onSave?: () => void;
   onSearch?: () => void;
 }
@@ -20,6 +21,13 @@ export function useKeyboardShortcuts(shortcuts: Shortcuts, deps: React.Dependenc
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         shortcuts.onSearch?.();
+        return;
+      }
+
+      // Cmd/Ctrl + N
+      if ((e.metaKey || e.ctrlKey) && e.key === "n") {
+        e.preventDefault();
+        shortcuts.onNew?.();
         return;
       }
 

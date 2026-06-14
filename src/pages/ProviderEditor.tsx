@@ -1,38 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useProviderStore } from "@/stores/providerStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useLocation, useParams } from "wouter";
-import { ArrowLeft, Save, Plus, Star, FileText, Server } from "lucide-react";
+import { ArrowLeft, Save, Plus, FileText, Server } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import type { ProviderConfig, ModelDefinition } from "@/types/provider";
+import { invokeCommand } from "@/lib/tauri-api";
+import { applyModelMetadata } from "@/lib/modelMetadata";
 import ProviderBasicForm from "@/components/ProviderEditor/ProviderBasicForm";
 import ModelList from "@/components/ProviderEditor/ModelList";
 import ModelEditorDialog from "@/components/ProviderEditor/ModelEditorDialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { useI18n } from "@/lib/i18n";
+import { FEATURED_PROVIDER_PRESETS, getProviderLogo } from "@/lib/providerPresets";
+import { getProviderLogoSrc } from "@/lib/providerLogos";
 
 const PROVIDER_ID_PATTERN = /^[A-Za-z0-9-]+$/;
 
-const model = (id: string, name: string, contextWindow: number, maxTokens: number, reasoning = false, input: ("text" | "image")[] = ["text"]): ModelDefinition => ({
-  id,
-  name,
-  reasoning,
-  input,
-  contextWindow,
-  maxTokens,
-  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-});
-
-const FEATURED_PRESETS: ProviderConfig[] = [
-  { id: "deepseek", name: "DeepSeek", enabled: false, isBuiltIn: false, api: "openai-completions", auth: "apiKey", baseUrl: "https://api.deepseek.com", models: [model("deepseek-v4-pro", "DeepSeek V4 Pro", 1_000_000, 384_000, true), model("deepseek-v4-flash", "DeepSeek V4 Flash", 1_000_000, 384_000, true)] },
-  { id: "kimi", name: "Kimi K2.6", enabled: false, isBuiltIn: false, api: "openai-completions", auth: "apiKey", baseUrl: "https://api.moonshot.ai/v1", models: [model("kimi-k2.6", "Kimi K2.6", 256_000, 32_768, true, ["text", "image"]), model("kimi-k2.5", "Kimi K2.5", 256_000, 32_768, true, ["text", "image"])] },
-  { id: "stepfun", name: "StepFun", enabled: false, isBuiltIn: false, api: "openai-completions", auth: "apiKey", baseUrl: "https://api.stepfun.ai/v1", models: [model("step-3.7-flash", "Step 3.7 Flash", 128_000, 16_000, true, ["text", "image"]), model("step-3.5-flash", "Step 3.5 Flash", 128_000, 16_000, true)] },
-  { id: "z-ai", name: "Zhipu GLM", enabled: false, isBuiltIn: false, api: "openai-completions", auth: "apiKey", baseUrl: "https://api.z.ai/api/paas/v4", models: [model("glm-4.5", "GLM-4.5", 128_000, 16_000, true), model("glm-4.5-air", "GLM-4.5 Air", 128_000, 16_000, true)] },
-  { id: "qwen", name: "Qwen / DashScope", enabled: false, isBuiltIn: false, api: "openai-completions", auth: "apiKey", baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1", models: [model("qwen3-max", "Qwen3 Max", 262_144, 32_768, true), model("qwen3-coder-plus", "Qwen3 Coder Plus", 262_144, 32_768, true), model("qwen3-coder-flash", "Qwen3 Coder Flash", 262_144, 32_768, true)] },
-  { id: "minimax", name: "MiniMax", enabled: false, isBuiltIn: false, api: "openai-completions", auth: "apiKey", baseUrl: "https://api.minimax.io/v1", models: [model("MiniMax-M3", "MiniMax M3", 1_000_000, 32_768, true, ["text", "image"]), model("MiniMax-M2.7-highspeed", "MiniMax M2.7 Highspeed", 204_800, 32_768, true)] },
-  { id: "openai", name: "OpenAI", enabled: false, isBuiltIn: false, api: "openai-responses", auth: "apiKey", baseUrl: "https://api.openai.com/v1", models: [model("gpt-5.5", "GPT-5.5", 400_000, 128_000, true, ["text", "image"]), model("gpt-5.4-mini", "GPT-5.4 Mini", 400_000, 128_000, true, ["text", "image"])] },
-  { id: "anthropic", name: "Anthropic", enabled: false, isBuiltIn: false, api: "anthropic-messages", auth: "apiKey", baseUrl: "https://api.anthropic.com", models: [model("claude-opus-4-8", "Claude Opus 4.8", 200_000, 32_000, true, ["text", "image"]), model("claude-sonnet-4-6", "Claude Sonnet 4.6", 200_000, 32_000, true, ["text", "image"])] },
-  { id: "openrouter", name: "OpenRouter", enabled: false, isBuiltIn: false, api: "openai-completions", auth: "apiKey", baseUrl: "https://openrouter.ai/api/v1", models: [model("openai/gpt-5.5", "OpenAI GPT-5.5", 400_000, 128_000, true, ["text", "image"]), model("anthropic/claude-sonnet-4.6", "Claude Sonnet 4.6", 200_000, 32_000, true, ["text", "image"])] },
-];
+type FetchedModel = { id: string; name?: string };
 
 const scalarToYaml = (value: unknown) => {
   if (typeof value === "string") return JSON.stringify(value);
@@ -134,25 +119,34 @@ export default function ProviderEditor() {
 
   // Preset/model selection for add mode
   const [selectedPresetId, setSelectedPresetId] = useState<string>("");
+  const [presetModelCandidates, setPresetModelCandidates] = useState<ModelDefinition[]>([]);
+  const [selectedPresetModelIds, setSelectedPresetModelIds] = useState<string[]>([]);
   const [nameTouched, setNameTouched] = useState(false);
   const [configText, setConfigText] = useState(toProviderYaml(form));
   const [configError, setConfigError] = useState<string | null>(null);
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+  const [fetchedModels, setFetchedModels] = useState<FetchedModel[]>([]);
+  const [isFetchingModels, setIsFetchingModels] = useState(false);
+  const originalFormRef = useRef(toProviderYaml(form));
 
   const visibleBuiltinPresets = builtinPresets.filter((p) => {
     const haystack = `${p.id} ${p.name}`.toLowerCase();
-    return !haystack.includes("oh-my-opencode") && !haystack.includes("opencode");
+    return Boolean(p.baseUrl) && !haystack.includes("oh-my-opencode") && !haystack.includes("opencode") && !haystack.includes("github-copilot") && !haystack.includes("lm-studio") && !haystack.includes("llama-cpp") && !haystack.includes("ollama");
   });
-  const presetOptions = [...FEATURED_PRESETS, ...visibleBuiltinPresets.filter((p) => !FEATURED_PRESETS.some((fp) => fp.id === p.id))];
+  const presetOptions = [...FEATURED_PROVIDER_PRESETS.filter((p) => Boolean(p.baseUrl)), ...visibleBuiltinPresets.filter((p) => !FEATURED_PROVIDER_PRESETS.some((fp) => fp.id === p.id))].sort((a, b) => a.name.localeCompare(b.name));
 
   useEffect(() => {
     if (isEdit) {
       const existing = providers.find((p) => p.id === editId);
       if (existing) {
         setForm(existing);
+        setConfigText(toProviderYaml(existing));
+        originalFormRef.current = toProviderYaml(existing);
       } else {
         fetchProviders();
       }
     } else {
+      originalFormRef.current = toProviderYaml(form);
       fetchBuiltinPresets();
     }
   }, [isEdit, editId, providers, fetchProviders, fetchBuiltinPresets]);
@@ -162,6 +156,7 @@ export default function ProviderEditor() {
     if (!PROVIDER_ID_PATTERN.test(target.id.trim())) return t("providerIdInvalid");
     if (!target.name.trim()) return t("providerNameRequired");
     if (!target.api) return t("apiFormatRequired");
+    if (target.enabled && !target.baseUrl?.trim() && !target.discovery) return t("baseUrlRequired");
     return null;
   };
 
@@ -182,18 +177,55 @@ export default function ProviderEditor() {
     setConfigText(toProviderYaml(next));
   };
 
+  const parseConfigTextValue = (text: string): ProviderConfig => {
+    const parsed = parseProviderYaml(text);
+    return {
+      ...parsed,
+      enabled: Boolean(parsed.enabled),
+      isBuiltIn: Boolean(parsed.isBuiltIn),
+      models: Array.isArray(parsed.models) ? parsed.models : [],
+    };
+  };
+
+  const isDirty = configText !== originalFormRef.current;
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      event.preventDefault();
+      event.returnValue = t("unsavedChanges");
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty, t]);
+
+  useEffect(() => {
+    const handleNavigate = (event: Event) => {
+      if (!isDirty) return;
+      const customEvent = event as CustomEvent<{ path: string }>;
+      event.preventDefault();
+      setPendingPath(customEvent.detail.path);
+    };
+    window.addEventListener("omp:navigate", handleNavigate);
+    return () => window.removeEventListener("omp:navigate", handleNavigate);
+  }, [isDirty]);
+
   const parseConfigText = (): ProviderConfig | null => {
     try {
-      const parsed = parseProviderYaml(configText);
-      return {
-        ...parsed,
-        enabled: Boolean(parsed.enabled),
-        isBuiltIn: Boolean(parsed.isBuiltIn),
-        models: Array.isArray(parsed.models) ? parsed.models : [],
-      };
+      return parseConfigTextValue(configText);
     } catch (err) {
       setConfigError(t("yamlParseFailed", { error: err instanceof Error ? err.message : String(err) }));
       return null;
+    }
+  };
+
+  const handleConfigTextChange = (text: string) => {
+    setConfigText(text);
+    try {
+      setForm(parseConfigTextValue(text));
+      setConfigError(null);
+    } catch (err) {
+      setConfigError(t("yamlParseFailed", { error: err instanceof Error ? err.message : String(err) }));
     }
   };
 
@@ -217,11 +249,15 @@ export default function ProviderEditor() {
         auth: "apiKey",
         models: [],
       });
+      setPresetModelCandidates([]);
+      setSelectedPresetModelIds([]);
       return;
     }
 
     if (presetId === "openai-compatible") {
       updateForm({ ...form, api: "openai-completions" });
+      setPresetModelCandidates([]);
+      setSelectedPresetModelIds([]);
       return;
     }
 
@@ -230,6 +266,9 @@ export default function ProviderEditor() {
 
     const replacePresetIdentity = !form.id || form.id === selectedPresetId;
     const nextId = replacePresetIdentity ? preset.id : form.id;
+    const candidates = preset.models ? [...preset.models] : [];
+    setPresetModelCandidates(candidates);
+    setSelectedPresetModelIds([]);
     updateForm({
       ...form,
       id: nextId,
@@ -240,8 +279,21 @@ export default function ProviderEditor() {
       apiKey: form.apiKey,
       enabled: false,
       isBuiltIn: false,
-      models: preset.models ? [...preset.models] : [],
+      models: [],
     });
+  };
+
+  const setPresetModelSelection = (ids: string[]) => {
+    setSelectedPresetModelIds(ids);
+    const selectedModels = presetModelCandidates.filter((m) => ids.includes(m.id));
+    updateForm({ ...form, models: selectedModels });
+  };
+
+  const togglePresetModel = (modelId: string) => {
+    const nextIds = selectedPresetModelIds.includes(modelId)
+      ? selectedPresetModelIds.filter((id) => id !== modelId)
+      : [...selectedPresetModelIds, modelId];
+    setPresetModelSelection(nextIds);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -256,6 +308,7 @@ export default function ProviderEditor() {
     setError(null);
     try {
       await saveProvider(submitForm);
+      originalFormRef.current = toProviderYaml(submitForm);
       toast.show(isEdit ? t("updateSuccess") : t("saveSuccess"), "success");
       setLocation("/");
     } catch (err) {
@@ -291,6 +344,39 @@ export default function ProviderEditor() {
     updateForm({ ...form, models: next });
   };
 
+  const fetchModels = async () => {
+    if (!form.baseUrl?.trim() || !form.apiKey?.trim()) return;
+    setIsFetchingModels(true);
+    try {
+      const result = await invokeCommand<FetchedModel[]>("fetch_models_for_config", {
+        baseUrl: form.baseUrl,
+        apiKey: form.apiKey,
+        apiType: form.api,
+      });
+      setFetchedModels(result);
+      toast.show(t("fetchedModels", { count: result.length }), "success");
+    } catch (err) {
+      toast.show(t("fetchModelsFailed", { error: String(err) }), "error");
+    } finally {
+      setIsFetchingModels(false);
+    }
+  };
+
+  const addFetchedModel = (item: FetchedModel) => {
+    if (models.some((m) => m.id === item.id)) return;
+    const base: ModelDefinition = {
+      id: item.id,
+      name: item.name || item.id,
+      api: form.api,
+      reasoning: true,
+      input: ["text"],
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+      contextWindow: 128000,
+      maxTokens: 16384,
+    };
+    updateForm({ ...form, models: [...models, applyModelMetadata(base) as ModelDefinition] });
+  };
+
   useKeyboardShortcuts({
     onEscape: () => {
       if (editingModelIdx !== null) {
@@ -308,7 +394,7 @@ export default function ProviderEditor() {
       <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
         <button
-          onClick={() => setLocation("/")}
+          onClick={() => (isDirty ? setPendingPath("/") : setLocation("/"))}
           className="mb-5 inline-flex items-center gap-2 rounded-xl border border-[#222] px-3 py-2 text-xs text-muted-foreground transition duration-200 hover:border-[#1db7f7]/60 hover:bg-[#111] hover:text-white"
           aria-label={t("back")}
         >
@@ -333,32 +419,40 @@ export default function ProviderEditor() {
               <h2 className="text-lg font-semibold text-white">{t("selectPreset")}</h2>
               <p className="mt-1 text-sm text-muted-foreground">{t("selectPresetHint")}</p>
             </div>
-            <div data-testid="preset-grid" className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <div data-testid="preset-grid" className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
                 data-testid="preset-card-custom"
                 onClick={() => applyPreset("")}
-                className={`group text-left rounded-3xl border p-4 transition duration-300 ${!selectedPresetId ? "border-transparent bg-[linear-gradient(90deg,#1db7f7,#b600f8)] text-white" : "border-[#222] bg-[#1f1f1f] text-muted-foreground hover:border-transparent hover:bg-[linear-gradient(90deg,#1db7f7,#b600f8)] hover:text-white"}`}
+                className={`group text-left rounded-xl border px-2 py-1.5 transition duration-300 ${!selectedPresetId ? "border-transparent bg-[linear-gradient(90deg,#1db7f7,#b600f8)] text-white" : "border-[#222] bg-[#1f1f1f] text-muted-foreground hover:border-transparent hover:bg-[linear-gradient(90deg,#1db7f7,#b600f8)] hover:text-white"}`}
               >
-                <div className="font-medium">{t("manualConfig")}</div>
-                <div className="mt-1 text-xs opacity-70">{t("manualConfigHint")}</div>
+                <div className="truncate text-xs font-medium">{t("manualConfig")}</div>
+                <div className="mt-0.5 text-[10px] opacity-70">{t("manualConfigHint")}</div>
               </button>
-              {presetOptions.map((preset) => (
-                <button
-                  key={preset.id}
-                  type="button"
-                  data-testid={`preset-card-${preset.id}`}
-                  onClick={() => applyPreset(preset.id)}
-                  className={`group text-left rounded-3xl border p-4 transition duration-300 ${selectedPresetId === preset.id ? "border-transparent bg-[linear-gradient(90deg,#1db7f7,#b600f8)] text-white" : "border-[#222] bg-[#1f1f1f] text-muted-foreground hover:border-transparent hover:bg-[linear-gradient(90deg,#1db7f7,#b600f8)] hover:text-white"}`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate font-medium">{preset.name}</span>
-                    {FEATURED_PRESETS.some((p) => p.id === preset.id) && <Star className="h-4 w-4 shrink-0 text-white" />}
-                  </div>
-                  <div className="mt-1 truncate text-xs opacity-70">{preset.baseUrl || t("localOrAuto")}</div>
-                  <div className="mt-2 text-xs opacity-70">{t("presetModelCount", { count: preset.models?.length ?? 0 })}</div>
-                </button>
-              ))}
+              {presetOptions.map((preset) => {
+                const logo = getProviderLogo(preset);
+                const logoSrc = getProviderLogoSrc(logo?.icon);
+
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    data-testid={`preset-card-${preset.id}`}
+                    onClick={() => applyPreset(preset.id)}
+                    className={`group text-left rounded-xl border px-2 py-1.5 transition duration-300 ${selectedPresetId === preset.id ? "border-transparent bg-[linear-gradient(90deg,#1db7f7,#b600f8)] text-white" : "border-[#222] bg-[#1f1f1f] text-muted-foreground hover:border-transparent hover:bg-[linear-gradient(90deg,#1db7f7,#b600f8)] hover:text-white"}`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {logoSrc ? (
+                        <img src={logoSrc} alt={preset.name} className="h-4 w-4 shrink-0 rounded" />
+                      ) : logo ? (
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-[9px] font-bold text-white" style={{ backgroundColor: logo.color }}>{logo.label}</span>
+                      ) : null}
+                      <span className="truncate text-xs font-medium">{preset.name}</span>
+                    </div>
+                    <div className="mt-0.5 text-[10px] opacity-70">{t("presetModelCount", { count: preset.models?.length ?? 0 })}</div>
+                  </button>
+                );
+              })}
             </div>
           </section>
         )}
@@ -375,41 +469,90 @@ export default function ProviderEditor() {
         </section>
 
         {/* Model cards for add mode when preset has models */}
-        {!isEdit && selectedPresetId && form.models && form.models.length > 0 && (
+        {!isEdit && selectedPresetId && presetModelCandidates.length > 0 && (
           <section className="space-y-3 rounded-3xl border border-[#222] bg-[#050505] p-5 transition duration-200 hover:border-[#1db7f7]/40">
-            <div>
-              <h2 className="text-sm font-medium text-white">{t("presetModels")}</h2>
-              <p className="mt-1 text-xs text-muted-foreground">{t("presetModelsHint")}</p>
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h2 className="text-sm font-medium text-white">{t("presetModels")}</h2>
+                <p className="mt-1 text-xs text-muted-foreground">{t("presetModelsHint")}</p>
+                <p className="mt-1 text-xs text-muted-foreground" data-testid="preset-model-selected-count">已选择 {selectedPresetModelIds.length}/{presetModelCandidates.length}</p>
+              </div>
+              <div className="flex gap-2">
+                <button type="button" data-testid="select-all-preset-models" onClick={() => setPresetModelSelection(presetModelCandidates.map((m) => m.id))} className="rounded-xl border border-[#222] px-3 py-1.5 text-xs text-white transition hover:border-[#1db7f7]/70">全选</button>
+                <button type="button" data-testid="clear-preset-models" onClick={() => setPresetModelSelection([])} className="rounded-xl border border-[#222] px-3 py-1.5 text-xs text-white transition hover:border-[#1db7f7]/70">清空</button>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3" data-testid="preset-model-grid">
-              {form.models.map((m) => (
-                <div key={m.id} data-testid={`preset-model-card-${m.id}`} className="rounded-2xl border border-[#222] bg-black/40 p-3 transition duration-200 hover:border-transparent hover:bg-[linear-gradient(90deg,#1db7f7,#b600f8)]">
-                  <div className="font-medium text-sm">{m.name}</div>
-                  <div className="text-xs text-muted-foreground font-mono mt-1 break-all">{m.id}</div>
+              {presetModelCandidates.map((m) => {
+                const checked = selectedPresetModelIds.includes(m.id);
+                return (
+                <label key={m.id} data-testid={`preset-model-card-${m.id}`} className={`rounded-2xl border p-3 transition duration-200 ${checked ? "border-transparent bg-[linear-gradient(90deg,#1db7f7,#b600f8)] text-white" : "border-[#222] bg-black/40 hover:border-[#1db7f7]/50"}`}>
+                  <div className="flex items-start gap-3">
+                    <input data-testid={`preset-model-checkbox-${m.id}`} type="checkbox" checked={checked} onChange={() => togglePresetModel(m.id)} className="mt-1" />
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm">{m.name}</div>
+                      <div className="text-xs text-muted-foreground font-mono mt-1 break-all">{m.id}</div>
+                    </div>
+                  </div>
                   <div className="flex flex-wrap gap-1.5 mt-3 text-[10px]">
                     <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{m.contextWindow.toLocaleString()} ctx</span>
                     <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{m.maxTokens.toLocaleString()} out</span>
                     {m.reasoning && <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">thinking</span>}
                     {m.input?.includes("image") && <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">multimodal</span>}
                   </div>
-                </div>
-              ))}
+                </label>
+              );
+              })}
             </div>
           </section>
         )}
 
         <section className="space-y-4 rounded-3xl border border-[#222] bg-[#050505] p-5">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <h2 className="text-lg font-semibold text-white">{t("modelConfig")}</h2>
-            <button
-              type="button"
-              onClick={startAddModel}
-              data-testid="add-model-btn"
-              className="inline-flex items-center gap-2 rounded-xl border border-[#222] px-3 py-2 text-sm text-white transition duration-200 hover:border-[#1db7f7]/70 hover:bg-[#111]"
-            >
-              <Plus className="h-3.5 w-3.5" /> {t("addModel")}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={fetchModels}
+                disabled={!form.baseUrl?.trim() || !form.apiKey?.trim() || isFetchingModels}
+                data-testid="fetch-models-btn"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#222] px-3 py-2 text-sm text-white transition duration-200 hover:border-[#1db7f7]/70 hover:bg-[#111] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isFetchingModels ? t("fetchingModels") : t("fetchModels")}
+              </button>
+              <button
+                type="button"
+                onClick={startAddModel}
+                data-testid="add-model-btn"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#222] px-3 py-2 text-sm text-white transition duration-200 hover:border-[#1db7f7]/70 hover:bg-[#111]"
+              >
+                <Plus className="h-3.5 w-3.5" /> {t("addModel")}
+              </button>
+            </div>
           </div>
+
+          {fetchedModels.length > 0 && (
+            <div className="rounded-2xl border border-[#222] bg-black/30 p-3" data-testid="fetched-models-panel">
+              <p className="mb-2 text-xs text-muted-foreground">{t("fetchModelsHint")}</p>
+              <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto">
+                {fetchedModels.map((item) => {
+                  const exists = models.some((m) => m.id === item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      disabled={exists}
+                      onClick={() => addFetchedModel(item)}
+                      title={item.id}
+                      className="max-w-[260px] truncate rounded-lg border border-border bg-[#111] px-2.5 py-1 font-mono text-[11px] text-white transition hover:border-[#1db7f7]/70 disabled:opacity-45"
+                    >
+                      {exists ? "✓ " : "+ "}{item.name || item.id}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <ModelList
             models={models}
@@ -422,8 +565,24 @@ export default function ProviderEditor() {
         {editingModelIdx !== null && (
           <ModelEditorDialog
             model={editingModelIdx === "new" ? undefined : models[editingModelIdx]}
+            models={models}
             onSave={saveModel}
             onCancel={() => setEditingModelIdx(null)}
+          />
+        )}
+
+        {pendingPath && (
+          <ConfirmDialog
+            title={t("unsavedChanges")}
+            message={t("unsavedChanges")}
+            confirmLabel={t("confirm")}
+            variant="default"
+            onCancel={() => setPendingPath(null)}
+            onConfirm={() => {
+              const path = pendingPath;
+              setPendingPath(null);
+              setLocation(path);
+            }}
           />
         )}
 
@@ -440,7 +599,7 @@ export default function ProviderEditor() {
           <textarea
             data-testid="provider-config-editor"
             value={configText}
-            onChange={(e) => setConfigText(e.target.value)}
+            onChange={(e) => handleConfigTextChange(e.target.value)}
             className="min-h-72 w-full rounded-2xl border border-[#222] bg-black/40 px-4 py-3 font-mono text-xs text-white outline-none transition focus:border-[#1db7f7] focus:ring-2 focus:ring-[#1db7f7]/20"
           />
           {configError && <div className="text-sm text-red-400" data-testid="provider-config-error">{configError}</div>}

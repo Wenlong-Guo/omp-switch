@@ -1,13 +1,9 @@
 # AGENTS.md
 
-- Use `npm install` from the repo root; this project has `package-lock.json` (no pnpm/yarn lockfile) plus `src-tauri/Cargo.lock`.
-- Dev/build: `npm run tauri dev` launches the Tauri app; `npm run tauri build` runs `npm run build` first via `src-tauri/tauri.conf.json`; frontend-only dev is `npm run dev` on fixed port `5173`.
-- Verification shortcuts: `npm run build` = `tsc && vite build`; `npm run test` = Vitest jsdom with `src/test/setup.ts`; focused test: `npx vitest run src/path/file.test.tsx`.
-- E2E source of truth is `npm run test:e2e` / `playwright.config.ts`, testDir `e2e-playwright-test`; it starts `npm run dev`.
-- **Testing is three-layered:**
-  - **Layer 1 — Rust Pipeline (`npm run test:pipeline`)**: `src-tauri/tests/pipeline_test.rs` tests the full DB → `models.yml` → `omp` CLI pipeline. Must run with `--test-threads=1` because `get_models_yaml_path()` writes to real `~/.omp/agent/models.yml`.
-  - **Layer 2 — Mock E2E (`npm run test:e2e`)**: `e2e-playwright-test/` runs against `localhost:5173` (Vite only, **no Tauri backend**). Uses `localStorage`-based mock via `tauri-mock.ts`. Fast for frontend regression but **never** exercises SQLite, `config_writer`, or filesystem writes.
-  - **Layer 3 — Real App (`npm run test:e2e:real`)**: `scripts/e2e-real.sh` builds debug Tauri binary, launches it, verifies `models.yml` content, and runs `omp --list-models`. `tauri-driver` (Linux/CI) config in `playwright.tauri.config.ts`. **Not supported on macOS.**
-- **HARD RULE: No mock data in Layer 1 and Layer 3.** All real-backend tests must use real SQLite and verify actual file writes. Layer 2 mock E2E is frontend-only regression and does not replace backend verification.
-- Frontend entrypoints: `src/main.tsx` -> `src/App.tsx`; routes use `wouter`, stores use Zustand, Tauri IPC is wrapped in `src/lib/tauri-api.ts`; `@/*` aliases to `src/*`.
-- Rust backend is under `src-tauri/src`: `commands/` are Tauri IPC handlers, `services/` business logic/file sync, `database/` SQLite DAOs; Cargo package requires Rust `1.77.2` despite README saying `>=1.70`.
+- Project identity: `omp-switch` is a Tauri client/tooling project for `pi` / `oh-my-pi`; it is **not** `opencode` or `oh-my-opencode-slim`. When searching/recalling OMP/omp-switch context, prioritize this fact and avoid treating project code as OpenCode config unless explicitly asked.
+- Install with `npm install` (root `package-lock.json`; no pnpm/yarn) plus Rust deps from `src-tauri/Cargo.lock`; Cargo requires Rust `1.77.2` despite README saying `>=1.70`.
+- Dev/build: `npm run tauri dev` opens the real Tauri app; `npm run dev` is frontend-only Vite on strict `5173`; `npm run tauri build` runs `npm run build` (`tsc && vite build`) first via `src-tauri/tauri.conf.json`.
+- Focused checks: `npm run test` = Vitest jsdom with `src/test/setup.ts`; single test `npx vitest run src/path/file.test.tsx`; `npm run test:e2e` starts Vite and runs mock Playwright tests in `e2e-playwright-test/`.
+- Testing layers: `npm run test:pipeline` is real SQLite → `~/.omp/agent/models.yml` → `omp` CLI (`--test-threads=1` required); mock E2E uses `localStorage`/`tauri-mock.ts` and never proves DB/filesystem; `npm run test:e2e:real` is the real-app smoke script, while `playwright.tauri.config.ts` is Linux/Windows `tauri-driver` only.
+- Do not use mock data for Layer 1 or Layer 3 regressions; backend/file-sync fixes must verify real SQLite writes and generated `models.yml`, not just frontend mock E2E.
+- Entrypoints/wiring: `src/main.tsx` → `src/App.tsx` (`wouter`, Zustand, `@/*` alias); Tauri IPC wrapper is `src/lib/tauri-api.ts`; Rust backend lives in `src-tauri/src/{commands,services,database}`, with startup preset seeding + YAML write in `src-tauri/src/main.rs`.

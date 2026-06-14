@@ -1,7 +1,9 @@
 use crate::database::connection::DbConnection;
 use crate::database::provider_dao::ProviderDao;
 use crate::database::settings_dao::SettingsDao;
-use crate::utils::fs::{atomic_write, get_models_yaml_path, get_settings_json_path};
+use crate::utils::fs::{
+    atomic_write, get_config_yml_path, get_models_yaml_path, get_settings_json_path,
+};
 use std::collections::HashMap;
 
 #[derive(Debug, thiserror::Error)]
@@ -31,6 +33,9 @@ impl<'a> ConfigWriter<'a> {
 
         let mut providers_map = HashMap::new();
         for p in providers {
+            if p.is_built_in && p.base_url.is_none() && p.discovery.is_none() {
+                continue;
+            }
             let mut config = serde_json::Map::new();
             config.insert("name".to_string(), serde_json::Value::String(p.name));
             if let Some(url) = p.base_url {
@@ -45,12 +50,21 @@ impl<'a> ConfigWriter<'a> {
                 config.insert("api".to_string(), serde_json::Value::String(api));
             }
             if let Some(headers) = p.headers {
-                config.insert("headers".to_string(), serde_json::Value::Object(
-                    headers.into_iter().map(|(k, v)| (k, serde_json::Value::String(v))).collect()
-                ));
+                config.insert(
+                    "headers".to_string(),
+                    serde_json::Value::Object(
+                        headers
+                            .into_iter()
+                            .map(|(k, v)| (k, serde_json::Value::String(v)))
+                            .collect(),
+                    ),
+                );
             }
             if let Some(auth_header) = p.auth_header {
-                config.insert("authHeader".to_string(), serde_json::Value::Bool(auth_header));
+                config.insert(
+                    "authHeader".to_string(),
+                    serde_json::Value::Bool(auth_header),
+                );
             }
             if let Some(auth) = p.auth {
                 config.insert("auth".to_string(), serde_json::Value::String(auth));
@@ -59,51 +73,87 @@ impl<'a> ConfigWriter<'a> {
                 config.insert("discovery".to_string(), serialize_discovery(discovery));
             }
             if let Some(models) = p.models {
-                let model_values: Vec<serde_json::Value> = models.into_iter().map(|m| {
-                    let mut mc = serde_json::Map::new();
-                    mc.insert("id".to_string(), serde_json::Value::String(m.id));
-                    mc.insert("name".to_string(), serde_json::Value::String(m.name));
-                    if let Some(api) = m.api_type {
-                        mc.insert("api".to_string(), serde_json::Value::String(api));
-                    }
-                    mc.insert("reasoning".to_string(), serde_json::Value::Bool(m.reasoning));
-                    mc.insert("input".to_string(), serde_json::to_value(m.input_types).unwrap());
-                    mc.insert("cost".to_string(), serde_json::to_value(m.cost).unwrap());
-                    mc.insert("contextWindow".to_string(), serde_json::Value::Number(m.context_window.into()));
-                    mc.insert("maxTokens".to_string(), serde_json::Value::Number(m.max_tokens.into()));
-                    if let Some(headers) = m.headers {
-                        mc.insert("headers".to_string(), serde_json::to_value(headers).unwrap());
-                    }
-                    if let Some(compat) = m.compat {
-                        if let Some(compat_value) = serialize_compat(compat) {
-                            mc.insert("compat".to_string(), compat_value);
+                let model_values: Vec<serde_json::Value> = models
+                    .into_iter()
+                    .map(|m| {
+                        let mut mc = serde_json::Map::new();
+                        mc.insert("id".to_string(), serde_json::Value::String(m.id));
+                        mc.insert("name".to_string(), serde_json::Value::String(m.name));
+                        if let Some(api) = m.api_type {
+                            mc.insert("api".to_string(), serde_json::Value::String(api));
                         }
-                    }
-                    if let Some(v) = m.default_temperature {
-                        if let Some(n) = serde_json::Number::from_f64(v) {
-                            mc.insert("defaultTemperature".to_string(), serde_json::Value::Number(n));
+                        mc.insert(
+                            "reasoning".to_string(),
+                            serde_json::Value::Bool(m.reasoning),
+                        );
+                        mc.insert(
+                            "input".to_string(),
+                            serde_json::to_value(m.input_types).unwrap(),
+                        );
+                        mc.insert("cost".to_string(), serde_json::to_value(m.cost).unwrap());
+                        mc.insert(
+                            "contextWindow".to_string(),
+                            serde_json::Value::Number(m.context_window.into()),
+                        );
+                        mc.insert(
+                            "maxTokens".to_string(),
+                            serde_json::Value::Number(m.max_tokens.into()),
+                        );
+                        if let Some(headers) = m.headers {
+                            mc.insert(
+                                "headers".to_string(),
+                                serde_json::to_value(headers).unwrap(),
+                            );
                         }
-                    }
-                    if let Some(v) = m.default_top_p {
-                        if let Some(n) = serde_json::Number::from_f64(v) {
-                            mc.insert("defaultTopP".to_string(), serde_json::Value::Number(n));
+                        if let Some(compat) = m.compat {
+                            if let Some(compat_value) = serialize_compat(compat) {
+                                mc.insert("compat".to_string(), compat_value);
+                            }
                         }
-                    }
-                    if let Some(v) = m.default_presence_penalty {
-                        if let Some(n) = serde_json::Number::from_f64(v) {
-                            mc.insert("defaultPresencePenalty".to_string(), serde_json::Value::Number(n));
+                        if let Some(v) = m.default_temperature {
+                            if let Some(n) = serde_json::Number::from_f64(v) {
+                                mc.insert(
+                                    "defaultTemperature".to_string(),
+                                    serde_json::Value::Number(n),
+                                );
+                            }
                         }
-                    }
-                    if let Some(v) = m.default_frequency_penalty {
-                        if let Some(n) = serde_json::Number::from_f64(v) {
-                            mc.insert("defaultFrequencyPenalty".to_string(), serde_json::Value::Number(n));
+                        if let Some(v) = m.default_top_p {
+                            if let Some(n) = serde_json::Number::from_f64(v) {
+                                mc.insert("defaultTopP".to_string(), serde_json::Value::Number(n));
+                            }
                         }
-                    }
-                    if let Some(v) = m.default_seed {
-                        mc.insert("defaultSeed".to_string(), serde_json::Value::Number(v.into()));
-                    }
-                    serde_json::Value::Object(mc)
-                }).collect();
+                        if let Some(v) = m.default_presence_penalty {
+                            if let Some(n) = serde_json::Number::from_f64(v) {
+                                mc.insert(
+                                    "defaultPresencePenalty".to_string(),
+                                    serde_json::Value::Number(n),
+                                );
+                            }
+                        }
+                        if let Some(v) = m.default_frequency_penalty {
+                            if let Some(n) = serde_json::Number::from_f64(v) {
+                                mc.insert(
+                                    "defaultFrequencyPenalty".to_string(),
+                                    serde_json::Value::Number(n),
+                                );
+                            }
+                        }
+                        if let Some(v) = m.default_seed {
+                            mc.insert(
+                                "defaultSeed".to_string(),
+                                serde_json::Value::Number(v.into()),
+                            );
+                        }
+                        if let Some(v) = m.thinking_level_map {
+                            mc.insert(
+                                "thinkingLevelMap".to_string(),
+                                serde_json::to_value(v).unwrap(),
+                            );
+                        }
+                        serde_json::Value::Object(mc)
+                    })
+                    .collect();
                 config.insert("models".to_string(), serde_json::Value::Array(model_values));
             }
             providers_map.insert(p.id, serde_json::Value::Object(config));
@@ -115,23 +165,135 @@ impl<'a> ConfigWriter<'a> {
         let path = get_models_yaml_path();
         crate::utils::fs::ensure_dir(&path.parent().unwrap_or(&path).to_path_buf())
             .map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
-        atomic_write(&path, &yaml_str)
-            .map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
+        atomic_write(&path, &yaml_str).map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
 
         Ok(())
     }
 
     pub fn write_settings_json(&self) -> Result<()> {
         let dao = SettingsDao::new(self.db);
-        if let Some(settings) = dao.get()? {
-            let json_str = serde_json::to_string_pretty(&settings)
-                .map_err(|e| ConfigWriterError::Serialize(e.to_string()))?;
-            let path = get_settings_json_path();
-            crate::utils::fs::ensure_dir(&path.parent().unwrap_or(&path).to_path_buf())
+        let settings = dao.get()?.unwrap_or_default();
+        let json_str = serde_json::to_string_pretty(&settings)
+            .map_err(|e| ConfigWriterError::Serialize(e.to_string()))?;
+        let path = get_settings_json_path();
+        crate::utils::fs::ensure_dir(&path.parent().unwrap_or(&path).to_path_buf())
+            .map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
+        atomic_write(&path, &json_str).map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
+
+        self.write_config_yml(&settings)?;
+        Ok(())
+    }
+
+    pub fn write_config_yml(&self, settings: &crate::models::settings::AppSettings) -> Result<()> {
+        let path = get_config_yml_path();
+        let mut root = if path.exists() {
+            let content = std::fs::read_to_string(&path)
                 .map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
-            atomic_write(&path, &json_str)
-                .map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
+            serde_yaml::from_str::<serde_yaml::Value>(&content)
+                .unwrap_or_else(|_| serde_yaml::Value::Mapping(Default::default()))
+        } else {
+            serde_yaml::Value::Mapping(Default::default())
+        };
+
+        let root_map = root.as_mapping_mut().ok_or_else(|| {
+            ConfigWriterError::Serialize("config.yml root must be a map".to_string())
+        })?;
+
+        if let Some(model_roles) = &settings.model_roles {
+            root_map.insert(
+                serde_yaml::Value::String("modelRoles".to_string()),
+                serde_yaml::to_value(&model_roles.0)
+                    .map_err(|e| ConfigWriterError::Serialize(e.to_string()))?,
+            );
         }
+        if let Some(level) = &settings.default_thinking_level {
+            root_map.insert(
+                serde_yaml::Value::String("defaultThinkingLevel".to_string()),
+                serde_yaml::Value::String(level.clone()),
+            );
+        }
+        if let Some(hidden) = settings.hide_thinking_block {
+            root_map.insert(
+                serde_yaml::Value::String("hideThinkingBlock".to_string()),
+                serde_yaml::Value::Bool(hidden),
+            );
+        }
+        if let Some(budgets) = &settings.thinking_budgets {
+            root_map.insert(
+                serde_yaml::Value::String("thinkingBudgets".to_string()),
+                serde_yaml::to_value(budgets)
+                    .map_err(|e| ConfigWriterError::Serialize(e.to_string()))?,
+            );
+        }
+        if let Some(retry) = &settings.retry {
+            let retry_key = serde_yaml::Value::String("retry".to_string());
+            let retry_value = root_map
+                .entry(retry_key)
+                .or_insert_with(|| serde_yaml::Value::Mapping(Default::default()));
+            let retry_map = retry_value.as_mapping_mut().ok_or_else(|| {
+                ConfigWriterError::Serialize("config.yml retry must be a map".to_string())
+            })?;
+            retry_map.insert(
+                serde_yaml::Value::String("fallbackChains".to_string()),
+                serde_yaml::to_value(&retry.fallback_chains)
+                    .map_err(|e| ConfigWriterError::Serialize(e.to_string()))?,
+            );
+        }
+
+        // Build enabledModels: merge DB enabled providers with existing manual entries
+        let dao = ProviderDao::new(self.db);
+        if let Ok(providers) = dao.get_enabled() {
+            // Collect all provider IDs we manage (both enabled and disabled)
+            let all_providers = crate::database::provider_dao::ProviderDao::new(self.db)
+                .get_all()
+                .unwrap_or_default();
+            let managed_ids: std::collections::HashSet<&str> =
+                all_providers.iter().map(|p| p.id.as_str()).collect();
+
+            // Preserve existing enabledModels entries from unmanaged providers
+            let existing: Vec<String> = root_map
+                .get(&serde_yaml::Value::String("enabledModels".to_string()))
+                .and_then(|v| v.as_sequence())
+                .map(|seq| {
+                    seq.iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
+                .unwrap_or_default();
+            let unmanaged: Vec<String> = existing
+                .into_iter()
+                .filter(|entry| {
+                    let provider_id = entry.split('/').next().unwrap_or("");
+                    !managed_ids.contains(provider_id)
+                })
+                .collect();
+
+            // Add all models from enabled providers
+            let mut enabled_models: Vec<serde_yaml::Value> = unmanaged
+                .into_iter()
+                .map(serde_yaml::Value::String)
+                .collect();
+            for p in &providers {
+                if let Some(models) = &p.models {
+                    for m in models {
+                        enabled_models
+                            .push(serde_yaml::Value::String(format!("{}/{}", p.id, m.id)));
+                    }
+                }
+            }
+
+            root_map.insert(
+                serde_yaml::Value::String("enabledModels".to_string()),
+                serde_yaml::Value::Sequence(enabled_models),
+            );
+        }
+
+        let yaml_str = serde_yaml::to_string(&root)
+            .map_err(|e| ConfigWriterError::Serialize(e.to_string()))?;
+        crate::utils::fs::ensure_dir(&path.parent().unwrap_or(&path).to_path_buf())
+            .map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
+        atomic_write(&path, &yaml_str).map_err(|e| ConfigWriterError::FileWrite(e.to_string()))?;
+
         Ok(())
     }
 }
@@ -148,7 +310,9 @@ fn serialize_compat(compat: crate::models::provider::ModelCompat) -> Option<serd
     }
 }
 
-fn serialize_discovery(mut discovery: crate::models::provider::DiscoveryConfig) -> serde_json::Value {
+fn serialize_discovery(
+    mut discovery: crate::models::provider::DiscoveryConfig,
+) -> serde_json::Value {
     if discovery.discovery_type == "lmstudio" {
         discovery.discovery_type = "lm-studio".to_string();
     }

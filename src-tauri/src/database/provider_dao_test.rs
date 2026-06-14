@@ -216,30 +216,29 @@ mod tests {
         let db = create_test_db();
         let dao = ProviderDao::new(&db);
         let mut provider = sample_provider("test-1");
-        provider.models = Some(vec![
-            crate::models::provider::ModelDefinition {
-                id: "gpt-4o".to_string(),
-                name: "GPT-4o".to_string(),
-                api_type: Some("openai-completions".to_string()),
-                reasoning: false,
-                input_types: vec!["text".to_string()],
-                cost: crate::models::provider::ModelCost {
-                    input: 2.5,
-                    output: 10.0,
-                    cache_read: 1.25,
-                    cache_write: 0.0,
-                },
-                context_window: 128000,
-                max_tokens: 16384,
-                headers: None,
-                compat: None,
-                default_temperature: None,
-                default_top_p: None,
-                default_presence_penalty: None,
-                default_frequency_penalty: None,
-                default_seed: None,
-            }
-        ]);
+        provider.models = Some(vec![crate::models::provider::ModelDefinition {
+            id: "gpt-4o".to_string(),
+            name: "GPT-4o".to_string(),
+            api_type: Some("openai-completions".to_string()),
+            reasoning: false,
+            input_types: vec!["text".to_string()],
+            cost: crate::models::provider::ModelCost {
+                input: 2.5,
+                output: 10.0,
+                cache_read: 1.25,
+                cache_write: 0.0,
+            },
+            context_window: 128000,
+            max_tokens: 16384,
+            headers: None,
+            compat: None,
+            default_temperature: None,
+            default_top_p: None,
+            default_presence_penalty: None,
+            default_frequency_penalty: None,
+            default_seed: None,
+            thinking_level_map: None,
+        }]);
         assert!(dao.create(&provider).is_ok());
     }
 

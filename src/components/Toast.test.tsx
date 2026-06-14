@@ -31,7 +31,7 @@ describe("Toast", () => {
     expect(screen.getByText("✕")).toBeInTheDocument();
   });
 
-  it("auto removes after 3 seconds", async () => {
+  it("auto removes after 1.5 seconds for success", async () => {
     vi.useFakeTimers();
     act(() => {
       useToastStore.getState().show("临时消息", "success");
@@ -40,10 +40,26 @@ describe("Toast", () => {
     expect(screen.getByText("临时消息")).toBeInTheDocument();
 
     act(() => {
-      vi.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(1500);
     });
 
     expect(screen.queryByText("临时消息")).not.toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it("error toast does not auto remove", async () => {
+    vi.useFakeTimers();
+    act(() => {
+      useToastStore.getState().show("错误消息", "error");
+    });
+    render(<Toast />);
+    expect(screen.getByText("错误消息")).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(10000);
+    });
+
+    expect(screen.getByText("错误消息")).toBeInTheDocument();
     vi.useRealTimers();
   });
 

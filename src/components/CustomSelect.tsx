@@ -1,5 +1,6 @@
 import { Check, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface Option {
   value: string;
@@ -16,9 +17,16 @@ interface Props {
 }
 
 export default function CustomSelect({ value, options, placeholder, disabled, testId, onChange }: Props) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState("");
   const ref = useRef<HTMLDivElement>(null);
   const selected = options.find((option) => option.value === value);
+  const filteredOptions = options.filter((option) => {
+    const query = filter.trim().toLowerCase();
+    if (!query) return true;
+    return option.label.toLowerCase().includes(query) || option.value.toLowerCase().includes(query);
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -27,6 +35,10 @@ export default function CustomSelect({ value, options, placeholder, disabled, te
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) setFilter("");
   }, [open]);
 
   return (
@@ -55,6 +67,14 @@ export default function CustomSelect({ value, options, placeholder, disabled, te
       </button>
       {open && !disabled && (
         <div className="absolute z-50 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-[#222] bg-[#050505] p-1 shadow-[0_24px_80px_rgba(0,0,0,0.65)]">
+          {options.length > 10 && (
+            <input
+              value={filter}
+              onChange={(event) => setFilter(event.target.value)}
+              placeholder={t("filterModels")}
+              className="mb-1 w-full rounded-xl border border-[#222] bg-black/60 px-3 py-2 text-sm text-white outline-none transition placeholder:text-muted-foreground focus:border-[#1db7f7]"
+            />
+          )}
           <button
             type="button"
             onClick={() => { onChange(""); setOpen(false); }}
@@ -63,7 +83,7 @@ export default function CustomSelect({ value, options, placeholder, disabled, te
             {placeholder}
             {!value && <Check className="h-4 w-4" />}
           </button>
-          {options.map((option) => (
+          {filteredOptions.map((option) => (
             <button
               key={option.value}
               type="button"

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useProviderStore } from "@/stores/providerStore";
+import { useI18n } from "@/lib/i18n";
 import { useLocation } from "wouter";
 
 interface Props {
@@ -16,6 +17,7 @@ interface SearchItem {
 }
 
 export default function SearchDialog({ open, onClose }: Props) {
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [selectedIdx, setSelectedIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -113,7 +115,7 @@ export default function SearchDialog({ open, onClose }: Props) {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索 Provider 或模型..."
+            placeholder={t("searchProviderOrModel")}
             className="flex-1 bg-transparent outline-none text-sm"
           />
           <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] border rounded bg-muted text-muted-foreground">
@@ -123,7 +125,7 @@ export default function SearchDialog({ open, onClose }: Props) {
         <div ref={listRef} className="max-h-80 overflow-y-auto py-2">
           {items.length === 0 && (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-              未找到匹配项
+              {t("noMatchFound")}
             </div>
           )}
           {items.map((item, idx) => (
@@ -157,15 +159,15 @@ export default function SearchDialog({ open, onClose }: Props) {
         </div>
         <div className="px-4 py-2 border-t bg-muted/20 flex items-center gap-4 text-[10px] text-muted-foreground">
           <span className="flex items-center gap-1">
-            <kbd className="px-1 border rounded bg-background">↑↓</kbd> 选择
+            <kbd className="px-1 border rounded bg-background">↑↓</kbd> {t("selectLabel")}
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 border rounded bg-background">↵</kbd> 确认
+            <kbd className="px-1 border rounded bg-background">↵</kbd> {t("confirm2")}
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 border rounded bg-background">esc</kbd> 关闭
+            <kbd className="px-1 border rounded bg-background">esc</kbd> {t("closeLabel")}
           </span>
-          <span className="ml-auto">{items.length} 个结果</span>
+          <span className="ml-auto">{t("results", { count: items.length })}</span>
         </div>
       </div>
     </div>

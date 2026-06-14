@@ -17,7 +17,10 @@ impl<'a> ProviderService<'a> {
         validate_provider(&config).map_err(|e| e.to_string())?;
 
         let dao = ProviderDao::new(self.db);
-        let exists = dao.get_by_id(&config.id).map_err(|e| e.to_string())?.is_some();
+        let exists = dao
+            .get_by_id(&config.id)
+            .map_err(|e| e.to_string())?
+            .is_some();
 
         if exists {
             dao.update(&config).map_err(|e| e.to_string())?;
@@ -28,6 +31,7 @@ impl<'a> ProviderService<'a> {
         // Write to models.yml
         let writer = super::config_writer::ConfigWriter::new(self.db);
         writer.write_models_yaml().map_err(|e| e.to_string())?;
+        writer.write_settings_json().map_err(|e| e.to_string())?;
 
         Ok(config)
     }
@@ -38,6 +42,7 @@ impl<'a> ProviderService<'a> {
 
         let writer = super::config_writer::ConfigWriter::new(self.db);
         writer.write_models_yaml().map_err(|e| e.to_string())?;
+        writer.write_settings_json().map_err(|e| e.to_string())?;
 
         Ok(())
     }
@@ -61,12 +66,25 @@ impl<'a> ProviderService<'a> {
         let provider = provider.unwrap();
 
         let settings_dao = crate::database::settings_dao::SettingsDao::new(self.db);
-        let mut settings = settings_dao.get().map_err(|e| e.to_string())?.unwrap_or_default();
+        let mut settings = settings_dao
+            .get()
+            .map_err(|e| e.to_string())?
+            .unwrap_or_default();
 
-        settings.default_provider = Some(provider_id.to_string());
-        settings.default_model = model_id.map(|s| s.to_string()).or_else(|| {
-            provider.models.as_ref().and_then(|models| models.first().map(|m| m.id.clone()))
+        let selected_model = model_id.map(|s| s.to_string()).or_else(|| {
+            provider
+                .models
+                .as_ref()
+                .and_then(|models| models.first().map(|m| m.id.clone()))
         });
+        settings.default_provider = Some(provider_id.to_string());
+        settings.default_model = selected_model.clone();
+
+        if let Some(model) = selected_model {
+            let mut roles = settings.model_roles.map(|r| r.0).unwrap_or_default();
+            roles.insert("default".to_string(), format!("{}/{}", provider_id, model));
+            settings.model_roles = Some(crate::models::settings::ModelRoles(roles));
+        }
 
         settings_dao.update(&settings).map_err(|e| e.to_string())?;
 
@@ -104,7 +122,12 @@ impl<'a> ProviderService<'a> {
         }
 
         if let Ok(Some(provider)) = self.get_by_id("github-copilot") {
-            if provider.is_built_in && provider.models.as_ref().map_or(true, |models| models.is_empty()) {
+            if provider.is_built_in
+                && provider
+                    .models
+                    .as_ref()
+                    .map_or(true, |models| models.is_empty())
+            {
                 let _ = self.delete("github-copilot");
             }
         }

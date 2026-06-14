@@ -25,4 +25,21 @@ describe("ModelEditorDialog", () => {
     expect(screen.getByTestId("model-context-window")).toHaveValue(400000);
     expect(screen.getByTestId("model-max-tokens")).toHaveValue(128000);
   });
+
+  it("saves omp-supported model defaults", () => {
+    const onSave = vi.fn();
+    render(<ModelEditorDialog onSave={onSave} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByTestId("model-id-input"), { target: { value: "model-a" } });
+    fireEvent.click(screen.getByRole("button", { name: /高级选项/ }));
+    fireEvent.change(screen.getByLabelText("默认 Temperature (omp)"), { target: { value: "0.2" } });
+    fireEvent.change(screen.getByLabelText("默认 Top P (omp)"), { target: { value: "0.9" } });
+    fireEvent.change(screen.getByLabelText("默认 Seed (omp)"), { target: { value: "1" } });
+    fireEvent.click(screen.getByTestId("save-model-btn"));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      defaultTemperature: 0.2,
+      defaultTopP: 0.9,
+      defaultSeed: 1,
+    }));
+  });
 });

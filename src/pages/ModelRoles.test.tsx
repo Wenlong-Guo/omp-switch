@@ -29,12 +29,15 @@ vi.mock("@/stores/settingsStore", () => ({
 }));
 
 describe("ModelRoles", () => {
-  it("renders five stable roles", () => {
+  it("renders all stable roles", () => {
     render(<ModelRoles />);
     expect(screen.getByText("Default")).toBeInTheDocument();
     expect(screen.getByText("Smol")).toBeInTheDocument();
     expect(screen.getByText("Slow")).toBeInTheDocument();
     expect(screen.getByText("Plan")).toBeInTheDocument();
+    expect(screen.getByText("Designer")).toBeInTheDocument();
+    expect(screen.getByText("Task")).toBeInTheDocument();
+    expect(screen.getByText("Vision")).toBeInTheDocument();
     expect(screen.getByText("Commit")).toBeInTheDocument();
   });
 
@@ -57,6 +60,6 @@ describe("ModelRoles", () => {
     render(<ModelRoles />);
     fireEvent.click(screen.getByTestId("clear-role-default"));
     fireEvent.click(screen.getByText("保存模型角色"));
-    expect(mocks.saveSettings).toHaveBeenCalledWith(expect.objectContaining({ modelRoles: undefined }));
+    expect(mocks.saveSettings).toHaveBeenCalledWith(expect.objectContaining({ modelRoles: {} }));
   });
 });

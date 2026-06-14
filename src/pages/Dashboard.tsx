@@ -2,36 +2,26 @@ import { useEffect, useState, useRef } from "react";
 import { useProviderStore } from "@/stores/providerStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useLocation } from "wouter";
-import { Plus, ArrowRight, Pencil, Trash2, Download, Upload, GripVertical, Copy, FlaskConical, BarChart3 } from "lucide-react";
+import { Plus, ArrowRight, Pencil, Trash2, Download, Upload, GripVertical, Copy, FlaskConical } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { validateProviderImport } from "@/lib/importValidation";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useI18n } from "@/lib/i18n";
 import { invokeCommand } from "@/lib/tauri-api";
+import { getProviderLogo, type ProviderLogoConfig } from "@/lib/providerPresets";
+import { getProviderLogoSrc } from "@/lib/providerLogos";
 import type { ProviderConfig } from "@/types/provider";
 
-const CC_SWITCH_PROVIDER_LOGOS: Record<string, { icon: string; color: string }> = {
-  anthropic: { icon: "anthropic", color: "#D4915D" },
-  claude: { icon: "anthropic", color: "#D4915D" },
-  github: { icon: "github", color: "#000000" },
-  copilot: { icon: "github", color: "#000000" },
-  gemini: { icon: "gemini", color: "#4285F4" },
-  google: { icon: "gemini", color: "#4285F4" },
-  openai: { icon: "openai", color: "#00A67E" },
-};
+const ProviderLogo = ({ name, logo }: { name: string; logo: ProviderLogoConfig | null }) => {
+  const logoSrc = getProviderLogoSrc(logo?.icon);
 
-const getProviderLogo = (provider: { id: string; name: string; api?: string; baseUrl?: string }) => {
-  const source = `${provider.id} ${provider.name} ${provider.api ?? ""} ${provider.baseUrl ?? ""}`.toLowerCase();
-  const key = Object.keys(CC_SWITCH_PROVIDER_LOGOS).find((candidate) => source.includes(candidate));
-  return key ? CC_SWITCH_PROVIDER_LOGOS[key] : null;
-};
+  if (logoSrc) {
+    return <img src={logoSrc} alt={logo?.icon ?? name} className="h-full w-full rounded-2xl object-cover" />;
+  }
 
-const ProviderLogo = ({ name, logo }: { name: string; logo: { icon: string; color: string } | null }) => {
   if (!logo) {
     return <span>{name.trim().charAt(0).toUpperCase() || "?"}</span>;
   }
-
-  const label = logo.icon === "anthropic" ? "△" : logo.icon === "github" ? "GH" : logo.icon === "gemini" ? "✦" : "◎";
 
   return (
     <span
@@ -39,7 +29,7 @@ const ProviderLogo = ({ name, logo }: { name: string; logo: { icon: string; colo
       style={{ backgroundColor: logo.color }}
       title={logo.icon}
     >
-      {label}
+      {logo.label}
     </span>
   );
 };
@@ -47,6 +37,20 @@ const ProviderLogo = ({ name, logo }: { name: string; logo: { icon: string; colo
 const getModelName = (model: { id: string; name?: string }) => model.name || model.id;
 
 const canUseOpenAiTest = (api?: string) => !api || api.includes("openai");
+
+const PROVIDER_ORDER_KEY = "omp-switch-provider-order";
+
+const mergeProviderOrder = (providers: ProviderConfig[], savedOrder: string[]) => {
+  const byId = new Map(providers.map((provider) => [provider.id, provider]));
+  const ordered = savedOrder.flatMap((id) => {
+    const provider = byId.get(id);
+    if (!provider) return [];
+    byId.delete(id);
+    return [provider];
+  });
+
+  return [...ordered, ...providers.filter((provider) => byId.has(provider.id))];
+};
 
 export default function Dashboard() {
   const { t } = useI18n();
@@ -59,11 +63,24 @@ export default function Dashboard() {
   const [orderedProviders, setOrderedProviders] = useState<typeof providers>([]);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [isFileDragOver, setIsFileDragOver] = useState(false);
+  const [testResults, setTestResults] = useState<Map<string, boolean>>(new Map());
   const searchRef = useRef<HTMLInputElement>(null);
+  const deletedProviderRef = useRef<Map<string, { provider: ProviderConfig; timer: number }>>(new Map());
 
   useEffect(() => {
-    setOrderedProviders(providers);
+    let savedOrder: string[] = [];
+    try {
+      savedOrder = JSON.parse(localStorage.getItem(PROVIDER_ORDER_KEY) ?? "[]");
+    } catch {
+      savedOrder = [];
+    }
+    setOrderedProviders(mergeProviderOrder(providers, savedOrder).filter((provider) => !deletedProviderRef.current.has(provider.id)));
   }, [providers]);
+
+  useEffect(() => () => {
+    deletedProviderRef.current.forEach(({ timer }) => window.clearTimeout(timer));
+  }, []);
 
   useKeyboardShortcuts({
     onSearch: () => {
@@ -75,11 +92,38 @@ export default function Dashboard() {
     fetchProviders();
   }, [fetchProviders]);
 
-  const filteredProviders = orderedProviders.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (p.api ?? "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProviders = orderedProviders.filter((p) => {
+    const query = searchQuery.toLowerCase();
+    return p.name.toLowerCase().includes(query) ||
+      p.id.toLowerCase().includes(query) ||
+      (p.api ?? "").toLowerCase().includes(query) ||
+      (p.models ?? []).some((model) =>
+        model.id.toLowerCase().includes(query) || (model.name ?? "").toLowerCase().includes(query)
+      );
+  });
+
+  const persistProviderOrder = (providers: ProviderConfig[]) => {
+    localStorage.setItem(PROVIDER_ORDER_KEY, JSON.stringify(providers.map((provider) => provider.id)));
+  };
+
+  const importProvidersFromFile = async (file: File) => {
+    try {
+      const text = await file.text();
+      const imported = JSON.parse(text);
+      const result = validateProviderImport(imported);
+      if (!result.valid) {
+        toast.show(`${t("importFailed")}：${result.error}`, "error");
+        return;
+      }
+      for (const p of result.providers) {
+        await saveProvider?.(p);
+      }
+      toast.show(t("importSuccess", { count: result.providers.length }), "success");
+      fetchProviders();
+    } catch {
+      toast.show(t("importFailed"), "error");
+    }
+  };
 
   const handleDragStart = (id: string) => {
     setDragId(id);
@@ -99,6 +143,7 @@ export default function Dashboard() {
     const [removed] = newOrder.splice(dragIdx, 1);
     newOrder.splice(targetIdx, 0, removed);
     setOrderedProviders(newOrder);
+    persistProviderOrder(newOrder);
     setDragId(null);
     setDragOverId(null);
   };
@@ -132,14 +177,66 @@ export default function Dashboard() {
           messages: [{ role: "user", content: "ping" }],
         },
       });
+      setTestResults((current) => new Map(current).set(provider.id, true));
       toast.show(t("testModelSuccess", { model: modelName }), "success");
     } catch (error) {
+      setTestResults((current) => new Map(current).set(provider.id, false));
       toast.show(t("testModelFailed", { reason: String(error) }), "error");
     }
   };
 
+  const scheduleDeleteProvider = (provider: ProviderConfig) => {
+    setOrderedProviders((current) => current.filter((item) => item.id !== provider.id));
+    const existing = deletedProviderRef.current.get(provider.id);
+    if (existing) window.clearTimeout(existing.timer);
+    const timer = window.setTimeout(async () => {
+      deletedProviderRef.current.delete(provider.id);
+      try {
+        await deleteProvider(provider.id);
+        toast.show(t("deleteSuccess"), "success");
+      } catch {
+        toast.show(t("importFailed"), "error");
+      }
+    }, 5000);
+    deletedProviderRef.current.set(provider.id, { provider, timer });
+    toast.show(t("deleteUndone"), "success", () => {
+      const deleted = deletedProviderRef.current.get(provider.id);
+      if (!deleted) return;
+      window.clearTimeout(deleted.timer);
+      deletedProviderRef.current.delete(provider.id);
+      setOrderedProviders((current) => mergeProviderOrder([...current, deleted.provider], [
+        ...current.map((item) => item.id),
+        deleted.provider.id,
+      ]));
+    });
+  };
+
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-10 md:px-10">
+    <div
+      className="relative mx-auto w-full max-w-6xl px-6 py-10 md:px-10"
+      onDragOver={(e) => {
+        if (e.dataTransfer?.items && Array.from(e.dataTransfer.items).some((item) => item.kind === "file")) {
+          e.preventDefault();
+          setIsFileDragOver(true);
+        }
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setIsFileDragOver(false);
+      }}
+      onDrop={async (e) => {
+        if (!e.dataTransfer?.files) return;
+        const file = Array.from(e.dataTransfer.files).find((file) => file.name.toLowerCase().endsWith(".json"));
+        if (!file) return;
+        e.preventDefault();
+        setIsFileDragOver(false);
+        await importProvidersFromFile(file);
+      }}
+    >
+      {isFileDragOver && (
+        <div className="pointer-events-none fixed inset-6 z-40 flex items-center justify-center rounded-3xl border-2 border-dashed border-[#1db7f7] bg-black/70 text-lg font-semibold text-white backdrop-blur-sm">
+          {t("dragFileHere")}
+        </div>
+      )}
       <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.28em] text-[#1db7f7]">{t("providers")}</p>
@@ -177,22 +274,7 @@ export default function Dashboard() {
               onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
-                try {
-                  const text = await file.text();
-                  const imported = JSON.parse(text);
-                  const result = validateProviderImport(imported);
-                  if (!result.valid) {
-                    toast.show(`${t("importFailed")}：${result.error}`, "error");
-                    return;
-                  }
-                  for (const p of result.providers) {
-                    await saveProvider?.(p);
-                  }
-                  toast.show(t("importSuccess", { count: result.providers.length }), "success");
-                  fetchProviders();
-                } catch {
-                  toast.show(t("importFailed"), "error");
-                }
+                await importProvidersFromFile(file);
                 e.target.value = "";
               }}
             />
@@ -232,6 +314,8 @@ export default function Dashboard() {
           {filteredProviders.map((provider) => {
             const isExpanded = expandedId === provider.id;
             const modelCount = provider.models?.length ?? 0;
+            const enabledModelCount = provider.enabled ? modelCount : 0;
+            const testResult = testResults.get(provider.id);
             const apiType = provider.api ?? "unknown";
             const apiBadgeColor =
               apiType.includes("openai") ? "border-[#1db7f7]/35 bg-[#1db7f7]/10 text-[#8adfff]" :
@@ -263,19 +347,25 @@ export default function Dashboard() {
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-border bg-[#111] text-lg font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] group-hover:border-white/25 group-hover:bg-black/20">
                   <ProviderLogo name={provider.name || provider.id} logo={logo} />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <h3 className="truncate text-lg font-semibold text-white">{provider.name}</h3>
-                    <span className={`rounded-lg border px-2 py-0.5 font-mono text-[11px] font-medium group-hover:border-white/25 group-hover:bg-white/10 group-hover:text-white ${apiBadgeColor}`}>{provider.id}</span>
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <h3 className="min-w-0 max-w-full truncate text-lg font-semibold text-white">{provider.name}</h3>
+                    {testResult !== undefined && (
+                      <span className={testResult ? "text-xs text-emerald-400" : "text-xs text-red-400"}>●</span>
+                    )}
+                    <span className="shrink-0 rounded-full border border-[#1db7f7]/35 bg-[#1db7f7]/10 px-2 py-0.5 text-[11px] font-medium text-[#8adfff] group-hover:border-white/25 group-hover:bg-white/10 group-hover:text-white">
+                      {modelCount} models, {enabledModelCount} enabled
+                    </span>
+                    <span title={provider.id} className={`min-w-0 max-w-[220px] truncate rounded-lg border px-2 py-0.5 font-mono text-[11px] font-medium group-hover:border-white/25 group-hover:bg-white/10 group-hover:text-white ${apiBadgeColor}`}>{provider.id}</span>
                     {provider.isBuiltIn && <span className="rounded border border-border bg-[#111] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground group-hover:border-white/25 group-hover:bg-white/10 group-hover:text-white">{t("builtIn")}</span>}
                     {!provider.enabled && <span className="rounded border border-yellow-300/25 bg-yellow-300/10 px-1.5 py-0.5 text-[10px] font-medium text-yellow-200 group-hover:border-white/25 group-hover:bg-white/10 group-hover:text-white">{t("disabled")}</span>}
                   </div>
                   <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground min-w-0 group-hover:text-white/80">
                     <span className="truncate max-w-[360px]">{provider.baseUrl || t("notConfiguredUrl")}</span>
                   </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  <div className="mt-3 flex min-w-0 flex-wrap items-center gap-1.5">
                     {visibleModels.length > 0 ? visibleModels.map((m) => (
-                      <span key={m.id} title={m.id} className="max-w-[180px] truncate rounded-lg border border-border bg-[#111] px-2.5 py-1 font-mono text-[11px] text-muted-foreground group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white/90">
+                      <span key={m.id} title={m.id} className="min-w-0 max-w-[160px] truncate rounded-lg border border-border bg-[#111] px-2.5 py-1 font-mono text-[11px] text-muted-foreground group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white/90">
                         {getModelName(m)}
                       </span>
                     )) : (
@@ -336,13 +426,6 @@ export default function Dashboard() {
                     <FlaskConical className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => setExpandedId(isExpanded ? null : provider.id)}
-                    aria-label={`${t("viewModels")} ${provider.name}`}
-                    className="rounded-xl p-2 text-muted-foreground transition duration-200 hover:bg-black/20 hover:text-white group-hover:text-white/80"
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                  </button>
-                  <button
                     onClick={() => setConfirmId(provider.id)}
                     aria-label={`${t("delete")} ${provider.name}`}
                     className="rounded-xl p-2 text-muted-foreground transition duration-200 hover:bg-black/20 hover:text-red-100 group-hover:text-white/80"
@@ -376,13 +459,9 @@ export default function Dashboard() {
         <ConfirmDialog
           title={t("confirmDelete")}
           message={t("deleteProviderConfirm", { name: providers.find((p) => p.id === confirmId)?.name ?? confirmId })}
-          onConfirm={async () => {
-            try {
-              await deleteProvider(confirmId);
-              toast.show(t("deleteSuccess"), "success");
-            } catch {
-              toast.show(t("importFailed"), "error");
-            }
+          onConfirm={() => {
+            const provider = providers.find((p) => p.id === confirmId);
+            if (provider) scheduleDeleteProvider(provider);
             setConfirmId(null);
           }}
           onCancel={() => setConfirmId(null)}

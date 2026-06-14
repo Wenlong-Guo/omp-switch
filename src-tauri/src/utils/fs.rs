@@ -81,6 +81,10 @@ pub fn get_settings_json_path() -> PathBuf {
     get_omp_agent_dir().join("settings.json")
 }
 
+pub fn get_config_yml_path() -> PathBuf {
+    get_omp_agent_dir().join("config.yml")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

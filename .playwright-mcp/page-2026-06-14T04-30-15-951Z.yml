@@ -1,0 +1,55 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: π
+      - heading "OMP Switch" [level=1] [ref=e8]
+  - generic [ref=e9]:
+    - complementary [ref=e10]:
+      - navigation [ref=e11]:
+        - button "模型供应商" [ref=e12]:
+          - img [ref=e14]
+          - generic [ref=e19]: 模型供应商
+        - button "角色模型" [ref=e20]:
+          - img [ref=e21]
+          - generic [ref=e24]: 角色模型
+        - button "同步配置" [ref=e25]:
+          - img [ref=e26]
+          - generic [ref=e31]: 同步配置
+        - button "设置" [ref=e32]:
+          - img [ref=e33]
+          - generic [ref=e36]: 设置
+      - generic [ref=e37]:
+        - button "添加供应商" [ref=e38]:
+          - img [ref=e39]
+          - text: 添加供应商
+        - generic [ref=e40]: v.BETA
+        - generic [ref=e41]:
+          - generic [ref=e42]: Ctrl+N 新建 Provider
+          - generic [ref=e43]: Ctrl+K 搜索
+          - generic [ref=e44]: Ctrl+S 保存
+    - main [ref=e45]:
+      - generic [ref=e47]:
+        - generic [ref=e48]:
+          - generic [ref=e49]:
+            - paragraph [ref=e50]: 模型供应商
+            - heading "供应商管理" [level=1] [ref=e51]
+            - paragraph [ref=e52]: 管理 API 端点和供应商配置。
+          - generic [ref=e53]:
+            - button "导出 JSON" [ref=e54]:
+              - img [ref=e55]
+              - text: 导出 JSON
+            - generic [ref=e58] [cursor=pointer]:
+              - img [ref=e59]
+              - text: 导入
+              - generic [ref=e62]: 导入
+        - textbox "搜索供应商 (名称/ID/接口格式)..." [ref=e64]
+        - generic [ref=e65]:
+          - generic [ref=e66]: π
+          - paragraph [ref=e67]: 暂无供应商
+          - paragraph [ref=e68]: 添加第一个 AI 供应商开始配置
+          - button "添加供应商" [ref=e69]:
+            - img [ref=e70]
+            - text: 添加供应商
+            - img [ref=e71]
+  - contentinfo [ref=e73]:
+    - generic [ref=e74]: v.BETA
