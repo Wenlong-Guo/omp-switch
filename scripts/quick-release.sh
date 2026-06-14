@@ -16,6 +16,8 @@ fi
 
 # Strip leading 'v' if present
 VERSION=${VERSION#v}
+TAURI_VERSION=${VERSION%%-*}
+export VERSION TAURI_VERSION
 
 echo "==> Updating version to $VERSION..."
 node -e "
@@ -25,6 +27,15 @@ pkg.version = '$VERSION';
 fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
 "
 
+echo "==> Updating package-lock.json..."
+node -e '
+const fs = require("fs");
+const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
+lock.version = process.env.VERSION;
+lock.packages[""].version = process.env.VERSION;
+fs.writeFileSync("package-lock.json", JSON.stringify(lock, null, 2) + "\n");
+'
+
 echo "==> Updating Cargo.toml..."
 node -e "
 const fs = require('fs');
@@ -33,8 +44,24 @@ toml = toml.replace(/^version = \"[^\"]+\"/m, 'version = \"$VERSION\"');
 fs.writeFileSync('src-tauri/Cargo.toml', toml);
 "
 
+echo "==> Updating Cargo.lock..."
+node -e '
+const fs = require("fs");
+let lock = fs.readFileSync("src-tauri/Cargo.lock", "utf8");
+lock = lock.replace(/(\[\[package\]\]\r?\nname = "omp-switch"\r?\nversion = ")[^"]+(")/, `$1${process.env.VERSION}$2`);
+fs.writeFileSync("src-tauri/Cargo.lock", lock);
+'
+
+echo "==> Updating tauri.conf.json..."
+node -e '
+const fs = require("fs");
+const conf = JSON.parse(fs.readFileSync("src-tauri/tauri.conf.json", "utf8"));
+conf.version = process.env.TAURI_VERSION;
+fs.writeFileSync("src-tauri/tauri.conf.json", JSON.stringify(conf, null, 2) + "\n");
+'
+
 echo "==> Committing..."
-git add package.json src-tauri/Cargo.toml
+git add package.json package-lock.json src-tauri/Cargo.toml src-tauri/Cargo.lock src-tauri/tauri.conf.json
 git commit -m "chore(release): v$VERSION"
 
 echo "==> Tagging v$VERSION..."

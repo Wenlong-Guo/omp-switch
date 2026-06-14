@@ -11,40 +11,93 @@ description: 自动化发布 omp-switch。用户说"发布VX.X.X"时触发。执
 
 ## 流程
 
-1. **同步版本号**（用户给的版本不带 V 前缀，如 `1.2.3`）：
-   - `package.json`: `"version": "1.2.3"`
-   - `package-lock.json`: `"version": "1.2.3"`（两处）
-   - `src-tauri/Cargo.toml`: `version = "1.2.3"`
-   - `src-tauri/Cargo.lock`: `version = "1.2.3"`（Cargo.toml 对应条目）
-   - `src-tauri/tauri.conf.json`: `"version": "1.2.3"`（纯数字，不用 rc/beta 等 prerelease 标识，因为 Windows MSI 不支持）
+### 1. 同步版本号
 
-2. **验证构建**：
+用户给的版本不带 V 前缀（如 `1.2.3`），同步到以下文件：
+
+| 文件 | 字段 | 值 |
+|---|---|---|
+| `package.json` | `"version"` | `1.2.3` |
+| `package-lock.json` | `"version"` + `packages[""].version` | `1.2.3` |
+| `src-tauri/Cargo.toml` | `version` | `1.2.3` |
+| `src-tauri/Cargo.lock` | `[[package]] name = "omp-switch"` 下的 `version` | `1.2.3` |
+| `src-tauri/tauri.conf.json` | `"version"` | 纯数字（`1.2.3`，不用 rc/beta） |
+
+**推荐**：用 `bash scripts/quick-release.sh 1.2.3` 自动完成以上同步 + commit + tag + push。
+
+### 2. 验证构建
+
+```bash
+npm run build          # tsc && vite build
+cargo check --manifest-path src-tauri/Cargo.toml
+```
+
+### 3. 提交并打 tag（若未用 quick-release.sh）
+
+```bash
+git add -A
+git commit -m "release: v1.2.3"
+git tag v1.2.3
+git push origin main
+git push origin v1.2.3
+```
+
+### 4. 检查发布状态（用诊断脚本，禁止手写 curl | jq）
+
+**必须用脚本**，不要手写 `curl | jq`——裸 API 调用在限流/空响应时容易误判。
+
+```powershell
+powershell -NoProfile -File scripts/check-release-status.ps1 -Tag v1.2.3
+```
+
+若有 GitHub PAT，传 `-Token` 避免匿名限流：
+
+```powershell
+powershell -NoProfile -File scripts/check-release-status.ps1 -Tag v1.2.3 -Token "ghp_xxx"
+```
+
+脚本输出 JSON，字段含义：
+
+| 字段 | 含义 |
+|---|---|
+| `tag_exists` | tag 是否在远程存在 |
+| `release_public` | `true` / `false` / `unknown_rate_limited` / `unknown_no_token` |
+| `actions_status` | `success` / `failure` / `in_progress` / `not_found` / `unknown_rate_limited` / `unknown_no_token` |
+| `actions_url` | Actions run 链接（如有） |
+| `release_url` | Release 页面链接（如有） |
+| `next_action` | 建议下一步操作 |
+
+### 5. 根据诊断结果处理
+
+**`actions_status = "in_progress"`**：等待后重新运行诊断脚本。
+
+**`actions_status = "failure"`**：
+1. 打开 `actions_url` 查看失败 job 的 annotations/logs
+2. 修复 `.github/workflows/release.yml` 或构建问题
+3. commit + push main
+4. 移动 tag 到最新 commit：
    ```bash
-   npm run build          # tsc && vite build
-   cargo check --manifest-path src-tauri/Cargo.toml
+   git push origin :refs/tags/v1.2.3 && git tag -f v1.2.3 && git push origin v1.2.3
    ```
+5. 重新运行诊断脚本，重复直到 `actions_status = "success"`
 
-3. **提交并打 tag**：
-   ```bash
-   git add -A
-   git commit -m "release: v1.2.3"
-   git tag v1.2.3
-   git push origin main
-   git push origin v1.2.3
-   ```
+**`release_public = "unknown_rate_limited"`**：
+- 用 `-Token` 重试，或等待 ~1 小时后重试
+- 也可打开 `https://github.com/Wenlong-Guo/omp-switch/releases/tag/v1.2.3` 人工确认
 
-4. **确认 CI，失败必须修到成功**：
-   - push tag 后查：`https://api.github.com/repos/Wenlong-Guo/omp-switch/actions/runs?event=push&branch=v1.2.3&per_page=1`
-   - 若 `status != completed`，等待后继续查。
-   - 若 `conclusion != success`，查 `jobs_url` 和每个失败 job 的 `check_run_url/annotations`。
-   - 修复 `.github/workflows/release.yml` 或构建问题，commit + push main。
-   - 移动 tag 到最新 commit：`git push origin :refs/tags/v1.2.3 && git tag -f v1.2.3 && git push origin v1.2.3`。
-   - 重复直到 `conclusion: success` 且公开 release API 返回对应 tag。
+**`release_public = false` 且 `actions_status = "success"`**：
+- 检查 workflow 中 `softprops/action-gh-release@v2` 是否执行成功
+- 确认 `draft: false, prerelease: true`
 
-5. **确认 Release 存在**：
-   ```bash
-   curl https://api.github.com/repos/Wenlong-Guo/omp-switch/releases/tags/v1.2.3
-   ```
+### 6. 最终确认
+
+```bash
+# 有 token 时用 API
+curl -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/Wenlong-Guo/omp-switch/releases/tags/v1.2.3
+
+# 无 token 时用诊断脚本
+powershell -NoProfile -File scripts/check-release-status.ps1 -Tag v1.2.3
+```
 
 ## 注意事项
 
@@ -56,6 +109,6 @@ description: 自动化发布 omp-switch。用户说"发布VX.X.X"时触发。执
 - **Release workflow 必须创建公开 Release（非 draft）**，否则 API 返回 404；workflow 用 `draft: false, prerelease: true`。
 - **Rust toolchain 用 `stable`**（CI 与本地版本一致），避免 `cargo check` 因版本不匹配失败。
 - **Release job 独立于 build matrix**，避免三平台并发抢创建同一 tag Release。
-- **GitHub API 限流时改用网页 HEAD 请求**确认 Release 页 HTTP 200。
+- **禁止手写 `curl | jq` 检查 API**。始终用 `scripts/check-release-status.ps1`，它内置限流检测、空值保护、HEAD 降级。
+- 若没有 `gh` CLI，用 GitHub REST API 或诊断脚本查 runs/jobs/check-runs/releases。
 - 不要只看 tag；必须确认公开 Release 页/API 已出现。不要停在 draft。
-- 若没有 `gh` CLI，用 GitHub REST API 查 runs/jobs/check-runs/releases.
