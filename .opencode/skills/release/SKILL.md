@@ -39,7 +39,7 @@ description: 自动化发布 omp-switch。用户说"发布VX.X.X"时触发。执
    - 若 `conclusion != success`，查 `jobs_url` 和每个失败 job 的 `check_run_url/annotations`。
    - 修复 `.github/workflows/release.yml` 或构建问题，commit + push main。
    - 移动 tag 到最新 commit：`git push origin :refs/tags/v1.2.3 && git tag -f v1.2.3 && git push origin v1.2.3`。
-   - 重复直到 `conclusion: success` 且 release API 返回对应 tag。
+   - 重复直到 `conclusion: success` 且公开 release API 返回对应 tag。
 
 5. **确认 Release 存在**：
    ```bash
@@ -53,5 +53,5 @@ description: 自动化发布 omp-switch。用户说"发布VX.X.X"时触发。执
 - 若用户说 rc 版本（如 `V1.0.0-rc`），`tauri.conf.json` 用 `1.0.0`，其余文件用 `1.0.0-rc`。
 - 构建产物在 `src-tauri/target/release/bundle/`。
 - 不要改无关文件，不要清理既有 warnings。
-- 不要只看 tag；必须确认 Release 页/API 已出现。
+- 不要只看 tag；必须确认公开 Release 页/API 已出现。不要停在 draft。
 - 若没有 `gh` CLI，用 GitHub REST API 查 runs/jobs/check-runs/releases。

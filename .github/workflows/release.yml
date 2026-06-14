@@ -52,7 +52,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: omp-switch ${{ github.ref_name }}
-          draft: true
+          draft: false
           prerelease: true
           files: release-assets/**/*
         env:
