@@ -31,7 +31,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: cargo check --manifest-path src-tauri/Cargo.toml
-      - run: npx tauri build --ci true
+      - run: npx tauri build --ci
       - uses: actions/upload-artifact@v4
         with:
           name: bundles-${{ matrix.platform }}
