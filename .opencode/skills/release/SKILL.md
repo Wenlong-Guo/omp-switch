@@ -53,5 +53,9 @@ description: 自动化发布 omp-switch。用户说"发布VX.X.X"时触发。执
 - 若用户说 rc 版本（如 `V1.0.0-rc`），`tauri.conf.json` 用 `1.0.0`，其余文件用 `1.0.0-rc`。
 - 构建产物在 `src-tauri/target/release/bundle/`。
 - 不要改无关文件，不要清理既有 warnings。
+- **Release workflow 必须创建公开 Release（非 draft）**，否则 API 返回 404；workflow 用 `draft: false, prerelease: true`。
+- **Rust toolchain 用 `stable`**（CI 与本地版本一致），避免 `cargo check` 因版本不匹配失败。
+- **Release job 独立于 build matrix**，避免三平台并发抢创建同一 tag Release。
+- **GitHub API 限流时改用网页 HEAD 请求**确认 Release 页 HTTP 200。
 - 不要只看 tag；必须确认公开 Release 页/API 已出现。不要停在 draft。
-- 若没有 `gh` CLI，用 GitHub REST API 查 runs/jobs/check-runs/releases。
+- 若没有 `gh` CLI，用 GitHub REST API 查 runs/jobs/check-runs/releases.

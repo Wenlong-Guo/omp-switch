@@ -2,7 +2,7 @@
 
 [English](README.md) | [中文](README.zh.md)
 
-> **Version**: 0.1.3 | **Platforms**: macOS / Windows / Linux
+> **Version**: 1.0.0-rc | **Platforms**: macOS / Windows / Linux
 
 A cross-platform AI Provider configuration manager built with **Tauri 2 + React + SQLite**.
 
@@ -85,15 +85,6 @@ npx playwright test
 
 Visit the [Releases](../../releases) page to download pre-built binaries for your platform.
 
-## Roadmap
-
-| Version | Features |
-|---------|----------|
-| V0.1.0  | Project skeleton, SQLite schema, Provider CRUD |
-| V0.1.1  | Comprehensive code review, 204 passing tests |
-| V0.1.2  | Edit mode, delete confirmation, Toast notifications, dynamic version, encryption key security fix |
-| V0.1.3  | omp-compatible YAML output, provider card UI, model role defaults, provider preset cards |
-| V0.2.0  | Model override, cost configuration, WebDAV sync |
 
 ## License
 

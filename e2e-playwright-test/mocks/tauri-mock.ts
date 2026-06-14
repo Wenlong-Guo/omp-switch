@@ -120,10 +120,9 @@ function buildInitScript() {
             saveState(st);
             return;
           case 'get_version':
-            return '0.1.3';
+            return '1.0.0-rc';
           case 'plugin:app|version':
-          case 'plugin:app|version|none':
-            return '0.1.3';
+            return '1.0.0-rc';
           case 'chat_completion':
             var messages = args.messages;
             var model = 'llama3-2';

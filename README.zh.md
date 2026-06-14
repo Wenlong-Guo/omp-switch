@@ -2,7 +2,7 @@
 
 [English](README.md) | [中文](README.zh.md)
 
-> **版本**: 0.1.3 | **支持平台**: macOS / Windows / Linux
+> **版本**: 1.0.0-rc | **支持平台**: macOS / Windows / Linux
 
 基于 **Tauri 2 + React + SQLite** 构建的跨平台 AI Provider 配置管理工具。
 
@@ -85,15 +85,6 @@ npx playwright test
 
 前往 [Releases](../../releases) 页面下载对应平台的预构建二进制文件。
 
-## 版本路线
-
-| 版本   | 功能                                                     |
-|--------|----------------------------------------------------------|
-| V0.1.0 | 项目骨架、SQLite 数据模型、Provider CRUD               |
-| V0.1.1 | 全面代码审查、204 个通过测试                           |
-| V0.1.2 | 编辑模式、删除确认、Toast 通知、动态版本号、加密密钥安全修复 |
-| V0.1.3 | omp 兼容 YAML 输出、Provider 卡片 UI、模型角色默认值、Provider 预设卡片 |
-| V0.2.0 | 模型覆盖、成本配置、WebDAV 同步                          |
 
 ## 许可证
 
