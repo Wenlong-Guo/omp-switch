@@ -2,7 +2,7 @@
 
 [English](README.md) | [中文](README.zh.md)
 
-> **Version**: 1.0.0-rc | **Platforms**: macOS / Windows / Linux
+> **Version**: 1.0.0 | **Platforms**: macOS / Windows / Linux
 
 A cross-platform AI Provider configuration manager built with **Tauri 2 + React + SQLite**.
 

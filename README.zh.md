@@ -2,7 +2,7 @@
 
 [English](README.md) | [中文](README.zh.md)
 
-> **版本**: 1.0.0-rc | **支持平台**: macOS / Windows / Linux
+> **版本**: 1.0.0 | **支持平台**: macOS / Windows / Linux
 
 基于 **Tauri 2 + React + SQLite** 构建的跨平台 AI Provider 配置管理工具。
 

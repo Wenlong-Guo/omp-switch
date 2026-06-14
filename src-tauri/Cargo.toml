@@ -1,6 +1,6 @@
 [package]
 name = "omp-switch"
-version = "1.0.0-rc"
+version = "1.0.0"
 description = "oh-my-pi 配置管理器"
 authors = ["Wenlong-Guo"]
 license = "MIT"

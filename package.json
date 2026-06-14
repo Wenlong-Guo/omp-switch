@@ -1,7 +1,7 @@
 {
   "name": "omp-switch",
   "private": true,
-  "version": "1.0.0-rc",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
